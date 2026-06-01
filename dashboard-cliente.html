@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>BlueMarket – Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:        #03174a;
+      --bg2:       #051e5c;
+      --surface:   rgba(255,255,255,0.06);
+      --border:    rgba(255,255,255,0.10);
+      --blue:      #4db8ff;
+      --blue-dim:  rgba(77,184,255,0.15);
+      --green:     #2ecc71;
+      --green-dim: rgba(46,204,113,0.15);
+      --orange:    #f39c12;
+      --orange-dim:rgba(243,156,18,0.15);
+      --red:       #e74c3c;
+      --red-dim:   rgba(231,76,60,0.15);
+      --text:      #ffffff;
+      --text2:     rgba(255,255,255,0.55);
+      --text3:     rgba(255,255,255,0.30);
+      --nav-h:     68px;
+      --top-h:     60px;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: #0a0a0a;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    }
+
+    /* ── FRAME RESPONSIVE ── */
+    .screen {
+      position: fixed; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .frame {
+      position: relative;
+      width: 100%; height: 100%;
+      background: var(--bg);
+      overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+    @media (min-width: 600px) {
+      .frame {
+        width: 390px; height: 844px;
+        border-radius: 40px;
+        box-shadow: 0 30px 80px rgba(0,0,0,0.75);
+      }
+    }
+
+    /* ── TOP BAR ── */
+    .topbar {
+      height: var(--top-h);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 20px;
+      background: rgba(3,23,74,0.95);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      backdrop-filter: blur(10px);
+    }
+    .topbar-left { display: flex; flex-direction: column; }
+    .topbar-left .greeting { font-size: 11px; color: var(--text2); }
+    .topbar-left .biz-name { font-size: 16px; font-weight: 700; color: var(--text); }
+    .topbar-left .biz-name span { color: var(--blue); }
+
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .notif-btn {
+      position: relative;
+      width: 36px; height: 36px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+    }
+    .notif-btn svg { width: 18px; height: 18px; stroke: var(--text2); }
+    .notif-dot {
+      position: absolute; top: 6px; right: 6px;
+      width: 8px; height: 8px;
+      background: var(--red); border-radius: 50%;
+      border: 1.5px solid var(--bg);
+    }
+    .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--blue-dim);
+      border: 1.5px solid var(--blue);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: var(--blue);
+    }
+
+    /* ── SCROLL CONTENT ── */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 16px 16px 20px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .content::-webkit-scrollbar { display: none; }
+
+    /* ── FECHA ── */
+    .date-row {
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .date-row span { font-size: 12px; color: var(--text2); }
+    .date-row .live-badge {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 11px; color: var(--green);
+      background: var(--green-dim);
+      padding: 3px 10px; border-radius: 20px;
+    }
+    .live-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--green);
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 1; }
+      50%      { opacity: 0.3; }
+    }
+
+    /* ── MÉTRICAS PRINCIPALES ── */
+    .metrics-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .metric-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px 16px;
+      display: flex; flex-direction: column; gap: 6px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .metric-card:hover { border-color: var(--blue); background: var(--blue-dim); }
+    .metric-card.full { grid-column: 1 / -1; flex-direction: row; align-items: center; justify-content: space-between; }
+
+    .metric-label {
+      font-size: 11px; color: var(--text2);
+      text-transform: uppercase; letter-spacing: 0.8px;
+    }
+    .metric-value {
+      font-size: 24px; font-weight: 700; color: var(--text);
+      line-height: 1;
+    }
+    .metric-value.green { color: var(--green); }
+    .metric-value.orange { color: var(--orange); }
+    .metric-value.red { color: var(--red); }
+
+    .metric-sub {
+      font-size: 11px; color: var(--text3);
+      display: flex; align-items: center; gap: 4px;
+    }
+    .metric-sub .up { color: var(--green); }
+    .metric-sub .down { color: var(--red); }
+
+    .metric-icon {
+      width: 40px; height: 40px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .metric-icon svg { width: 22px; height: 22px; }
+    .metric-icon.blue   { background: var(--blue-dim); }
+    .metric-icon.green  { background: var(--green-dim); }
+    .metric-icon.orange { background: var(--orange-dim); }
+    .metric-icon.red    { background: var(--red-dim); }
+
+    /* ── SECCIÓN TÍTULO ── */
+    .section-title {
+      font-size: 13px; font-weight: 600; color: var(--text2);
+      text-transform: uppercase; letter-spacing: 0.8px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .section-title a {
+      font-size: 11px; color: var(--blue);
+      text-transform: none; letter-spacing: 0;
+      text-decoration: none; cursor: pointer;
+    }
+
+    /* ── PEDIDOS RECIENTES ── */
+    .orders-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .order-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex; align-items: center; gap: 12px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .order-item:hover { border-color: var(--blue); }
+
+    .order-status-dot {
+      width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+    }
+    .order-status-dot.nuevo      { background: var(--blue); box-shadow: 0 0 6px var(--blue); }
+    .order-status-dot.preparando { background: var(--orange); }
+    .order-status-dot.listo      { background: var(--green); }
+
+    .order-info { flex: 1; min-width: 0; }
+    .order-info .order-name {
+      font-size: 13px; font-weight: 600; color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .order-info .order-detail {
+      font-size: 11px; color: var(--text2); margin-top: 2px;
+    }
+
+    .order-right { text-align: right; flex-shrink: 0; }
+    .order-right .order-amount {
+      font-size: 14px; font-weight: 700; color: var(--text);
+    }
+    .order-right .order-time {
+      font-size: 10px; color: var(--text3); margin-top: 2px;
+    }
+
+    /* ── CUENTA CORRIENTE ALERT ── */
+    .cc-alert {
+      background: linear-gradient(135deg, rgba(231,76,60,0.15), rgba(231,76,60,0.05));
+      border: 1px solid rgba(231,76,60,0.35);
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex; align-items: center; gap: 12px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .cc-alert:hover { border-color: var(--red); }
+    .cc-alert-icon {
+      width: 38px; height: 38px;
+      background: var(--red-dim); border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .cc-alert-icon svg { width: 20px; height: 20px; stroke: var(--red); }
+    .cc-alert-info { flex: 1; }
+    .cc-alert-info .cc-title { font-size: 13px; font-weight: 600; color: var(--text); }
+    .cc-alert-info .cc-sub   { font-size: 11px; color: rgba(231,76,60,0.8); margin-top: 2px; }
+    .cc-alert-amount { font-size: 16px; font-weight: 700; color: var(--red); }
+
+    /* ── ACCESOS RÁPIDOS ── */
+    .quick-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    .quick-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 6px 12px;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 7px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .quick-btn:hover { border-color: var(--blue); background: var(--blue-dim); }
+    .quick-btn svg { width: 24px; height: 24px; stroke: var(--blue); }
+    .quick-btn span { font-size: 10px; color: var(--text2); text-align: center; line-height: 1.3; }
+
+    /* ── BOTTOM NAV ── */
+    .bottom-nav {
+      height: var(--nav-h);
+      background: rgba(3,23,74,0.97);
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-around;
+      padding: 0 8px;
+      flex-shrink: 0;
+      backdrop-filter: blur(12px);
+    }
+    .nav-item {
+      flex: 1;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 4px;
+      padding: 8px 4px;
+      cursor: pointer;
+      border-radius: 12px;
+      transition: background 0.2s;
+      position: relative;
+    }
+    .nav-item:hover { background: var(--surface); }
+    .nav-item.active svg { stroke: var(--blue); }
+    .nav-item.active span { color: var(--blue); }
+    .nav-item svg { width: 22px; height: 22px; stroke: var(--text3); transition: stroke 0.2s; }
+    .nav-item span { font-size: 10px; color: var(--text3); transition: color 0.2s; }
+    .nav-badge {
+      position: absolute; top: 6px; right: calc(50% - 18px);
+      background: var(--red); color: #fff;
+      font-size: 9px; font-weight: 700;
+      min-width: 16px; height: 16px;
+      border-radius: 8px; padding: 0 4px;
+      display: flex; align-items: center; justify-content: center;
+      border: 1.5px solid var(--bg);
+    }
+  </style>
+</head>
+<body>
+<div class="screen">
+  <div class="frame">
+
+    <!-- TOP BAR -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <span class="greeting">Buenos días,</span>
+        <span class="biz-name"><span>Blue</span>Market Escobar</span>
+      </div>
+      <div class="topbar-right">
+        <div class="notif-btn">
+          <svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div class="notif-dot"></div>
+        </div>
+        <div class="avatar">MB</div>
+      </div>
+    </div>
+
+    <!-- SCROLL CONTENT -->
+    <div class="content">
+
+      <!-- FECHA + LIVE -->
+      <div class="date-row">
+        <span>Lunes 2 de junio, 2025</span>
+        <div class="live-badge">
+          <div class="live-dot"></div>
+          En vivo
+        </div>
+      </div>
+
+      <!-- MÉTRICAS -->
+      <div class="metrics-grid">
+
+        <div class="metric-card" onclick="">
+          <div class="metric-label">Ventas hoy</div>
+          <div class="metric-value green">$84.500</div>
+          <div class="metric-sub"><span class="up">↑ 12%</span> vs ayer</div>
+        </div>
+
+        <div class="metric-card" onclick="">
+          <div class="metric-label">Pedidos</div>
+          <div class="metric-value">23</div>
+          <div class="metric-sub"><span class="up">↑ 4</span> nuevos</div>
+        </div>
+
+        <div class="metric-card" onclick="">
+          <div class="metric-label">En preparación</div>
+          <div class="metric-value orange">7</div>
+          <div class="metric-sub">3 para entregar</div>
+        </div>
+
+        <div class="metric-card" onclick="">
+          <div class="metric-label">Clientes hoy</div>
+          <div class="metric-value">18</div>
+          <div class="metric-sub">5 nuevos</div>
+        </div>
+
+      </div>
+
+      <!-- CUENTA CORRIENTE ALERT -->
+      <div>
+        <div class="section-title" style="margin-bottom:10px">
+          Cuenta Corriente
+          <a>Ver todos</a>
+        </div>
+        <div class="cc-alert">
+          <div class="cc-alert-icon">
+            <svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="cc-alert-info">
+            <div class="cc-title">3 clientes con saldo pendiente</div>
+            <div class="cc-sub">Vencimiento más próximo: hoy</div>
+          </div>
+          <div class="cc-amount">$32.800</div>
+        </div>
+      </div>
+
+      <!-- PEDIDOS RECIENTES -->
+      <div>
+        <div class="section-title" style="margin-bottom:10px">
+          Pedidos recientes
+          <a>Ver todos</a>
+        </div>
+        <div class="orders-list">
+
+          <div class="order-item">
+            <div class="order-status-dot nuevo"></div>
+            <div class="order-info">
+              <div class="order-name">María García</div>
+              <div class="order-detail">2 kg merluza · 1 kg langostinos</div>
+            </div>
+            <div class="order-right">
+              <div class="order-amount">$4.200</div>
+              <div class="order-time">hace 3 min</div>
+            </div>
+          </div>
+
+          <div class="order-item">
+            <div class="order-status-dot preparando"></div>
+            <div class="order-info">
+              <div class="order-name">Restaurante El Mar</div>
+              <div class="order-detail">5 kg salmón · 2 kg calamares</div>
+            </div>
+            <div class="order-right">
+              <div class="order-amount">$18.500</div>
+              <div class="order-time">hace 15 min</div>
+            </div>
+          </div>
+
+          <div class="order-item">
+            <div class="order-status-dot listo"></div>
+            <div class="order-info">
+              <div class="order-name">Juan Pérez</div>
+              <div class="order-detail">1 kg corvina · 500g gambas</div>
+            </div>
+            <div class="order-right">
+              <div class="order-amount">$3.100</div>
+              <div class="order-time">hace 28 min</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ACCESOS RÁPIDOS -->
+      <div>
+        <div class="section-title" style="margin-bottom:10px">Accesos rápidos</div>
+        <div class="quick-grid">
+
+          <div class="quick-btn">
+            <svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z" stroke-width="1.8"/>
+              <path d="M16 3H8l-2 4h12l-2-4z" stroke-width="1.8" stroke-linejoin="round"/>
+            </svg>
+            <span>Productos</span>
+          </div>
+
+          <div class="quick-btn">
+            <svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke-width="1.8" stroke-linecap="round"/>
+              <circle cx="9" cy="7" r="4" stroke-width="1.8"/>
+              <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+            <span>Clientes</span>
+          </div>
+
+          <div class="quick-btn">
+            <svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="10" r="3" stroke-width="1.8"/>
+              <path d="M12 2a8 8 0 00-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 00-8-8z" stroke-width="1.8"/>
+            </svg>
+            <span>Repartidores</span>
+          </div>
+
+          <div class="quick-btn">
+            <svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Estadísticas</span>
+          </div>
+
+        </div>
+      </div>
+
+    </div><!-- /content -->
+
+    <!-- BOTTOM NAV -->
+    <div class="bottom-nav">
+
+      <div class="nav-item active">
+        <svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M9 22V12h6v10" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>Inicio</span>
+      </div>
+
+      <div class="nav-item">
+        <div class="nav-badge">4</div>
+        <svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>Pedidos</span>
+      </div>
+
+      <div class="nav-item">
+        <svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z" stroke-width="1.8"/>
+          <path d="M16 3H8l-2 4h12l-2-4z" stroke-width="1.8" stroke-linejoin="round"/>
+        </svg>
+        <span>Productos</span>
+      </div>
+
+      <div class="nav-item">
+        <svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke-width="1.8" stroke-linecap="round"/>
+          <circle cx="9" cy="7" r="4" stroke-width="1.8"/>
+          <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        <span>Clientes</span>
+      </div>
+
+      <div class="nav-item">
+        <svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="3" stroke-width="1.8"/>
+          <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke-width="1.8"/>
+        </svg>
+        <span>Más</span>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // Navegación bottom nav
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', function() {
+      document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>

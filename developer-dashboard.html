@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>BlueMarket – Developer</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:          #0a0a12;
+      --bg2:         #111120;
+      --surface:     rgba(255,255,255,0.05);
+      --surface2:    rgba(255,255,255,0.09);
+      --border:      rgba(255,255,255,0.08);
+      --border2:     rgba(255,255,255,0.14);
+      --blue:        #4db8ff;
+      --blue-dim:    rgba(77,184,255,0.12);
+      --green:       #2ecc71;
+      --green-dim:   rgba(46,204,113,0.12);
+      --orange:      #f39c12;
+      --orange-dim:  rgba(243,156,18,0.12);
+      --red:         #e74c3c;
+      --red-dim:     rgba(231,76,60,0.12);
+      --purple:      #9b59b6;
+      --purple-dim:  rgba(155,89,182,0.12);
+      --teal:        #1abc9c;
+      --teal-dim:    rgba(26,188,156,0.12);
+      --text:        #f0f0f8;
+      --text2:       rgba(240,240,248,0.50);
+      --text3:       rgba(240,240,248,0.25);
+      --nav-w:       220px;
+      --topbar-h:    56px;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      color: var(--text);
+    }
+
+    /* ── LAYOUT DESKTOP ── */
+    .layout {
+      display: flex;
+      width: 100%; height: 100vh;
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: var(--nav-w);
+      height: 100vh;
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .sidebar-logo {
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-logo h1 {
+      font-size: 18px; font-weight: 800; letter-spacing: -0.5px;
+    }
+    .sidebar-logo h1 span { color: var(--blue); }
+    .sidebar-logo .dev-badge {
+      display: inline-block; margin-top: 4px;
+      font-size: 9px; font-weight: 700; letter-spacing: 1px;
+      background: var(--purple-dim); color: var(--purple);
+      padding: 2px 8px; border-radius: 6px;
+      text-transform: uppercase;
+    }
+
+    .sidebar-nav {
+      flex: 1; padding: 12px 10px;
+      overflow-y: auto;
+    }
+    .sidebar-nav::-webkit-scrollbar { display: none; }
+
+    .nav-section-label {
+      font-size: 10px; font-weight: 600; color: var(--text3);
+      text-transform: uppercase; letter-spacing: 1px;
+      padding: 8px 10px 4px;
+    }
+
+    .nav-link {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 10px; border-radius: 10px;
+      cursor: pointer; margin-bottom: 2px;
+      transition: background 0.15s;
+      font-size: 13px; color: var(--text2);
+      text-decoration: none;
+    }
+    .nav-link:hover { background: var(--surface2); color: var(--text); }
+    .nav-link.active { background: var(--blue-dim); color: var(--blue); }
+    .nav-link svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .nav-link .nav-badge {
+      margin-left: auto;
+      background: var(--orange); color: #fff;
+      font-size: 9px; font-weight: 700;
+      padding: 1px 6px; border-radius: 8px;
+    }
+    .nav-link .nav-badge.green { background: var(--green); color: #03174a; }
+
+    .sidebar-footer {
+      padding: 12px 10px;
+      border-top: 1px solid var(--border);
+    }
+    .dev-user {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px; border-radius: 10px;
+      cursor: pointer;
+    }
+    .dev-avatar {
+      width: 30px; height: 30px; border-radius: 8px;
+      background: var(--purple-dim); border: 1px solid var(--purple);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; color: var(--purple);
+    }
+    .dev-info { flex: 1; min-width: 0; }
+    .dev-info .dev-name { font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dev-info .dev-role { font-size: 10px; color: var(--text3); }
+
+    /* ── MAIN ── */
+    .main {
+      flex: 1; display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Top bar */
+    .topbar {
+      height: var(--topbar-h);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px;
+      flex-shrink: 0;
+    }
+    .topbar-title { font-size: 15px; font-weight: 700; color: var(--text); }
+    .topbar-right { display: flex; align-items: center; gap: 10px; }
+
+    .period-select {
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      color: var(--text2);
+      font-size: 12px;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+
+    .notif-btn {
+      width: 32px; height: 32px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; position: relative;
+    }
+    .notif-btn svg { width: 15px; height: 15px; stroke: var(--text2); }
+    .notif-dot { position: absolute; top: 5px; right: 5px; width: 7px; height: 7px; background: var(--red); border-radius: 50%; }
+
+    /* Scroll content */
+    .page-content {
+      flex: 1; overflow-y: auto; overflow-x: hidden;
+      padding: 24px;
+      display: flex; flex-direction: column; gap: 24px;
+    }
+    .page-content::-webkit-scrollbar { width: 4px; }
+    .page-content::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+    /* ── KPI ROW ── */
+    .kpi-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+    }
+    @media (max-width: 900px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+
+    .kpi-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .kpi-card:hover { border-color: var(--border2); }
+
+    .kpi-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .kpi-label { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.6px; }
+    .kpi-icon {
+      width: 30px; height: 30px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .kpi-icon svg { width: 15px; height: 15px; }
+    .kpi-icon.blue   { background: var(--blue-dim);   stroke: var(--blue); }
+    .kpi-icon.green  { background: var(--green-dim);  stroke: var(--green); }
+    .kpi-icon.purple { background: var(--purple-dim); stroke: var(--purple); }
+    .kpi-icon.teal   { background: var(--teal-dim);   stroke: var(--teal); }
+    .kpi-icon svg { stroke: inherit; }
+
+    .kpi-value { font-size: 26px; font-weight: 800; color: var(--text); line-height: 1; }
+    .kpi-value.green  { color: var(--green); }
+    .kpi-value.blue   { color: var(--blue); }
+    .kpi-value.purple { color: var(--purple); }
+    .kpi-value.teal   { color: var(--teal); }
+
+    .kpi-delta {
+      margin-top: 6px; font-size: 11px; color: var(--text3);
+      display: flex; align-items: center; gap: 4px;
+    }
+    .kpi-delta .up   { color: var(--green); }
+    .kpi-delta .down { color: var(--red); }
+
+    /* ── SECCIÓN DOS COLUMNAS ── */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 860px) { .two-col { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 14px 18px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .card-title { font-size: 13px; font-weight: 700; color: var(--text); }
+    .card-action {
+      font-size: 11px; color: var(--blue);
+      cursor: pointer; text-decoration: none;
+    }
+    .card-body { padding: 14px 18px; }
+
+    /* ── TABLA EMPRESAS ── */
+    .empresa-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .empresa-row:last-child { border-bottom: none; }
+
+    .empresa-avatar {
+      width: 34px; height: 34px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 800;
+      flex-shrink: 0;
+    }
+    .empresa-info { flex: 1; min-width: 0; }
+    .empresa-name { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .empresa-meta { font-size: 10px; color: var(--text3); margin-top: 2px; }
+
+    .plan-badge {
+      padding: 3px 9px; border-radius: 8px;
+      font-size: 10px; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .plan-badge.pro      { background: var(--blue-dim);   color: var(--blue); }
+    .plan-badge.starter  { background: var(--teal-dim);   color: var(--teal); }
+    .plan-badge.enterprise { background: var(--purple-dim); color: var(--purple); }
+
+    .status-dot {
+      width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+    }
+    .status-dot.active   { background: var(--green); }
+    .status-dot.trial    { background: var(--orange); }
+    .status-dot.inactive { background: var(--text3); }
+
+    .empresa-arr { stroke: var(--text3); width: 14px; height: 14px; flex-shrink: 0; cursor: pointer; }
+
+    /* ── TICKETS ── */
+    .ticket-row {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+    }
+    .ticket-row:last-child { border-bottom: none; }
+    .ticket-prio {
+      width: 4px; align-self: stretch;
+      border-radius: 4px; flex-shrink: 0; margin-top: 2px;
+    }
+    .ticket-prio.alta   { background: var(--red); }
+    .ticket-prio.media  { background: var(--orange); }
+    .ticket-prio.baja   { background: var(--teal); }
+    .ticket-info { flex: 1; min-width: 0; }
+    .ticket-title { font-size: 12px; font-weight: 600; color: var(--text); }
+    .ticket-meta  { font-size: 10px; color: var(--text3); margin-top: 3px; }
+    .ticket-status {
+      font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 6px; flex-shrink: 0;
+    }
+    .ticket-status.abierto  { background: var(--red-dim);    color: var(--red); }
+    .ticket-status.en-curso { background: var(--orange-dim); color: var(--orange); }
+    .ticket-status.cerrado  { background: var(--green-dim);  color: var(--green); }
+
+    /* ── MRR CHART SIMPLE ── */
+    .mrr-bars {
+      display: flex; align-items: flex-end; gap: 6px;
+      height: 80px; padding-top: 8px;
+    }
+    .mrr-bar-wrap {
+      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
+    }
+    .mrr-bar {
+      width: 100%; border-radius: 4px 4px 0 0;
+      background: var(--blue-dim); border: 1px solid rgba(77,184,255,0.2);
+      transition: background 0.2s;
+      cursor: pointer;
+    }
+    .mrr-bar:hover { background: var(--blue); }
+    .mrr-bar.current { background: var(--blue); }
+    .mrr-month { font-size: 9px; color: var(--text3); }
+
+    /* ── ROADMAP ── */
+    .roadmap-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .roadmap-item:last-child { border-bottom: none; }
+    .roadmap-dot {
+      width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+    }
+    .roadmap-dot.done    { background: var(--green); }
+    .roadmap-dot.wip     { background: var(--blue); box-shadow: 0 0 6px var(--blue); }
+    .roadmap-dot.planned { background: var(--border2); }
+    .roadmap-info { flex: 1; }
+    .roadmap-title { font-size: 12px; font-weight: 600; color: var(--text); }
+    .roadmap-meta  { font-size: 10px; color: var(--text3); margin-top: 2px; }
+    .roadmap-tag {
+      font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 6px; flex-shrink: 0;
+    }
+    .roadmap-tag.done    { background: var(--green-dim);  color: var(--green); }
+    .roadmap-tag.wip     { background: var(--blue-dim);   color: var(--blue); }
+    .roadmap-tag.planned { background: var(--surface2);   color: var(--text3); }
+
+    /* ── MOBILE: ocultar sidebar, mostrar bottom nav ── */
+    .mobile-nav { display: none; }
+    @media (max-width: 600px) {
+      .sidebar { display: none; }
+      .mobile-nav {
+        display: flex;
+        height: 60px;
+        background: var(--bg2);
+        border-top: 1px solid var(--border);
+        align-items: center; justify-content: space-around;
+        flex-shrink: 0;
+      }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .two-col  { grid-template-columns: 1fr; }
+      .page-content { padding: 16px; }
+      .topbar { padding: 0 16px; }
+    }
+    .mob-nav-item {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; gap: 3px; cursor: pointer;
+    }
+    .mob-nav-item svg { width: 20px; height: 20px; stroke: var(--text3); }
+    .mob-nav-item span { font-size: 9px; color: var(--text3); }
+    .mob-nav-item.active svg  { stroke: var(--blue); }
+    .mob-nav-item.active span { color: var(--blue); }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <h1><span>Blue</span>Market</h1>
+      <span class="dev-badge">Developer Console</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">General</div>
+
+      <a class="nav-link active">
+        <svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke="currentColor">
+          <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Dashboard
+      </a>
+
+      <a class="nav-link">
+        <svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke="currentColor">
+          <path d="M3 21h18M3 7v1a3 3 0 006 0V7m0 1a3 3 0 006 0V7m0 1a3 3 0 006 0V7H3l2-4h14l2 4" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Empresas
+      </a>
+
+      <a class="nav-link">
+        <svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke="currentColor">
+          <rect x="2" y="5" width="20" height="14" rx="2" stroke-width="1.8"/>
+          <path d="M2 10h20" stroke-width="1.8"/>
+        </svg>
+        Suscripciones
+        <span class="nav-badge">2</span>
+      </a>
+
+      <a class="nav-link">
+        <svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke="currentColor">
+          <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Telemetría
+      </a>
+
+      <div class="nav-section-label" style="margin-top:8px">Soporte</div>
+
+      <a class="nav-link">
+        <svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke="currentColor">
+          <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Tickets
+        <span class="nav-badge">3</span>
+      </a>
+
+      <a class="nav-link">
+        <svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke="currentColor">
+          <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Roadmap
+      </a>
+
+      <div class="nav-section-label" style="margin-top:8px">Sistema</div>
+
+      <a class="nav-link">
+        <svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke="currentColor">
+          <circle cx="12" cy="12" r="3" stroke-width="1.8"/>
+          <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke-width="1.8"/>
+        </svg>
+        Configuración
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="dev-user">
+        <div class="dev-avatar">SA</div>
+        <div class="dev-info">
+          <div class="dev-name">Sebastián A.</div>
+          <div class="dev-role">Super Admin</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── MAIN ── -->
+  <div class="main">
+
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="topbar-title">Dashboard general</div>
+      <div class="topbar-right">
+        <select class="period-select">
+          <option>Este mes</option>
+          <option>Mes anterior</option>
+          <option>Últimos 3 meses</option>
+          <option>Este año</option>
+        </select>
+        <div class="notif-btn">
+          <svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div class="notif-dot"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="page-content">
+
+      <!-- KPIs -->
+      <div class="kpi-grid">
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">MRR</span>
+            <div class="kpi-icon green">
+              <svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke="var(--green)">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 100 7h5a3.5 3.5 0 110 7H6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="kpi-value green">$284.000</div>
+          <div class="kpi-delta"><span class="up">↑ 18%</span> vs mes anterior</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">Empresas activas</span>
+            <div class="kpi-icon blue">
+              <svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke="var(--blue)">
+                <path d="M3 21h18M3 7v1a3 3 0 006 0V7m0 1a3 3 0 006 0V7m0 1a3 3 0 006 0V7H3l2-4h14l2 4" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="kpi-value blue">12</div>
+          <div class="kpi-delta"><span class="up">↑ 2</span> nuevas este mes</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">Pedidos plataforma</span>
+            <div class="kpi-icon purple">
+              <svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke="var(--purple)">
+                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="kpi-value purple">3.842</div>
+          <div class="kpi-delta"><span class="up">↑ 31%</span> vs mes anterior</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">Churn rate</span>
+            <div class="kpi-icon teal">
+              <svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke="var(--teal)">
+                <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                <polyline points="16 7 22 7 22 13" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="kpi-value teal">2.1%</div>
+          <div class="kpi-delta"><span class="up">↓ 0.4%</span> mejoró</div>
+        </div>
+
+      </div>
+
+      <!-- MRR Chart + Empresas -->
+      <div class="two-col">
+
+        <!-- MRR Chart -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Evolución MRR</span>
+            <a class="card-action">Ver detalle</a>
+          </div>
+          <div class="card-body">
+            <div class="mrr-bars">
+              <div class="mrr-bar-wrap">
+                <div class="mrr-bar" style="height:35px"></div>
+                <span class="mrr-month">Ene</span>
+              </div>
+              <div class="mrr-bar-wrap">
+                <div class="mrr-bar" style="height:42px"></div>
+                <span class="mrr-month">Feb</span>
+              </div>
+              <div class="mrr-bar-wrap">
+                <div class="mrr-bar" style="height:50px"></div>
+                <span class="mrr-month">Mar</span>
+              </div>
+              <div class="mrr-bar-wrap">
+                <div class="mrr-bar" style="height:55px"></div>
+                <span class="mrr-month">Abr</span>
+              </div>
+              <div class="mrr-bar-wrap">
+                <div class="mrr-bar" style="height:62px"></div>
+                <span class="mrr-month">May</span>
+              </div>
+              <div class="mrr-bar-wrap">
+                <div class="mrr-bar current" style="height:70px"></div>
+                <span class="mrr-month" style="color:var(--blue)">Jun</span>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:12px;font-size:11px;color:var(--text3)">
+              <span>$118.000</span>
+              <span style="color:var(--green);font-weight:600">$284.000 ↑</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empresas recientes -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Empresas suscriptas</span>
+            <a class="card-action">Ver todas</a>
+          </div>
+          <div class="card-body" style="padding:8px 18px">
+
+            <div class="empresa-row">
+              <div class="empresa-avatar" style="background:rgba(77,184,255,0.15);color:#4db8ff">PE</div>
+              <div class="empresa-info">
+                <div class="empresa-name">Pescadería Escobar</div>
+                <div class="empresa-meta">Activa desde ene 2025 · 312 pedidos</div>
+              </div>
+              <div class="plan-badge pro">Pro</div>
+              <div class="status-dot active"></div>
+              <svg class="empresa-arr" fill="none" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+
+            <div class="empresa-row">
+              <div class="empresa-avatar" style="background:rgba(26,188,156,0.15);color:#1abc9c">FM</div>
+              <div class="empresa-info">
+                <div class="empresa-name">Frutos del Mar SA</div>
+                <div class="empresa-meta">Activa desde mar 2025 · 186 pedidos</div>
+              </div>
+              <div class="plan-badge enterprise">Enterprise</div>
+              <div class="status-dot active"></div>
+              <svg class="empresa-arr" fill="none" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+
+            <div class="empresa-row">
+              <div class="empresa-avatar" style="background:rgba(243,156,18,0.15);color:#f39c12">OP</div>
+              <div class="empresa-info">
+                <div class="empresa-name">Ocean Prime</div>
+                <div class="empresa-meta">Trial · vence en 8 días · 22 pedidos</div>
+              </div>
+              <div class="plan-badge starter">Trial</div>
+              <div class="status-dot trial"></div>
+              <svg class="empresa-arr" fill="none" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+
+            <div class="empresa-row">
+              <div class="empresa-avatar" style="background:rgba(155,89,182,0.15);color:#9b59b6">LM</div>
+              <div class="empresa-info">
+                <div class="empresa-name">La Marea Tigre</div>
+                <div class="empresa-meta">Activa desde abr 2025 · 98 pedidos</div>
+              </div>
+              <div class="plan-badge pro">Pro</div>
+              <div class="status-dot active"></div>
+              <svg class="empresa-arr" fill="none" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Tickets + Roadmap -->
+      <div class="two-col">
+
+        <!-- Tickets -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Tickets de soporte</span>
+            <a class="card-action">Ver todos</a>
+          </div>
+          <div class="card-body" style="padding:8px 18px">
+
+            <div class="ticket-row">
+              <div class="ticket-prio alta"></div>
+              <div class="ticket-info">
+                <div class="ticket-title">Error al confirmar pedido en iOS</div>
+                <div class="ticket-meta">Pescadería Escobar · hace 2h</div>
+              </div>
+              <span class="ticket-status abierto">Abierto</span>
+            </div>
+
+            <div class="ticket-row">
+              <div class="ticket-prio media"></div>
+              <div class="ticket-info">
+                <div class="ticket-title">Integración Mercado Pago</div>
+                <div class="ticket-meta">Frutos del Mar · hace 5h</div>
+              </div>
+              <span class="ticket-status en-curso">En curso</span>
+            </div>
+
+            <div class="ticket-row">
+              <div class="ticket-prio baja"></div>
+              <div class="ticket-info">
+                <div class="ticket-title">Cambio de logo en portal</div>
+                <div class="ticket-meta">Ocean Prime · ayer</div>
+              </div>
+              <span class="ticket-status en-curso">En curso</span>
+            </div>
+
+            <div class="ticket-row">
+              <div class="ticket-prio baja"></div>
+              <div class="ticket-info">
+                <div class="ticket-title">Exportar historial CSV</div>
+                <div class="ticket-meta">La Marea Tigre · hace 2 días</div>
+              </div>
+              <span class="ticket-status cerrado">Cerrado</span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Roadmap -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Roadmap</span>
+            <a class="card-action">Editar</a>
+          </div>
+          <div class="card-body" style="padding:8px 18px">
+
+            <div class="roadmap-item">
+              <div class="roadmap-dot done"></div>
+              <div class="roadmap-info">
+                <div class="roadmap-title">Portal Consumidor v1</div>
+                <div class="roadmap-meta">Catálogo + carrito + pedido</div>
+              </div>
+              <span class="roadmap-tag done">Listo</span>
+            </div>
+
+            <div class="roadmap-item">
+              <div class="roadmap-dot done"></div>
+              <div class="roadmap-info">
+                <div class="roadmap-title">Portal Repartidor</div>
+                <div class="roadmap-meta">Pedidos + mapa + estado</div>
+              </div>
+              <span class="roadmap-tag done">Listo</span>
+            </div>
+
+            <div class="roadmap-item">
+              <div class="roadmap-dot wip"></div>
+              <div class="roadmap-info">
+                <div class="roadmap-title">Push Notifications</div>
+                <div class="roadmap-meta">FCM + Supabase Edge Functions</div>
+              </div>
+              <span class="roadmap-tag wip">En curso</span>
+            </div>
+
+            <div class="roadmap-item">
+              <div class="roadmap-dot wip"></div>
+              <div class="roadmap-info">
+                <div class="roadmap-title">Integración Mercado Pago</div>
+                <div class="roadmap-meta">Checkout online</div>
+              </div>
+              <span class="roadmap-tag wip">En curso</span>
+            </div>
+
+            <div class="roadmap-item">
+              <div class="roadmap-dot planned"></div>
+              <div class="roadmap-info">
+                <div class="roadmap-title">IA — Catálogo automático</div>
+                <div class="roadmap-meta">Precios dinámicos + recomendaciones</div>
+              </div>
+              <span class="roadmap-tag planned">Planificado</span>
+            </div>
+
+            <div class="roadmap-item">
+              <div class="roadmap-dot planned"></div>
+              <div class="roadmap-info">
+                <div class="roadmap-title">IUC + Business Score</div>
+                <div class="roadmap-meta">Índice único de cliente</div>
+              </div>
+              <span class="roadmap-tag planned">Planificado</span>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div><!-- /page-content -->
+
+    <!-- Mobile bottom nav -->
+    <div class="mobile-nav">
+      <div class="mob-nav-item active">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Dashboard</span>
+      </div>
+      <div class="mob-nav-item">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M3 21h18M3 7v1a3 3 0 006 0V7m0 1a3 3 0 006 0V7m0 1a3 3 0 006 0V7H3l2-4h14l2 4" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Empresas</span>
+      </div>
+      <div class="mob-nav-item">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Tickets</span>
+      </div>
+      <div class="mob-nav-item">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="3" stroke-width="1.8"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke-width="1.8"/></svg>
+        <span>Config</span>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div>
+
+<script>
+  document.querySelectorAll('.nav-link').forEach(l => {
+    l.addEventListener('click', function() {
+      document.querySelectorAll('.nav-link').forEach(x => x.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+  document.querySelectorAll('.mob-nav-item').forEach(l => {
+    l.addEventListener('click', function() {
+      document.querySelectorAll('.mob-nav-item').forEach(x => x.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>
