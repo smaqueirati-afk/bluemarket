@@ -1,21 +1,24 @@
 'use client'
 
 import { useState } from 'react'
-import { crearPescaderia } from './actions'
+import { crearPescaderia, asignarDueno } from './actions'
 
 export default function PanelDeveloper({ pescaderias }) {
   const [mostrarForm, setMostrarForm] = useState(false)
   const [cargando, setCargando] = useState(false)
   const [mensaje, setMensaje] = useState(null)
 
+  // Estado para asignar dueño
+  const [asignandoId, setAsignandoId] = useState(null)
+  const [emailDueno, setEmailDueno] = useState('')
+  const [cargandoAsig, setCargandoAsig] = useState(false)
+
   async function handleSubmit(e) {
     e.preventDefault()
     setCargando(true)
     setMensaje(null)
-
     const formData = new FormData(e.target)
     const resultado = await crearPescaderia(formData)
-
     if (resultado.error) {
       setMensaje({ tipo: 'error', texto: resultado.error })
     } else {
@@ -26,12 +29,25 @@ export default function PanelDeveloper({ pescaderias }) {
     setCargando(false)
   }
 
+  async function handleAsignar(pescaderiaId) {
+    setCargandoAsig(true)
+    setMensaje(null)
+    const resultado = await asignarDueno(pescaderiaId, emailDueno)
+    if (resultado.error) {
+      setMensaje({ tipo: 'error', texto: resultado.error })
+    } else {
+      setMensaje({ tipo: 'ok', texto: `${resultado.email} ahora es dueño ✓` })
+      setAsignandoId(null)
+      setEmailDueno('')
+    }
+    setCargandoAsig(false)
+  }
+
   const activas = pescaderias.filter((p) => p.activa).length
   const trials = pescaderias.filter((p) => p.plan === 'trial').length
 
   return (
     <div className="min-h-screen text-white bg-[linear-gradient(180deg,#051e5c_0%,#03174a_60%,#020f30_100%)]">
-      {/* Luz de superficie */}
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] blur-3xl pointer-events-none"
            style={{ background: 'radial-gradient(circle, rgba(77,184,255,0.12), transparent 70%)' }} />
 
@@ -83,7 +99,7 @@ export default function PanelDeveloper({ pescaderias }) {
           </div>
         )}
 
-        {/* Formulario */}
+        {/* Formulario crear */}
         {mostrarForm && (
           <form onSubmit={handleSubmit}
             className="bg-white/[0.06] border border-white/12 rounded-2xl p-5 mb-6 space-y-4 backdrop-blur-md"
@@ -125,26 +141,65 @@ export default function PanelDeveloper({ pescaderias }) {
             <div className="space-y-2.5">
               {pescaderias.map((p, idx) => (
                 <div key={p.id}
-                  className="bg-white/[0.06] border border-white/10 rounded-2xl p-4 flex items-center justify-between backdrop-blur-sm transition-all hover:border-[#4db8ff]/40"
+                  className="bg-white/[0.06] border border-white/10 rounded-2xl p-4 backdrop-blur-sm transition-all hover:border-[#4db8ff]/40"
                   style={{ animation: 'bmFadeUp 0.4s ease both', animationDelay: `${idx * 0.05}s` }}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-[#4db8ff]/12 border border-[#4db8ff]/30 flex items-center justify-center text-lg">
-                      🐟
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-[#4db8ff]/12 border border-[#4db8ff]/30 flex items-center justify-center text-lg">
+                        🐟
+                      </div>
+                      <div>
+                        <div className="font-semibold text-white">{p.nombre}</div>
+                        <div className="text-xs text-white/40 mt-0.5">/{p.slug} · {p.telefono || 'sin teléfono'}</div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="font-semibold text-white">{p.nombre}</div>
-                      <div className="text-xs text-white/40 mt-0.5">/{p.slug} · {p.telefono || 'sin teléfono'}</div>
+                    <div className="flex items-center gap-2.5">
+                      <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg uppercase tracking-wide ${
+                        p.plan === 'trial' ? 'bg-[#f39c12]/15 text-[#f39c12]' : 'bg-[#4db8ff]/15 text-[#4db8ff]'
+                      }`}>
+                        {p.plan}
+                      </span>
+                      <span className={`w-2 h-2 rounded-full ${p.activa ? 'bg-[#2ecc71]' : 'bg-white/20'}`}
+                            style={p.activa ? { boxShadow: '0 0 8px rgba(46,204,113,0.6)' } : {}}></span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2.5">
-                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg uppercase tracking-wide ${
-                      p.plan === 'trial' ? 'bg-[#f39c12]/15 text-[#f39c12]' : 'bg-[#4db8ff]/15 text-[#4db8ff]'
-                    }`}>
-                      {p.plan}
-                    </span>
-                    <span className={`w-2 h-2 rounded-full ${p.activa ? 'bg-[#2ecc71]' : 'bg-white/20'}`}
-                          style={p.activa ? { boxShadow: '0 0 8px rgba(46,204,113,0.6)' } : {}}></span>
+
+                  {/* Botón / formulario de asignar dueño */}
+                  <div className="mt-3 pt-3 border-t border-white/8">
+                    {asignandoId === p.id ? (
+                      <div className="flex gap-2" style={{ animation: 'bmFadeUp 0.3s ease both' }}>
+                        <input
+                          type="email"
+                          value={emailDueno}
+                          onChange={(e) => setEmailDueno(e.target.value)}
+                          placeholder="email@deldueño.com"
+                          className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 outline-none focus:border-[#4db8ff]"
+                        />
+                        <button
+                          onClick={() => handleAsignar(p.id)}
+                          disabled={cargandoAsig}
+                          className="bg-[#2ecc71] text-[#03174a] font-bold text-xs px-3 py-2 rounded-lg active:scale-95 disabled:opacity-60"
+                        >
+                          {cargandoAsig ? '...' : 'Asignar'}
+                        </button>
+                        <button
+                          onClick={() => { setAsignandoId(null); setEmailDueno('') }}
+                          className="bg-white/8 text-white/50 text-xs px-3 py-2 rounded-lg"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => { setAsignandoId(p.id); setEmailDueno(''); setMensaje(null) }}
+                        className="text-xs text-[#4db8ff] font-medium hover:underline"
+                      >
+                        + Asignar dueño
+                      </button>
+                    )}
                   </div>
+
                 </div>
               ))}
             </div>
