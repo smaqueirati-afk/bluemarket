@@ -1,1 +1,67 @@
 @import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════════════
+   BLUEMARKET · DESIGN TOKENS
+   "El océano digital de las pescaderías modernas"
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── PALETA MARINA ── */
+  --bm-abyss:        #03174a;
+  --bm-deep:         #051e5c;
+  --bm-ocean:        #0a3a7a;
+  --bm-blue:         #4db8ff;
+  --bm-sky:          #7dd3fc;
+  --bm-foam:         #cde8ff;
+  --bm-white:        #ffffff;
+
+  /* ── ESTADOS ── */
+  --bm-success:      #2ecc71;
+  --bm-warning:      #f39c12;
+  --bm-danger:       #e74c3c;
+  --bm-info:         #4db8ff;
+
+  /* ── SUPERFICIES (glassmorphism) ── */
+  --bm-glass:        rgba(255,255,255,0.06);
+  --bm-glass-strong: rgba(255,255,255,0.10);
+  --bm-border:       rgba(255,255,255,0.10);
+  --bm-border-strong:rgba(255,255,255,0.18);
+
+  /* ── TEXTO ── */
+  --bm-text:         #ffffff;
+  --bm-text-2:       rgba(255,255,255,0.55);
+  --bm-text-3:       rgba(255,255,255,0.28);
+
+  /* ── ESPACIADOS ── */
+  --bm-space-1: 4px;  --bm-space-2: 8px;  --bm-space-3: 12px;
+  --bm-space-4: 16px; --bm-space-5: 20px; --bm-space-6: 24px; --bm-space-8: 32px;
+
+  /* ── RADIOS ── */
+  --bm-radius-sm: 8px;  --bm-radius: 12px;
+  --bm-radius-lg: 16px; --bm-radius-xl: 20px;
+
+  /* ── SOMBRAS ── */
+  --bm-shadow-sm: 0 2px 8px rgba(0,0,0,0.2);
+  --bm-shadow:    0 8px 24px rgba(0,0,0,0.3);
+  --bm-shadow-lg: 0 30px 80px rgba(0,0,0,0.55);
+  --bm-glow-blue: 0 0 16px rgba(77,184,255,0.4);
+
+  /* ── GRADIENTES OCÉANO ── */
+  --bm-grad-deep:    linear-gradient(180deg, #051e5c 0%, #03174a 100%);
+  --bm-grad-ocean:   linear-gradient(135deg, #0a3a7a 0%, #051e5c 100%);
+  --bm-grad-surface: linear-gradient(160deg, #03174a 0%, #051e5c 50%, #071e3a 100%);
+  --bm-grad-blue:    linear-gradient(90deg, #4db8ff, #2ecc71);
+}
+
+/* Scrollbar marino fino */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); border-radius: 3px; }
+
+.bm-no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.bm-no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* Animaciones marinas compartidas */
+@keyframes bm-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+@keyframes bm-spin { to { transform: rotate(360deg); } }
+@keyframes bm-fade-up { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
