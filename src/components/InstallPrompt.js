@@ -2,11 +2,17 @@
 
 import { useState, useEffect } from 'react'
 
+// URL pública de BlueMarket (para copiar y abrir en Safari)
+const APP_URL = 'https://bluemarket-two.vercel.app'
+
 export default function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState(null)
   const [mostrar, setMostrar] = useState(false)
   const [esIOS, setEsIOS] = useState(false)
+  const [esIpad, setEsIpad] = useState(false)
+  const [esSafari, setEsSafari] = useState(true)
   const [instalada, setInstalada] = useState(false)
+  const [copiado, setCopiado] = useState(false)
 
   useEffect(() => {
     // ¿Ya está instalada y abierta como app?
@@ -14,15 +20,21 @@ export default function InstallPrompt() {
       || window.navigator.standalone
     if (standalone) { setInstalada(true); return }
 
-    // ¿Es iPhone/iPad? (Safari no dispara el evento automático)
-    // Ojo: iPadOS 13+ se hace pasar por Mac de escritorio (el UA dice "Macintosh"),
-    // así que el iPad se detecta como "Mac con pantalla táctil".
     const ua = window.navigator.userAgent.toLowerCase()
-    const esIphone = /iphone|ipod/.test(ua)
-    const esIpad = /ipad/.test(ua) ||
+
+    // Detección iOS / iPad. Ojo: iPadOS 13+ se hace pasar por Mac de escritorio
+    // (el UA dice "Macintosh"), así que el iPad se detecta como "Mac con pantalla táctil".
+    const ipad = /ipad/.test(ua) ||
       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
-    const ios = esIphone || esIpad
+    const iphone = /iphone|ipod/.test(ua)
+    const ios = iphone || ipad
+    setEsIpad(ipad)
     setEsIOS(ios)
+
+    // En iOS, "Agregar a inicio" SOLO funciona en Safari.
+    // Detectamos Safari descartando los navegadores embebidos (Chrome, Firefox, etc.).
+    const safari = /safari/.test(ua) && !/crios|fxios|opios|edgios|chrome/.test(ua)
+    setEsSafari(safari)
 
     // Android/Chrome: capturar el evento de instalación
     function handler(e) {
@@ -46,7 +58,28 @@ export default function InstallPrompt() {
     setDeferredPrompt(null)
   }
 
+  // Copiar el link para abrirlo en Safari (con fallback para navegadores viejos)
+  async function copiarLink() {
+    try {
+      await navigator.clipboard.writeText(APP_URL)
+      setCopiado(true)
+    } catch (e) {
+      const ta = document.createElement('textarea')
+      ta.value = APP_URL
+      ta.style.position = 'fixed'
+      ta.style.opacity = '0'
+      document.body.appendChild(ta)
+      ta.focus()
+      ta.select()
+      try { document.execCommand('copy'); setCopiado(true) } catch (err) {}
+      document.body.removeChild(ta)
+    }
+    setTimeout(() => setCopiado(false), 2500)
+  }
+
   if (instalada || !mostrar) return null
+
+  const disp = esIpad ? 'iPad' : 'iPhone'
 
   return (
     <div className="fixed bottom-4 left-4 right-4 z-50 max-w-[400px] mx-auto"
@@ -58,14 +91,23 @@ export default function InstallPrompt() {
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-white font-bold text-sm">Instalá BlueMarket</div>
-            {esIOS ? (
-              <div className="text-white/60 text-xs mt-1 leading-relaxed">
-                Tocá <span className="text-[#4db8ff]">Compartir</span> ⬆️ y después
-                <span className="text-[#4db8ff]"> "Agregar a inicio"</span>
-              </div>
-            ) : (
+
+            {!esIOS && (
               <div className="text-white/60 text-xs mt-1 leading-relaxed">
                 Accedé más rápido desde tu pantalla de inicio
+              </div>
+            )}
+
+            {esIOS && esSafari && (
+              <div className="text-white/60 text-xs mt-1 leading-relaxed">
+                Instalá la app en tu {disp}: tocá <span className="text-[#4db8ff]">Compartir</span> ⬆️ y después
+                <span className="text-[#4db8ff]"> "Agregar a inicio"</span>
+              </div>
+            )}
+
+            {esIOS && !esSafari && (
+              <div className="text-white/60 text-xs mt-1 leading-relaxed">
+                Para instalar en tu {disp} <span className="text-[#ffd24d] font-semibold">tenés que abrir esta página en Safari</span>. Copiá el link y pegalo en Safari.
               </div>
             )}
           </div>
@@ -73,10 +115,19 @@ export default function InstallPrompt() {
             className="text-white/40 text-xl leading-none shrink-0 px-1">×</button>
         </div>
 
+        {/* Android / Desktop: botón de instalar nativo */}
         {!esIOS && (
           <button onClick={instalar}
             className="w-full mt-3 bg-[#4db8ff] text-[#03174a] font-bold py-2.5 rounded-xl text-sm active:scale-[0.98] transition-transform">
             Instalar app
+          </button>
+        )}
+
+        {/* iOS fuera de Safari: copiar link para abrir en Safari */}
+        {esIOS && !esSafari && (
+          <button onClick={copiarLink}
+            className="w-full mt-3 bg-[#4db8ff] text-[#03174a] font-bold py-2.5 rounded-xl text-sm active:scale-[0.98] transition-transform">
+            {copiado ? '✓ ¡Copiado! Abrí Safari y pegá el link' : 'Copiar link'}
           </button>
         )}
       </div>
