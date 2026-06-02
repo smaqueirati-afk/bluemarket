@@ -17,7 +17,47 @@ const UNIDADES = [
   { id: 'porcion', label: 'Por porción' },
 ]
 
-const FORM_VACIO = { nombre: '', precio: '', categoria: 'pescado', unidad: 'kg', emoji: '', stock: '', descripcion: '' }
+// Emoji por defecto según la categoría
+const EMOJI_POR_CATEGORIA = {
+  pescado: '🐟',
+  mariscos: '🦐',
+  moluscos: '🦪',
+}
+
+// Paleta de emojis para elegir (productos de pescadería)
+const EMOJIS_DISPONIBLES = [
+  '🐟', '🐠', '🐡', '🦈', '🐙', '🦑', '🦐', '🦞', '🦀',
+  '🦪', '🐚', '🍤', '🍣', '🍥', '🐳', '🐬', '🧊', '🍋',
+]
+
+// Adivina el emoji según palabras en el nombre del producto.
+// El orden importa: primero las más específicas.
+const PALABRAS_EMOJI = [
+  { palabras: ['langostino', 'camaron', 'camarón', 'gamba'], emoji: '🦐' },
+  { palabras: ['langosta', 'bogavante'], emoji: '🦞' },
+  { palabras: ['cangrejo', 'centolla'], emoji: '🦀' },
+  { palabras: ['pulpo'], emoji: '🐙' },
+  { palabras: ['calamar', 'sepia', 'anillo'], emoji: '🦑' },
+  { palabras: ['mejillon', 'mejillón', 'almeja', 'ostra', 'vieira', 'molusco'], emoji: '🦪' },
+  { palabras: ['caracol', 'cholga'], emoji: '🐚' },
+  { palabras: ['tiburon', 'tiburón', 'cazon', 'cazón'], emoji: '🦈' },
+  { palabras: ['sushi', 'roll'], emoji: '🍣' },
+  { palabras: ['rebozado', 'milanesa', 'frito', 'tempura', 'nugget'], emoji: '🍤' },
+  { palabras: ['salmon', 'salmón', 'trucha', 'atun', 'atún'], emoji: '🐟' },
+  { palabras: ['merluza', 'corvina', 'lenguado', 'brotola', 'brótola', 'pejerrey', 'dorado', 'pez', 'pescado', 'filet', 'lomo'], emoji: '🐟' },
+  { palabras: ['limon', 'limón'], emoji: '🍋' },
+  { palabras: ['hielo', 'congelado'], emoji: '🧊' },
+]
+
+function adivinarEmoji(nombre) {
+  const n = (nombre || '').toLowerCase()
+  for (const item of PALABRAS_EMOJI) {
+    if (item.palabras.some((p) => n.includes(p))) return item.emoji
+  }
+  return null // no encontró coincidencia
+}
+
+const FORM_VACIO = { nombre: '', precio: '', categoria: 'pescado', unidad: 'kg', emoji: '🐟', stock: '', descripcion: '' }
 
 export default function GestionProductos({ productos, nombrePescaderia }) {
   const [form, setForm] = useState(FORM_VACIO)
@@ -129,7 +169,18 @@ export default function GestionProductos({ productos, nombrePescaderia }) {
 
             <div>
               <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">Nombre *</label>
-              <input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+              <input value={form.nombre} onChange={(e) => {
+                  const nuevoNombre = e.target.value
+                  const emojiAdivinado = adivinarEmoji(nuevoNombre)
+                  // Solo autocompleto si el emoji actual es un default (de categoría) o está vacío,
+                  // así no piso un emoji que el usuario eligió a mano de la grilla.
+                  const esDefault = !form.emoji || Object.values(EMOJI_POR_CATEGORIA).includes(form.emoji) || form._emojiAuto
+                  if (emojiAdivinado && esDefault) {
+                    setForm({ ...form, nombre: nuevoNombre, emoji: emojiAdivinado, _emojiAuto: true })
+                  } else {
+                    setForm({ ...form, nombre: nuevoNombre })
+                  }
+                }}
                 placeholder="Merluza fresca"
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-[#4db8ff]" />
             </div>
@@ -152,7 +203,16 @@ export default function GestionProductos({ productos, nombrePescaderia }) {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">Categoría</label>
-                <select value={form.categoria} onChange={(e) => setForm({ ...form, categoria: e.target.value })}
+                <select value={form.categoria} onChange={(e) => {
+                    const nuevaCat = e.target.value
+                    // Si el emoji actual está vacío o es el default de otra categoría, lo actualizo
+                    const esDefaultDeOtra = Object.values(EMOJI_POR_CATEGORIA).includes(form.emoji)
+                    setForm({
+                      ...form,
+                      categoria: nuevaCat,
+                      emoji: (!form.emoji || esDefaultDeOtra) ? EMOJI_POR_CATEGORIA[nuevaCat] : form.emoji,
+                    })
+                  }}
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#4db8ff]">
                   {CATEGORIAS.map((c) => <option key={c.id} value={c.id} className="bg-[#051e5c]">{c.emoji} {c.label}</option>)}
                 </select>
@@ -167,10 +227,31 @@ export default function GestionProductos({ productos, nombrePescaderia }) {
             </div>
 
             <div>
-              <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">Emoji (opcional)</label>
-              <input value={form.emoji} onChange={(e) => setForm({ ...form, emoji: e.target.value })}
-                placeholder="🐟" maxLength={4}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-[#4db8ff]" />
+              <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">
+                Emoji (así se ve en la tienda)
+              </label>
+              <div className="flex items-center gap-3 mb-2.5">
+                <div className="w-14 h-14 rounded-xl bg-[#4db8ff]/12 border border-[#4db8ff]/30 flex items-center justify-center text-3xl shrink-0">
+                  {form.emoji || EMOJI_POR_CATEGORIA[form.categoria] || '🐟'}
+                </div>
+                <p className="text-[12px] text-white/45 leading-relaxed">
+                  Este es el ícono que verán tus clientes.<br />Tocá uno de abajo para cambiarlo.
+                </p>
+              </div>
+              <div className="grid grid-cols-9 gap-1.5 bg-white/[0.03] border border-white/8 rounded-xl p-2.5">
+                {EMOJIS_DISPONIBLES.map((em) => (
+                  <button
+                    key={em}
+                    type="button"
+                    onClick={() => setForm({ ...form, emoji: em, _emojiAuto: false })}
+                    className={`aspect-square rounded-lg text-xl flex items-center justify-center transition-all active:scale-90 ${
+                      form.emoji === em ? 'bg-[#4db8ff]/30 border border-[#4db8ff]' : 'bg-white/[0.04] border border-transparent hover:bg-white/10'
+                    }`}
+                  >
+                    {em}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="flex gap-2 pt-1">
