@@ -60,7 +60,7 @@ export async function crearPedido(datos, items) {
       pescaderia_id: PESCADERIA_DEMO,
       cliente_id: clienteId,
       estado: 'nuevo',
-      tipo_entrega: datos.entrega,
+      tipo_entrega: datos.entrega === 'envio' ? 'delivery' : 'retiro',
       direccion: datos.direccion || null,
       metodo_pago: datos.pago,
       pagado: false,
