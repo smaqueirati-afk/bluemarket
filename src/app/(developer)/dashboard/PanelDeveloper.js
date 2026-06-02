@@ -56,7 +56,7 @@ export default function PanelDeveloper({ pescaderias }) {
       <div className="relative max-w-4xl mx-auto p-6">
 
         {/* Header */}
-        <div className="flex items-center justify-between mb-7">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-7">
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight">
               <span className="text-[#4db8ff]">Blue</span>Market
@@ -65,7 +65,7 @@ export default function PanelDeveloper({ pescaderias }) {
           </div>
           <button
             onClick={() => setMostrarForm(!mostrarForm)}
-            className="bg-[#4db8ff] text-[#03174a] font-bold text-sm px-4 py-2.5 rounded-xl transition-all hover:shadow-[0_0_16px_rgba(77,184,255,0.4)] active:scale-95"
+            className="w-full sm:w-auto bg-[#4db8ff] text-[#03174a] font-bold text-sm px-4 py-2.5 rounded-xl transition-all hover:shadow-[0_0_16px_rgba(77,184,255,0.4)] active:scale-95 whitespace-nowrap"
           >
             {mostrarForm ? 'Cancelar' : '+ Nueva pescadería'}
           </button>
@@ -172,17 +172,17 @@ export default function PanelDeveloper({ pescaderias }) {
                   className="bg-white/[0.06] border border-white/10 rounded-2xl p-4 backdrop-blur-sm transition-all hover:border-[#4db8ff]/40"
                   style={{ animation: 'bmFadeUp 0.4s ease both', animationDelay: `${idx * 0.05}s` }}>
 
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-[#4db8ff]/12 border border-[#4db8ff]/30 flex items-center justify-center text-lg">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-[#4db8ff]/12 border border-[#4db8ff]/30 flex items-center justify-center text-lg shrink-0">
                         🐟
                       </div>
-                      <div>
-                        <div className="font-semibold text-white">{p.nombre}</div>
-                        <div className="text-xs text-white/40 mt-0.5">/{p.slug} · {p.telefono || 'sin teléfono'}</div>
+                      <div className="min-w-0">
+                        <div className="font-semibold text-white truncate">{p.nombre}</div>
+                        <div className="text-xs text-white/40 mt-0.5 truncate">/{p.slug} · {p.telefono || 'sin teléfono'}</div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2 shrink-0">
                       <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg uppercase tracking-wide ${
                         p.plan === 'trial' ? 'bg-[#f39c12]/15 text-[#f39c12]' : 'bg-[#4db8ff]/15 text-[#4db8ff]'
                       }`}>
