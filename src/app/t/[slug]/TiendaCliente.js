@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Checkout from './Checkout'
-import { crearPedido } from './actions'
+import { crearPedido, misPedidos } from './actions'
 import BarraUsuario from '../../../components/BarraUsuario'
 import { createClient } from '../../../lib/supabase/client'
 
@@ -17,6 +17,24 @@ export default function TiendaCliente({ productos, pescaderia, ccHabilitada }) {
   const [guardando, setGuardando] = useState(false)
   const [errorPedido, setErrorPedido] = useState(null)
   const [necesitaLogin, setNecesitaLogin] = useState(false)
+  const [verMisPedidos, setVerMisPedidos] = useState(false)
+  const [misPedidosLista, setMisPedidosLista] = useState(null) // null = cargando, [] = vacío
+
+  async function abrirMisPedidos() {
+    setVerMisPedidos(true)
+    setMisPedidosLista(null)
+    const res = await misPedidos(pescaderia?.id)
+    setMisPedidosLista(res.pedidos || [])
+  }
+
+  const ESTADOS_INFO = {
+    nuevo: { label: 'Recibido', color: '#4db8ff', emoji: '🆕' },
+    preparando: { label: 'Preparando', color: '#f39c12', emoji: '👨‍🍳' },
+    listo: { label: 'Listo', color: '#2ecc71', emoji: '✅' },
+    en_camino: { label: 'En camino', color: '#9b59b6', emoji: '🛵' },
+    entregado: { label: 'Entregado', color: '#2ecc71', emoji: '🎉' },
+    cancelado: { label: 'Cancelado', color: '#e74c3c', emoji: '❌' },
+  }
 
   // Inicia sesión con Google y vuelve a esta misma tienda
   async function iniciarSesion() {
@@ -111,17 +129,25 @@ export default function TiendaCliente({ productos, pescaderia, ccHabilitada }) {
               <span className="text-[11px] text-white/55">Entrega en</span>
               <strong className="text-[11px] text-white">Escobar, BA</strong>
             </div>
-            <button
-              onClick={() => setVerCarrito(true)}
-              className="relative w-10 h-10 bg-white/[0.07] border border-white/12 rounded-xl flex items-center justify-center backdrop-blur-sm active:scale-95 transition-transform">
-              <span className="text-white/70 text-lg">🛒</span>
-              {totalItems > 0 && (
-                <div className="absolute -top-1.5 -right-1.5 bg-[#4db8ff] text-[#03174a] text-[9px] font-extrabold min-w-[17px] h-[17px] rounded-lg px-1 flex items-center justify-center"
-                     style={{ boxShadow: '0 0 10px rgba(77,184,255,0.5)' }}>
-                  {totalItems}
-                </div>
-              )}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={abrirMisPedidos}
+                className="h-10 px-3 bg-white/[0.07] border border-white/12 rounded-xl flex items-center gap-1.5 backdrop-blur-sm active:scale-95 transition-transform">
+                <span className="text-base">📋</span>
+                <span className="text-[12px] text-white/70 font-medium">Mis pedidos</span>
+              </button>
+              <button
+                onClick={() => setVerCarrito(true)}
+                className="relative w-10 h-10 bg-white/[0.07] border border-white/12 rounded-xl flex items-center justify-center backdrop-blur-sm active:scale-95 transition-transform">
+                <span className="text-white/70 text-lg">🛒</span>
+                {totalItems > 0 && (
+                  <div className="absolute -top-1.5 -right-1.5 bg-[#4db8ff] text-[#03174a] text-[9px] font-extrabold min-w-[17px] h-[17px] rounded-lg px-1 flex items-center justify-center"
+                       style={{ boxShadow: '0 0 10px rgba(77,184,255,0.5)' }}>
+                    {totalItems}
+                  </div>
+                )}
+              </button>
+            </div>
           </div>
 
           <h1 className="text-xl font-extrabold text-white mb-0.5">
@@ -327,6 +353,59 @@ export default function TiendaCliente({ productos, pescaderia, ccHabilitada }) {
               setCarrito([])
             }}
           />
+        )}
+
+        {/* PANEL MIS PEDIDOS */}
+        {verMisPedidos && (
+          <div className="absolute inset-0 z-50 flex flex-col">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setVerMisPedidos(false)} />
+            <div className="relative mt-auto bg-[#051e5c] border-t border-white/12 rounded-t-3xl max-h-[85%] flex flex-col"
+                 style={{ animation: 'bmSlideUp 0.3s ease both' }}>
+              <div className="shrink-0 flex items-center justify-between px-5 pt-5 pb-3">
+                <h2 className="text-lg font-extrabold text-white">Mis pedidos 📋</h2>
+                <button onClick={() => setVerMisPedidos(false)} className="text-white/40 text-2xl leading-none px-1">×</button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto px-5 pb-6">
+                {misPedidosLista === null ? (
+                  <div className="text-center py-12 text-white/45 text-sm">Cargando tus pedidos...</div>
+                ) : misPedidosLista.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="text-4xl mb-3 opacity-40">📦</div>
+                    <p className="text-white/45 text-sm">Todavía no hiciste pedidos en esta pescadería.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {misPedidosLista.map((p) => {
+                      const est = ESTADOS_INFO[p.estado] || ESTADOS_INFO.nuevo
+                      return (
+                        <div key={p.id} className="bg-white/[0.06] border border-white/10 rounded-2xl p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-extrabold text-white">Pedido #{p.numero}</span>
+                            <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg"
+                              style={{ background: `${est.color}22`, color: est.color }}>
+                              {est.emoji} {est.label}
+                            </span>
+                          </div>
+                          <div className="text-[12px] text-white/50 mb-2">
+                            {p.items.map((it) => `${it.cantidad} ${it.nombre}`).join(' · ')}
+                          </div>
+                          <div className="flex items-center justify-between pt-2 border-t border-white/8">
+                            <span className="text-[11px] text-white/40">
+                              {new Date(p.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                            <span className="text-base font-extrabold text-[#4db8ff]">
+                              ${Number(p.total).toLocaleString('es-AR')}
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         )}
 
         {/* CONFIRMACIÓN */}

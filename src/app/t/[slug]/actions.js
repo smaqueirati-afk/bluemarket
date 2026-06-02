@@ -141,3 +141,56 @@ export async function crearPedido(pescaderiaId, datos, items) {
 
   return { ok: true, numero: pedido.numero, pedidoId: pedido.id }
 }
+
+
+// ── Traer los pedidos del cliente logueado en esta pescadería ──
+export async function misPedidos(pescaderiaId) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'No logueado', pedidos: [] }
+  if (!pescaderiaId) return { pedidos: [] }
+
+  const admin = createAdminClient()
+
+  // Buscar la ficha de cliente de este usuario en esta pescadería
+  const { data: cli } = await admin
+    .from('clientes')
+    .select('id')
+    .eq('pescaderia_id', pescaderiaId)
+    .eq('usuario_id', user.id)
+    .maybeSingle()
+
+  if (!cli) return { pedidos: [] }
+
+  // Traer sus pedidos con los items
+  const { data: pedidos } = await admin
+    .from('pedidos')
+    .select('id, numero, estado, tipo_entrega, total, created_at')
+    .eq('pescaderia_id', pescaderiaId)
+    .eq('cliente_id', cli.id)
+    .order('created_at', { ascending: false })
+    .limit(20)
+
+  if (!pedidos || pedidos.length === 0) return { pedidos: [] }
+
+  // Traer los items de esos pedidos
+  const ids = pedidos.map((p) => p.id)
+  const { data: items } = await admin
+    .from('items_pedido')
+    .select('pedido_id, nombre, cantidad, unidad')
+    .in('pedido_id', ids)
+
+  // Agrupar items por pedido
+  const itemsPorPedido = {}
+  ;(items || []).forEach((it) => {
+    if (!itemsPorPedido[it.pedido_id]) itemsPorPedido[it.pedido_id] = []
+    itemsPorPedido[it.pedido_id].push(it)
+  })
+
+  const pedidosConItems = pedidos.map((p) => ({
+    ...p,
+    items: itemsPorPedido[p.id] || [],
+  }))
+
+  return { pedidos: pedidosConItems }
+}
