@@ -116,10 +116,16 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) 
               <p className="text-xs text-white/40 truncate">Hola, {nombreUsuario} 👋</p>
             </div>
           </div>
-          <a href="/pescaderia/productos"
-            className="shrink-0 bg-white/[0.08] border border-white/12 text-white text-xs font-medium px-3 py-2.5 rounded-xl active:scale-95 transition-all whitespace-nowrap">
-            🐟 Productos
-          </a>
+          <div className="flex gap-2 shrink-0">
+            <a href="/pescaderia/productos"
+              className="bg-white/[0.08] border border-white/12 text-white text-xs font-medium px-3 py-2.5 rounded-xl active:scale-95 transition-all whitespace-nowrap">
+              🐟 Productos
+            </a>
+            <a href="/pescaderia/clientes"
+              className="bg-white/[0.08] border border-white/12 text-white text-xs font-medium px-3 py-2.5 rounded-xl active:scale-95 transition-all whitespace-nowrap">
+              👥 Clientes
+            </a>
+          </div>
         </div>
 
         {/* Métricas del día */}
