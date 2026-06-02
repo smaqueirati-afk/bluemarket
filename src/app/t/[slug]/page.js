@@ -10,7 +10,7 @@ export default async function TiendaPorSlug({ params }) {
   // 1. Buscar la pescadería por su slug
   const { data: pescaderia } = await admin
     .from('pescaderias')
-    .select('id, nombre, slug, activa')
+    .select('id, nombre, slug, activa, modalidad, direccion')
     .eq('slug', slug)
     .maybeSingle()
 

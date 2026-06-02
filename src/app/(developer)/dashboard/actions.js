@@ -101,3 +101,25 @@ export async function asignarDueno(pescaderiaId, email) {
   revalidatePath('/dashboard')
   return { ok: true, email: usuario.email }
 }
+
+// ── Borrar pescadería (definitivo, en cascada) ──
+// Todas las FK que apuntan a pescaderias están en ON DELETE CASCADE,
+// así que un solo delete arrastra productos, pedidos, clientes,
+// repartidores, notificaciones y movimientos de cuenta corriente.
+export async function borrarPescaderia(pescaderiaId) {
+  const check = await verificarDeveloper()
+  if (check.error) return { error: check.error }
+
+  if (!pescaderiaId) return { error: 'Falta el id de la pescadería' }
+
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('pescaderias')
+    .delete()
+    .eq('id', pescaderiaId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/dashboard')
+  return { ok: true }
+}

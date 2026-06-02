@@ -115,6 +115,24 @@ export default function TiendaCliente({ productos, pescaderia, ccHabilitada }) {
   const totalItems = carrito.reduce((acc, i) => acc + i.cantidad, 0)
   const totalPrecio = carrito.reduce((acc, i) => acc + i.producto.precio * i.cantidad, 0)
 
+  // Cartel de entrega del top bar, según la modalidad de la pescadería
+  const esReparto = pescaderia?.modalidad === 'solo_reparto' || pescaderia?.modalidad === 'local_reparto'
+  const dir = pescaderia?.direccion?.trim()
+  let entregaIcono, entregaLabel, entregaValor
+  if (esReparto) {
+    entregaIcono = '🛵'
+    entregaLabel = null
+    entregaValor = 'Envíos a domicilio'
+  } else if (dir) {
+    entregaIcono = '📍'
+    entregaLabel = 'Retirás en'
+    entregaValor = dir
+  } else {
+    entregaIcono = '📍'
+    entregaLabel = null
+    entregaValor = 'Retiro en el local'
+  }
+
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black">
       <div className="relative w-full h-full max-w-[420px] sm:max-h-[900px] sm:rounded-[40px] sm:shadow-[0_30px_80px_rgba(0,0,0,0.55)] flex flex-col overflow-hidden bg-[linear-gradient(180deg,#051e5c_0%,#03174a_100%)]">
@@ -124,10 +142,10 @@ export default function TiendaCliente({ productos, pescaderia, ccHabilitada }) {
         {/* TOP BAR */}
         <div className="shrink-0 px-4 pt-5 pb-1">
           <div className="flex items-center justify-between mb-3.5">
-            <div className="flex items-center gap-1.5 bg-white/[0.07] border border-white/12 rounded-full px-3 py-1.5 backdrop-blur-sm">
-              <span>📍</span>
-              <span className="text-[11px] text-white/55">Entrega en</span>
-              <strong className="text-[11px] text-white">Escobar, BA</strong>
+            <div className="flex items-center gap-1.5 bg-white/[0.07] border border-white/12 rounded-full px-3 py-1.5 backdrop-blur-sm max-w-[62%] min-w-0">
+              <span className="shrink-0">{entregaIcono}</span>
+              {entregaLabel && <span className="text-[11px] text-white/55 shrink-0">{entregaLabel}</span>}
+              <strong className="text-[11px] text-white truncate">{entregaValor}</strong>
             </div>
             <div className="flex items-center gap-2">
               <button

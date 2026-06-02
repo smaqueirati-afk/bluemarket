@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { crearPescaderia, asignarDueno } from './actions'
+import { crearPescaderia, asignarDueno, borrarPescaderia } from './actions'
 import BarraUsuario from '../../../components/BarraUsuario'
 
 export default function PanelDeveloper({ pescaderias }) {
@@ -12,6 +12,9 @@ export default function PanelDeveloper({ pescaderias }) {
   const [asignandoId, setAsignandoId] = useState(null)
   const [emailDueno, setEmailDueno] = useState('')
   const [cargandoAsig, setCargandoAsig] = useState(false)
+
+  const [borrandoId, setBorrandoId] = useState(null)
+  const [cargandoBorrar, setCargandoBorrar] = useState(false)
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -43,8 +46,22 @@ export default function PanelDeveloper({ pescaderias }) {
     setCargandoAsig(false)
   }
 
+  async function handleBorrar(id) {
+    setCargandoBorrar(true)
+    setMensaje(null)
+    const resultado = await borrarPescaderia(id)
+    if (resultado.error) {
+      setMensaje({ tipo: 'error', texto: resultado.error })
+    } else {
+      setMensaje({ tipo: 'ok', texto: 'Pescadería borrada ✓' })
+    }
+    setBorrandoId(null)
+    setCargandoBorrar(false)
+  }
+
   const activas = pescaderias.filter((p) => p.activa).length
   const trials = pescaderias.filter((p) => p.plan === 'trial').length
+  const pescBorrar = borrandoId ? pescaderias.find((x) => x.id === borrandoId) : null
 
   return (
     <div className="min-h-screen text-white bg-[linear-gradient(180deg,#051e5c_0%,#03174a_60%,#020f30_100%)]">
@@ -190,6 +207,13 @@ export default function PanelDeveloper({ pescaderias }) {
                       </span>
                       <span className={`w-2 h-2 rounded-full ${p.activa ? 'bg-[#2ecc71]' : 'bg-white/20'}`}
                             style={p.activa ? { boxShadow: '0 0 8px rgba(46,204,113,0.6)' } : {}}></span>
+                      <button
+                        onClick={() => { setBorrandoId(p.id); setMensaje(null) }}
+                        title="Borrar pescadería"
+                        className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/8 flex items-center justify-center text-white/35 hover:text-[#e74c3c] hover:border-[#e74c3c]/40 transition-colors active:scale-90"
+                      >
+                        🗑
+                      </button>
                     </div>
                   </div>
 
@@ -261,6 +285,43 @@ export default function PanelDeveloper({ pescaderias }) {
         </div>
 
       </div>
+
+      {/* Modal de confirmación de borrado */}
+      {pescBorrar && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-5">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+               onClick={() => { if (!cargandoBorrar) setBorrandoId(null) }} />
+          <div className="relative w-full max-w-sm bg-[#0a2a5e] border border-[#e74c3c]/30 rounded-2xl p-6 text-center"
+               style={{ animation: 'bmFadeUp 0.3s ease both' }}>
+            <div className="w-14 h-14 mx-auto rounded-full bg-[#e74c3c]/15 border border-[#e74c3c]/40 flex items-center justify-center text-2xl mb-4">
+              ⚠️
+            </div>
+            <h3 className="text-lg font-extrabold text-white mb-2">¿Borrar esta pescadería?</h3>
+            <p className="text-sm text-white/60 mb-2">
+              Vas a borrar <strong className="text-white">{pescBorrar.nombre}</strong> <span className="text-white/40">(/{pescBorrar.slug})</span>.
+            </p>
+            <p className="text-[12px] text-[#ff8a80] mb-5 leading-relaxed">
+              Esto borra <strong>definitivamente</strong> también sus productos, pedidos, clientes, repartidores y movimientos de cuenta corriente. No se puede deshacer.
+            </p>
+            <div className="flex gap-2.5">
+              <button
+                onClick={() => setBorrandoId(null)}
+                disabled={cargandoBorrar}
+                className="flex-1 bg-white/8 text-white/70 font-semibold py-3 rounded-xl active:scale-[0.98] disabled:opacity-60"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => handleBorrar(pescBorrar.id)}
+                disabled={cargandoBorrar}
+                className="flex-1 bg-[#e74c3c] text-white font-bold py-3 rounded-xl active:scale-[0.98] disabled:opacity-60"
+              >
+                {cargandoBorrar ? 'Borrando...' : 'Sí, borrar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style jsx>{`
         @keyframes bmFadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
