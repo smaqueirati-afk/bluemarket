@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Checkout from './Checkout'
+import { crearPedido } from './actions'
 
 export default function TiendaCliente({ productos }) {
   // carrito = array de { producto, cantidad }
@@ -10,6 +11,9 @@ export default function TiendaCliente({ productos }) {
   const [verCarrito, setVerCarrito] = useState(false)
   const [verCheckout, setVerCheckout] = useState(false)
   const [pedidoConfirmado, setPedidoConfirmado] = useState(false)
+  const [numeroPedido, setNumeroPedido] = useState(null)
+  const [guardando, setGuardando] = useState(false)
+  const [errorPedido, setErrorPedido] = useState(null)
 
   const categorias = [
     { id: 'todo', emoji: '🐟', label: 'Todo' },
@@ -267,11 +271,20 @@ export default function TiendaCliente({ productos }) {
         {verCheckout && (
           <Checkout
             carrito={carrito}
+            cargando={guardando}
+            errorExterno={errorPedido}
             onVolver={() => { setVerCheckout(false); setVerCarrito(true) }}
-            onConfirmar={(datos) => {
-              // Etapa 3: acá guardaremos en Supabase. Por ahora solo confirmamos visualmente.
-              console.log('Pedido:', datos, carrito)
+            onConfirmar={async (datos) => {
+              setGuardando(true)
+              setErrorPedido(null)
+              const resultado = await crearPedido(datos, carrito)
+              setGuardando(false)
+              if (resultado.error) {
+                setErrorPedido(resultado.error)
+                return
+              }
               setVerCheckout(false)
+              setNumeroPedido(resultado.numero)
               setPedidoConfirmado(true)
               setCarrito([])
             }}
@@ -287,6 +300,9 @@ export default function TiendaCliente({ productos }) {
               ✓
             </div>
             <h1 className="text-2xl font-extrabold text-white mb-2">¡Pedido confirmado!</h1>
+            {numeroPedido && (
+              <div className="text-[#4db8ff] font-bold text-lg mb-3">Pedido #{numeroPedido}</div>
+            )}
             <p className="text-white/55 text-sm leading-relaxed mb-8">
               Tu pedido fue recibido. La pescadería lo va a preparar y te avisará cuando esté listo. 🐟
             </p>

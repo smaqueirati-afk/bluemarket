@@ -3,7 +3,7 @@
 import { useState } from 'react'
 
 // Pantalla de checkout. Recibe el carrito y una función para volver/confirmar.
-export default function Checkout({ carrito, onVolver, onConfirmar, cargando }) {
+export default function Checkout({ carrito, onVolver, onConfirmar, cargando, errorExterno }) {
   const [entrega, setEntrega] = useState('envio')   // 'envio' | 'retiro'
   const [pago, setPago] = useState('efectivo')       // 'efectivo' | 'transferencia'
   const [direccion, setDireccion] = useState('')
@@ -141,9 +141,9 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando }) {
           </div>
         </div>
 
-        {error && (
+        {(error || errorExterno) && (
           <div className="px-4 py-3 rounded-xl text-sm bg-[#e74c3c]/15 border border-[#e74c3c]/30 text-[#e74c3c]">
-            {error}
+            {error || errorExterno}
           </div>
         )}
 
