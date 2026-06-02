@@ -5,7 +5,7 @@ import Checkout from './Checkout'
 import { crearPedido } from './actions'
 import BarraUsuario from '../../../components/BarraUsuario'
 
-export default function TiendaCliente({ productos, pescaderia }) {
+export default function TiendaCliente({ productos, pescaderia, ccHabilitada }) {
   // carrito = array de { producto, cantidad }
   const [carrito, setCarrito] = useState([])
   const [categoria, setCategoria] = useState('todo')
@@ -272,7 +272,7 @@ export default function TiendaCliente({ productos, pescaderia }) {
 
         {/* CHECKOUT */}
         {verCheckout && (
-          <Checkout
+          <Checkout ccHabilitada={ccHabilitada}
             carrito={carrito}
             cargando={guardando}
             errorExterno={errorPedido}

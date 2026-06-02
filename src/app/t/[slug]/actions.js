@@ -113,5 +113,31 @@ export async function crearPedido(pescaderiaId, datos, items) {
     return { error: 'El pedido se creó pero falló al guardar los productos: ' + errItems.message }
   }
 
+  // Si el pago es cuenta corriente, sumar el total al saldo del cliente y registrar el movimiento
+  if (datos.pago === 'cuenta_corriente' && clienteId) {
+    const { data: cli } = await admin
+      .from('clientes')
+      .select('cc_saldo, cc_habilitada')
+      .eq('id', clienteId)
+      .single()
+
+    if (cli?.cc_habilitada) {
+      const saldoActual = Number(cli.cc_saldo) || 0
+      const nuevoSaldo = saldoActual + total
+
+      await admin.from('cc_movimientos').insert({
+        pescaderia_id: pescaderiaId,
+        cliente_id: clienteId,
+        pedido_id: pedido.id,
+        tipo: 'cargo',
+        monto: total,
+        saldo_despues: nuevoSaldo,
+        nota: `Pedido #${pedido.numero}`,
+      })
+
+      await admin.from('clientes').update({ cc_saldo: nuevoSaldo }).eq('id', clienteId)
+    }
+  }
+
   return { ok: true, numero: pedido.numero, pedidoId: pedido.id }
 }

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 
 // Pantalla de checkout. Recibe el carrito y una función para volver/confirmar.
-export default function Checkout({ carrito, onVolver, onConfirmar, cargando, errorExterno }) {
+export default function Checkout({ carrito, onVolver, onConfirmar, cargando, errorExterno, ccHabilitada }) {
   const [entrega, setEntrega] = useState('envio')   // 'envio' | 'retiro'
   const [pago, setPago] = useState('efectivo')       // 'efectivo' | 'transferencia'
   const [direccion, setDireccion] = useState('')
@@ -100,6 +100,18 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
               <span className="text-2xl">🏦</span>
               <span className="text-sm font-bold text-white">Transferencia</span>
             </button>
+            {ccHabilitada && (
+              <button onClick={() => setPago('cuenta_corriente')}
+                className={`w-full p-3.5 rounded-2xl border flex items-center gap-3 transition-all ${
+                  pago === 'cuenta_corriente' ? 'bg-[#2ecc71]/15 border-[#2ecc71]' : 'bg-white/[0.05] border-white/10'
+                }`}>
+                <span className="text-2xl">📒</span>
+                <div className="text-left">
+                  <span className="text-sm font-bold text-white block">Cuenta corriente</span>
+                  <span className="text-[10px] text-white/45">Se suma a tu cuenta para pagar después</span>
+                </div>
+              </button>
+            )}
             <div className="w-full p-3.5 rounded-2xl border border-white/8 bg-white/[0.02] flex items-center gap-3 opacity-50">
               <span className="text-2xl">💳</span>
               <div>
