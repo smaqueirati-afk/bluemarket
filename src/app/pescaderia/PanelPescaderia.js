@@ -29,6 +29,36 @@ const SIGUIENTE = {
 export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) {
   const [filtro, setFiltro] = useState('activos')
   const [actualizando, setActualizando] = useState(null)
+  const [copiado, setCopiado] = useState(false)
+  const [verQR, setVerQR] = useState(false)
+
+  // Link de la tienda de esta pescadería
+  const linkTienda = typeof window !== 'undefined'
+    ? `${window.location.origin}/t/${pescaderia?.slug}`
+    : `/t/${pescaderia?.slug}`
+
+  async function copiarLink() {
+    try {
+      await navigator.clipboard.writeText(linkTienda)
+      setCopiado(true)
+      setTimeout(() => setCopiado(false), 2000)
+    } catch (e) {
+      // fallback si no hay permiso de portapapeles
+      setCopiado(false)
+    }
+  }
+
+  async function compartirLink() {
+    const texto = `¡Hacé tu pedido en ${pescaderia?.nombre}! 🐟\n${linkTienda}`
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: pescaderia?.nombre, text: texto, url: linkTienda })
+      } catch (e) { /* el usuario canceló */ }
+    } else {
+      // si el navegador no soporta compartir nativo, abrir WhatsApp
+      window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank')
+    }
+  }
 
   function fmt(n) {
     return '$' + Number(n).toLocaleString('es-AR')
@@ -100,6 +130,50 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) 
             <div className="text-[10px] text-white/40 uppercase tracking-wide leading-tight">Ventas hoy</div>
             <div className="text-sm sm:text-xl font-extrabold mt-1 text-[#2ecc71] truncate">{fmt(ventasHoy)}</div>
           </div>
+        </div>
+
+        {/* Tarjeta del link de la tienda */}
+        <div className="bg-[linear-gradient(135deg,rgba(77,184,255,0.12),rgba(46,204,113,0.08))] border border-[#4db8ff]/25 rounded-2xl p-4 mb-5 sm:mb-6">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-base">🔗</span>
+            <span className="text-sm font-bold text-white">Tu link de tienda</span>
+          </div>
+          <p className="text-[12px] text-white/50 mb-3 leading-relaxed">
+            Compartí este link con tus clientes para que vean tus productos y te hagan pedidos.
+          </p>
+          <div className="bg-black/25 border border-white/10 rounded-xl px-3 py-2.5 mb-3 overflow-x-auto bm-no-scrollbar">
+            <code className="text-[12px] text-[#7dd3fc] whitespace-nowrap">{linkTienda}</code>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={compartirLink}
+              className="flex-1 bg-[#4db8ff] text-[#03174a] font-bold text-sm py-2.5 rounded-xl active:scale-[0.98] transition-transform flex items-center justify-center gap-1.5">
+              <span>📤</span> Compartir
+            </button>
+            <button onClick={copiarLink}
+              className="flex-1 bg-white/[0.08] border border-white/12 text-white font-medium text-sm py-2.5 rounded-xl active:scale-[0.98] transition-all flex items-center justify-center gap-1.5">
+              {copiado ? <><span>✓</span> Copiado</> : <><span>📋</span> Copiar</>}
+            </button>
+            <button onClick={() => setVerQR(!verQR)}
+              className="bg-white/[0.08] border border-white/12 text-white font-medium text-sm py-2.5 px-3 rounded-xl active:scale-[0.98] transition-all">
+              {verQR ? '✕' : '🔲'}
+            </button>
+          </div>
+
+          {verQR && (
+            <div className="mt-4 flex flex-col items-center" style={{ animation: 'bmFadeUp 0.3s ease both' }}>
+              <div className="bg-white p-3 rounded-2xl">
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(linkTienda)}`}
+                  alt="QR de la tienda"
+                  width={200}
+                  height={200}
+                />
+              </div>
+              <p className="text-[11px] text-white/45 mt-2.5 text-center">
+                Imprimí este QR y pegalo en tu local.<br />Tus clientes lo escanean y compran.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Filtros */}
