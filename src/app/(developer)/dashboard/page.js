@@ -5,29 +5,30 @@ import PanelDeveloper from './PanelDeveloper'
 export default async function DashboardDeveloper() {
   const supabase = await createClient()
 
-  // Traer todas las pescaderías
   const { data: pescaderias } = await supabase
     .from('pescaderias')
     .select('*')
     .order('created_at', { ascending: false })
 
-  // Traer los dueños (usuarios con rol cliente) para mostrarlos en cada pescadería
+  // Traer los dueños (rol cliente) con nombre y email
   const admin = createAdminClient()
   const { data: duenos } = await admin
     .from('usuarios')
-    .select('email, pescaderia_id')
+    .select('nombre, email, pescaderia_id')
     .eq('rol', 'cliente')
 
-  // Armar un mapa: pescaderia_id -> email del dueño
+  // Mapa: pescaderia_id -> { nombre, email }
   const duenoPorPescaderia = {}
   ;(duenos || []).forEach((d) => {
-    if (d.pescaderia_id) duenoPorPescaderia[d.pescaderia_id] = d.email
+    if (d.pescaderia_id) {
+      duenoPorPescaderia[d.pescaderia_id] = { nombre: d.nombre, email: d.email }
+    }
   })
 
-  // Agregar el email del dueño a cada pescadería
   const pescaderiasConDueno = (pescaderias || []).map((p) => ({
     ...p,
-    dueno_email: duenoPorPescaderia[p.id] || null,
+    dueno_nombre: duenoPorPescaderia[p.id]?.nombre || null,
+    dueno_email: duenoPorPescaderia[p.id]?.email || null,
   }))
 
   return <PanelDeveloper pescaderias={pescaderiasConDueno} />

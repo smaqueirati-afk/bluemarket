@@ -198,13 +198,13 @@ export default function PanelDeveloper({ pescaderias }) {
                     ) : p.dueno_email ? (
                       // Tiene dueño: mostrar bloqueado + opción de cambiar
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-lg bg-[#2ecc71]/15 border border-[#2ecc71]/30 flex items-center justify-center text-sm">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-9 h-9 rounded-xl bg-[#2ecc71]/15 border border-[#2ecc71]/30 flex items-center justify-center text-base">
                             👤
                           </div>
                           <div>
-                            <div className="text-[10px] text-white/40 uppercase tracking-wide">Dueño</div>
-                            <div className="text-sm text-white font-medium">{p.dueno_email}</div>
+                            <div className="text-sm text-white font-semibold">{p.dueno_nombre || p.dueno_email}</div>
+                            <div className="text-[11px] text-white/40">{p.dueno_email}</div>
                           </div>
                         </div>
                         <button
