@@ -1,10 +1,9 @@
 'use server'
 
-import { createClient } from '../../../lib/supabase/server'
-import { createAdminClient } from '../../../lib/supabase/admin'
+import { createClient } from '../../lib/supabase/server'
+import { createAdminClient } from '../../lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 
-// Cambiar el estado de un pedido (solo el dueño de esa pescadería puede)
 export async function cambiarEstadoPedido(pedidoId, nuevoEstado) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -22,7 +21,6 @@ export async function cambiarEstadoPedido(pedidoId, nuevoEstado) {
 
   const admin = createAdminClient()
 
-  // Verificar que el pedido sea de la pescadería de este usuario
   const { data: pedido } = await admin
     .from('pedidos')
     .select('pescaderia_id')
@@ -33,7 +31,6 @@ export async function cambiarEstadoPedido(pedidoId, nuevoEstado) {
     return { error: 'Ese pedido no es de tu pescadería' }
   }
 
-  // Actualizar el estado
   const { error } = await admin
     .from('pedidos')
     .update({ estado: nuevoEstado })

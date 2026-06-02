@@ -1,5 +1,5 @@
-import { createClient } from '../../../lib/supabase/server'
-import { createAdminClient } from '../../../lib/supabase/admin'
+import { createClient } from '../../lib/supabase/server'
+import { createAdminClient } from '../../lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import PanelPescaderia from './PanelPescaderia'
 
@@ -9,28 +9,24 @@ export default async function DashboardPescaderia() {
 
   if (!user) redirect('/login')
 
-  // Buscar el perfil del usuario (su pescadería)
   const { data: perfil } = await supabase
     .from('usuarios')
     .select('rol, pescaderia_id, nombre')
     .eq('id', user.id)
     .single()
 
-  // Si no es cliente, no debería estar acá
   if (!perfil || perfil.rol !== 'cliente' || !perfil.pescaderia_id) {
     redirect('/inicio')
   }
 
   const admin = createAdminClient()
 
-  // Datos de la pescadería
   const { data: pescaderia } = await admin
     .from('pescaderias')
     .select('*')
     .eq('id', perfil.pescaderia_id)
     .single()
 
-  // Pedidos de esta pescadería (los más nuevos primero)
   const { data: pedidos } = await admin
     .from('pedidos')
     .select('*')

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { cambiarEstadoPedido } from './actions'
-import BarraUsuario from '../../../components/BarraUsuario'
+import BarraUsuario from '../../components/BarraUsuario'
 
 // Orden y datos de los estados del pedido
 const ESTADOS = [
@@ -87,18 +87,18 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) 
         </div>
 
         {/* Métricas del día */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-3.5 backdrop-blur-sm">
-            <div className="text-[10px] text-white/40 uppercase tracking-wide">Pedidos hoy</div>
-            <div className="text-xl font-extrabold mt-1 text-white">{pedidosHoy.length}</div>
+        <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-5 sm:mb-6">
+          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-3 sm:p-3.5 backdrop-blur-sm">
+            <div className="text-[10px] text-white/40 uppercase tracking-wide leading-tight">Pedidos hoy</div>
+            <div className="text-lg sm:text-xl font-extrabold mt-1 text-white">{pedidosHoy.length}</div>
           </div>
-          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-3.5 backdrop-blur-sm">
-            <div className="text-[10px] text-white/40 uppercase tracking-wide">Activos</div>
-            <div className="text-xl font-extrabold mt-1 text-[#4db8ff]">{activos.length}</div>
+          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-3 sm:p-3.5 backdrop-blur-sm">
+            <div className="text-[10px] text-white/40 uppercase tracking-wide leading-tight">Activos</div>
+            <div className="text-lg sm:text-xl font-extrabold mt-1 text-[#4db8ff]">{activos.length}</div>
           </div>
-          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-3.5 backdrop-blur-sm">
-            <div className="text-[10px] text-white/40 uppercase tracking-wide">Ventas hoy</div>
-            <div className="text-xl font-extrabold mt-1 text-[#2ecc71]">{fmt(ventasHoy)}</div>
+          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-3 sm:p-3.5 backdrop-blur-sm">
+            <div className="text-[10px] text-white/40 uppercase tracking-wide leading-tight">Ventas hoy</div>
+            <div className="text-sm sm:text-xl font-extrabold mt-1 text-[#2ecc71] truncate">{fmt(ventasHoy)}</div>
           </div>
         </div>
 
@@ -137,15 +137,15 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) 
                   style={{ animation: 'bmFadeUp 0.4s ease both', animationDelay: `${idx * 0.05}s` }}>
 
                   {/* Cabecera del pedido */}
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-lg font-extrabold text-white">#{pedido.numero}</span>
-                      <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg"
+                  <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-lg font-extrabold text-white shrink-0">#{pedido.numero}</span>
+                      <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg shrink-0"
                         style={{ background: `${est.color}22`, color: est.color }}>
                         {est.emoji} {est.label}
                       </span>
                     </div>
-                    <span className="text-[11px] text-white/35">{fmtHora(pedido.created_at)}</span>
+                    <span className="text-[11px] text-white/35 shrink-0">{fmtHora(pedido.created_at)}</span>
                   </div>
 
                   {/* Datos del pedido */}
@@ -170,11 +170,11 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) 
                   </div>
 
                   {/* Total y acciones */}
-                  <div className="flex items-center justify-between pt-3 border-t border-white/8">
+                  <div className="flex items-center justify-between gap-2 pt-3 border-t border-white/8 flex-wrap">
                     <span className="text-lg font-extrabold text-[#4db8ff]">{fmt(pedido.total)}</span>
 
                     {!['entregado', 'cancelado'].includes(pedido.estado) && (
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 shrink-0">
                         <button
                           onClick={() => cancelar(pedido)}
                           disabled={actualizando === pedido.id}

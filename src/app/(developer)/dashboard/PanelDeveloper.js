@@ -56,7 +56,7 @@ export default function PanelDeveloper({ pescaderias }) {
       <div className="relative max-w-4xl mx-auto p-6">
 
         {/* Header */}
-        <div className="flex items-center justify-between mb-7">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight">
               <span className="text-[#4db8ff]">Blue</span>Market
@@ -65,28 +65,28 @@ export default function PanelDeveloper({ pescaderias }) {
           </div>
           <button
             onClick={() => setMostrarForm(!mostrarForm)}
-            className="bg-[#4db8ff] text-[#03174a] font-bold text-sm px-4 py-2.5 rounded-xl transition-all hover:shadow-[0_0_16px_rgba(77,184,255,0.4)] active:scale-95"
+            className="w-full sm:w-auto bg-[#4db8ff] text-[#03174a] font-bold text-sm px-4 py-2.5 rounded-xl transition-all hover:shadow-[0_0_16px_rgba(77,184,255,0.4)] active:scale-95 whitespace-nowrap"
           >
             {mostrarForm ? 'Cancelar' : '+ Nueva pescadería'}
           </button>
         </div>
 
         {/* Métricas */}
-        <div className="grid grid-cols-3 gap-3 mb-7">
-          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-4 backdrop-blur-sm">
-            <div className="text-[11px] text-white/40 uppercase tracking-wide">Total</div>
-            <div className="text-2xl font-extrabold mt-1 text-white">{pescaderias.length}</div>
-            <div className="text-[11px] text-white/30 mt-1">pescaderías</div>
+        <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-6">
+          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-3 sm:p-4 backdrop-blur-sm">
+            <div className="text-[10px] sm:text-[11px] text-white/40 uppercase tracking-wide">Total</div>
+            <div className="text-xl sm:text-2xl font-extrabold mt-1 text-white">{pescaderias.length}</div>
+            <div className="text-[10px] sm:text-[11px] text-white/30 mt-1 leading-tight">pescaderías</div>
           </div>
-          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-4 backdrop-blur-sm">
-            <div className="text-[11px] text-white/40 uppercase tracking-wide">Activas</div>
-            <div className="text-2xl font-extrabold mt-1 text-[#2ecc71]">{activas}</div>
-            <div className="text-[11px] text-white/30 mt-1">funcionando</div>
+          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-3 sm:p-4 backdrop-blur-sm">
+            <div className="text-[10px] sm:text-[11px] text-white/40 uppercase tracking-wide">Activas</div>
+            <div className="text-xl sm:text-2xl font-extrabold mt-1 text-[#2ecc71]">{activas}</div>
+            <div className="text-[10px] sm:text-[11px] text-white/30 mt-1 leading-tight">funcionando</div>
           </div>
-          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-4 backdrop-blur-sm">
-            <div className="text-[11px] text-white/40 uppercase tracking-wide">En prueba</div>
-            <div className="text-2xl font-extrabold mt-1 text-[#f39c12]">{trials}</div>
-            <div className="text-[11px] text-white/30 mt-1">trial</div>
+          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-3 sm:p-4 backdrop-blur-sm">
+            <div className="text-[10px] sm:text-[11px] text-white/40 uppercase tracking-wide">En prueba</div>
+            <div className="text-xl sm:text-2xl font-extrabold mt-1 text-[#f39c12]">{trials}</div>
+            <div className="text-[10px] sm:text-[11px] text-white/30 mt-1 leading-tight">trial</div>
           </div>
         </div>
 
@@ -146,17 +146,17 @@ export default function PanelDeveloper({ pescaderias }) {
                   className="bg-white/[0.06] border border-white/10 rounded-2xl p-4 backdrop-blur-sm transition-all hover:border-[#4db8ff]/40"
                   style={{ animation: 'bmFadeUp 0.4s ease both', animationDelay: `${idx * 0.05}s` }}>
 
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-[#4db8ff]/12 border border-[#4db8ff]/30 flex items-center justify-center text-lg">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-[#4db8ff]/12 border border-[#4db8ff]/30 flex items-center justify-center text-lg shrink-0">
                         🐟
                       </div>
-                      <div>
-                        <div className="font-semibold text-white">{p.nombre}</div>
-                        <div className="text-xs text-white/40 mt-0.5">/{p.slug} · {p.telefono || 'sin teléfono'}</div>
+                      <div className="min-w-0">
+                        <div className="font-semibold text-white truncate">{p.nombre}</div>
+                        <div className="text-xs text-white/40 mt-0.5 truncate">/{p.slug} · {p.telefono || 'sin teléfono'}</div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2 shrink-0">
                       <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg uppercase tracking-wide ${
                         p.plan === 'trial' ? 'bg-[#f39c12]/15 text-[#f39c12]' : 'bg-[#4db8ff]/15 text-[#4db8ff]'
                       }`}>
