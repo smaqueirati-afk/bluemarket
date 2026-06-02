@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Checkout from './Checkout'
 import { crearPedido } from './actions'
+import BarraUsuario from '../../../components/BarraUsuario'
 
 export default function TiendaCliente({ productos }) {
   // carrito = array de { producto, cantidad }
@@ -70,6 +71,8 @@ export default function TiendaCliente({ productos }) {
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black">
       <div className="relative w-full h-full max-w-[420px] sm:max-h-[900px] sm:rounded-[40px] sm:shadow-[0_30px_80px_rgba(0,0,0,0.55)] flex flex-col overflow-hidden bg-[linear-gradient(180deg,#051e5c_0%,#03174a_100%)]">
+
+        <BarraUsuario perfil="consumidor" />
 
         {/* TOP BAR */}
         <div className="shrink-0 px-4 pt-5 pb-1">

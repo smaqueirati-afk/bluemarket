@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { cambiarEstadoPedido } from './actions'
+import BarraUsuario from '../../../components/BarraUsuario'
 
 // Orden y datos de los estados del pedido
 const ESTADOS = [
@@ -69,6 +70,8 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) 
     <div className="min-h-screen text-white bg-[linear-gradient(180deg,#051e5c_0%,#03174a_60%,#020f30_100%)]">
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] blur-3xl pointer-events-none"
            style={{ background: 'radial-gradient(circle, rgba(77,184,255,0.12), transparent 70%)' }} />
+
+      <BarraUsuario perfil="pescaderia" />
 
       <div className="relative max-w-3xl mx-auto p-5">
 
