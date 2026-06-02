@@ -4,7 +4,6 @@ import { createClient } from '../../../lib/supabase/server'
 import { createAdminClient } from '../../../lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 
-// Verifica que quien llama sea developer. Devuelve el user o un error.
 async function verificarDeveloper() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -22,24 +21,39 @@ async function verificarDeveloper() {
   return { user }
 }
 
+// Genera un slug prolijo a partir del nombre
+function generarSlug(nombre) {
+  return nombre
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // sacar acentos
+    .replace(/[^a-z0-9]+/g, '-')                       // espacios y símbolos -> guión
+    .replace(/^-+|-+$/g, '')                           // sacar guiones de los bordes
+}
+
 // ── Crear pescadería ──
 export async function crearPescaderia(formData) {
   const check = await verificarDeveloper()
   if (check.error) return { error: check.error }
 
   const nombre = formData.get('nombre')?.trim()
-  const slug = formData.get('slug')?.trim().toLowerCase()
+  let slug = formData.get('slug')?.trim().toLowerCase()
   const telefono = formData.get('telefono')?.trim()
+  const modalidad = formData.get('modalidad') || 'local_reparto'
 
-  if (!nombre || !slug) {
-    return { error: 'Nombre y slug son obligatorios' }
+  if (!nombre) {
+    return { error: 'El nombre es obligatorio' }
   }
+
+  // Si no pusieron slug, generarlo del nombre
+  if (!slug) slug = generarSlug(nombre)
+  else slug = generarSlug(slug)
 
   const admin = createAdminClient()
   const { error } = await admin.from('pescaderias').insert({
     nombre,
     slug,
     telefono: telefono || null,
+    modalidad,
     plan: 'trial',
     activa: true,
   })
@@ -60,7 +74,6 @@ export async function asignarDueno(pescaderiaId, email) {
 
   const admin = createAdminClient()
 
-  // 1. Buscar al usuario por email (tiene que haber entrado al menos una vez)
   const { data: usuario, error: errBusca } = await admin
     .from('usuarios')
     .select('id, email, rol')
@@ -71,7 +84,6 @@ export async function asignarDueno(pescaderiaId, email) {
     return { error: 'No se encontró ese email. La persona tiene que entrar una vez con Google antes de asignarla.' }
   }
 
-  // 2. Convertirlo en dueño (cliente) de esa pescadería
   const { error: errUpdate } = await admin
     .from('usuarios')
     .update({ rol: 'cliente', pescaderia_id: pescaderiaId })
@@ -79,7 +91,6 @@ export async function asignarDueno(pescaderiaId, email) {
 
   if (errUpdate) return { error: errUpdate.message }
 
-  // 3. Crear también su ficha en la tabla clientes (opcional, para datos comerciales)
   await admin.from('clientes').insert({
     pescaderia_id: pescaderiaId,
     usuario_id: usuario.id,

@@ -56,7 +56,7 @@ export default function PanelDeveloper({ pescaderias }) {
       <div className="relative max-w-4xl mx-auto p-6">
 
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+        <div className="flex items-center justify-between mb-7">
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight">
               <span className="text-[#4db8ff]">Blue</span>Market
@@ -65,28 +65,28 @@ export default function PanelDeveloper({ pescaderias }) {
           </div>
           <button
             onClick={() => setMostrarForm(!mostrarForm)}
-            className="w-full sm:w-auto bg-[#4db8ff] text-[#03174a] font-bold text-sm px-4 py-2.5 rounded-xl transition-all hover:shadow-[0_0_16px_rgba(77,184,255,0.4)] active:scale-95 whitespace-nowrap"
+            className="bg-[#4db8ff] text-[#03174a] font-bold text-sm px-4 py-2.5 rounded-xl transition-all hover:shadow-[0_0_16px_rgba(77,184,255,0.4)] active:scale-95"
           >
             {mostrarForm ? 'Cancelar' : '+ Nueva pescadería'}
           </button>
         </div>
 
         {/* Métricas */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-6">
-          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-3 sm:p-4 backdrop-blur-sm">
-            <div className="text-[10px] sm:text-[11px] text-white/40 uppercase tracking-wide">Total</div>
-            <div className="text-xl sm:text-2xl font-extrabold mt-1 text-white">{pescaderias.length}</div>
-            <div className="text-[10px] sm:text-[11px] text-white/30 mt-1 leading-tight">pescaderías</div>
+        <div className="grid grid-cols-3 gap-3 mb-7">
+          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-4 backdrop-blur-sm">
+            <div className="text-[11px] text-white/40 uppercase tracking-wide">Total</div>
+            <div className="text-2xl font-extrabold mt-1 text-white">{pescaderias.length}</div>
+            <div className="text-[11px] text-white/30 mt-1">pescaderías</div>
           </div>
-          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-3 sm:p-4 backdrop-blur-sm">
-            <div className="text-[10px] sm:text-[11px] text-white/40 uppercase tracking-wide">Activas</div>
-            <div className="text-xl sm:text-2xl font-extrabold mt-1 text-[#2ecc71]">{activas}</div>
-            <div className="text-[10px] sm:text-[11px] text-white/30 mt-1 leading-tight">funcionando</div>
+          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-4 backdrop-blur-sm">
+            <div className="text-[11px] text-white/40 uppercase tracking-wide">Activas</div>
+            <div className="text-2xl font-extrabold mt-1 text-[#2ecc71]">{activas}</div>
+            <div className="text-[11px] text-white/30 mt-1">funcionando</div>
           </div>
-          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-3 sm:p-4 backdrop-blur-sm">
-            <div className="text-[10px] sm:text-[11px] text-white/40 uppercase tracking-wide">En prueba</div>
-            <div className="text-xl sm:text-2xl font-extrabold mt-1 text-[#f39c12]">{trials}</div>
-            <div className="text-[10px] sm:text-[11px] text-white/30 mt-1 leading-tight">trial</div>
+          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-4 backdrop-blur-sm">
+            <div className="text-[11px] text-white/40 uppercase tracking-wide">En prueba</div>
+            <div className="text-2xl font-extrabold mt-1 text-[#f39c12]">{trials}</div>
+            <div className="text-[11px] text-white/30 mt-1">trial</div>
           </div>
         </div>
 
@@ -112,14 +112,40 @@ export default function PanelDeveloper({ pescaderias }) {
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-[#4db8ff]" />
             </div>
             <div>
-              <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">Slug (identificador único, sin espacios)</label>
-              <input name="slug" required placeholder="pescaderia-tigre"
+              <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">Slug (dejalo vacío y se genera solo)</label>
+              <input name="slug" placeholder="se genera del nombre"
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-[#4db8ff]" />
             </div>
             <div>
-              <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">Teléfono (opcional)</label>
+              <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">Teléfono / WhatsApp (opcional)</label>
               <input name="telefono" placeholder="+54 11 1234 5678"
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-[#4db8ff]" />
+            </div>
+            <div>
+              <label className="block text-xs text-white/50 uppercase tracking-wide mb-2">¿Cómo trabaja?</label>
+              <div className="space-y-2">
+                <label className="flex items-start gap-3 bg-white/5 border border-white/10 rounded-xl px-3.5 py-3 cursor-pointer has-[:checked]:border-[#4db8ff] has-[:checked]:bg-[#4db8ff]/10 transition-all">
+                  <input type="radio" name="modalidad" value="solo_local" className="mt-0.5 accent-[#4db8ff]" />
+                  <div>
+                    <div className="text-sm font-semibold text-white">🏪 Solo local</div>
+                    <div className="text-[11px] text-white/45">Atiende al público, el cliente retira. No hace reparto.</div>
+                  </div>
+                </label>
+                <label className="flex items-start gap-3 bg-white/5 border border-white/10 rounded-xl px-3.5 py-3 cursor-pointer has-[:checked]:border-[#4db8ff] has-[:checked]:bg-[#4db8ff]/10 transition-all">
+                  <input type="radio" name="modalidad" value="local_reparto" defaultChecked className="mt-0.5 accent-[#4db8ff]" />
+                  <div>
+                    <div className="text-sm font-semibold text-white">🏪🛵 Local + reparto</div>
+                    <div className="text-[11px] text-white/45">Tiene local y además entrega a domicilio.</div>
+                  </div>
+                </label>
+                <label className="flex items-start gap-3 bg-white/5 border border-white/10 rounded-xl px-3.5 py-3 cursor-pointer has-[:checked]:border-[#4db8ff] has-[:checked]:bg-[#4db8ff]/10 transition-all">
+                  <input type="radio" name="modalidad" value="solo_reparto" className="mt-0.5 accent-[#4db8ff]" />
+                  <div>
+                    <div className="text-sm font-semibold text-white">🛵 Solo reparto</div>
+                    <div className="text-[11px] text-white/45">Sin local. Solo entrega a domicilio (particulares y/o restaurantes).</div>
+                  </div>
+                </label>
+              </div>
             </div>
             <button type="submit" disabled={cargando}
               className="w-full bg-[#4db8ff] text-[#03174a] font-bold py-3 rounded-xl transition-all hover:shadow-[0_0_16px_rgba(77,184,255,0.4)] active:scale-[0.98] disabled:opacity-60">
@@ -146,17 +172,17 @@ export default function PanelDeveloper({ pescaderias }) {
                   className="bg-white/[0.06] border border-white/10 rounded-2xl p-4 backdrop-blur-sm transition-all hover:border-[#4db8ff]/40"
                   style={{ animation: 'bmFadeUp 0.4s ease both', animationDelay: `${idx * 0.05}s` }}>
 
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-10 rounded-xl bg-[#4db8ff]/12 border border-[#4db8ff]/30 flex items-center justify-center text-lg shrink-0">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-[#4db8ff]/12 border border-[#4db8ff]/30 flex items-center justify-center text-lg">
                         🐟
                       </div>
-                      <div className="min-w-0">
-                        <div className="font-semibold text-white truncate">{p.nombre}</div>
-                        <div className="text-xs text-white/40 mt-0.5 truncate">/{p.slug} · {p.telefono || 'sin teléfono'}</div>
+                      <div>
+                        <div className="font-semibold text-white">{p.nombre}</div>
+                        <div className="text-xs text-white/40 mt-0.5">/{p.slug} · {p.telefono || 'sin teléfono'}</div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-2.5">
                       <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg uppercase tracking-wide ${
                         p.plan === 'trial' ? 'bg-[#f39c12]/15 text-[#f39c12]' : 'bg-[#4db8ff]/15 text-[#4db8ff]'
                       }`}>
