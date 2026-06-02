@@ -7,8 +7,21 @@ export default function Home() {
   const router = useRouter()
 
   useEffect(() => {
+    // Bloquear el scroll del documento mientras se muestra el splash.
+    // En iOS, sin esto, la pantalla "rebota" y deja scrollear arriba/abajo.
+    const html = document.documentElement
+    const body = document.body
+    const prevHtml = html.style.overflow
+    const prevBody = body.style.overflow
+    html.style.overflow = 'hidden'
+    body.style.overflow = 'hidden'
+
     const t = setTimeout(() => router.replace('/login'), 2600)
-    return () => clearTimeout(t)
+    return () => {
+      clearTimeout(t)
+      html.style.overflow = prevHtml
+      body.style.overflow = prevBody
+    }
   }, [router])
 
   const burbujas = [
@@ -40,7 +53,11 @@ export default function Home() {
 
       <style jsx>{`
         .bm-splash {
-          position: fixed; inset: 0; overflow: hidden; background: #03174a;
+          position: fixed; top: 0; left: 0;
+          width: 100vw;
+          height: 100vh;   /* fallback */
+          height: 100svh;  /* iOS: altura visible real, sin las barras de Safari */
+          overflow: hidden; background: #03174a;
           display: flex; align-items: center; justify-content: center;
         }
         .bm-splash-bg {
