@@ -3,7 +3,7 @@
 import { useState } from 'react'
 
 // Pantalla de checkout. Recibe el carrito y una función para volver/confirmar.
-export default function Checkout({ carrito, onVolver, onConfirmar, cargando, errorExterno, ccHabilitada }) {
+export default function Checkout({ carrito, onVolver, onConfirmar, cargando, errorExterno, ccHabilitada, necesitaLogin, onLogin }) {
   const [entrega, setEntrega] = useState('envio')   // 'envio' | 'retiro'
   const [pago, setPago] = useState('efectivo')       // 'efectivo' | 'transferencia'
   const [direccion, setDireccion] = useState('')
@@ -153,23 +153,37 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
           </div>
         </div>
 
-        {(error || errorExterno) && (
+        {(error || errorExterno) && !necesitaLogin && (
           <div className="px-4 py-3 rounded-xl text-sm bg-[#e74c3c]/15 border border-[#e74c3c]/30 text-[#e74c3c]">
             {error || errorExterno}
+          </div>
+        )}
+
+        {necesitaLogin && (
+          <div className="px-4 py-4 rounded-xl bg-[#4db8ff]/10 border border-[#4db8ff]/30 text-center">
+            <div className="text-2xl mb-2">🔑</div>
+            <p className="text-sm text-white font-semibold mb-1">Iniciá sesión para confirmar</p>
+            <p className="text-[12px] text-white/55 mb-3">Necesitamos saber quién sos para enviarte el pedido. Tu carrito se mantiene.</p>
+            <button onClick={onLogin}
+              className="w-full bg-white text-[#03174a] font-bold py-3 rounded-xl active:scale-[0.98] transition-transform flex items-center justify-center gap-2">
+              <span>Continuar con Google</span>
+            </button>
           </div>
         )}
 
       </div>
 
       {/* Footer fijo */}
-      <div className="shrink-0 px-4 py-4 border-t border-white/8 bg-[#03174a]">
-        <button
-          onClick={confirmar}
-          disabled={cargando}
-          className="w-full bg-[#4db8ff] text-[#03174a] font-bold py-3.5 rounded-xl active:scale-[0.98] transition-transform disabled:opacity-60">
-          {cargando ? 'Confirmando...' : `Confirmar pedido · ${fmt(totalPrecio)}`}
-        </button>
-      </div>
+      {!necesitaLogin && (
+        <div className="shrink-0 px-4 py-4 border-t border-white/8 bg-[#03174a]">
+          <button
+            onClick={confirmar}
+            disabled={cargando}
+            className="w-full bg-[#4db8ff] text-[#03174a] font-bold py-3.5 rounded-xl active:scale-[0.98] transition-transform disabled:opacity-60">
+            {cargando ? 'Confirmando...' : `Confirmar pedido · ${fmt(totalPrecio)}`}
+          </button>
+        </div>
+      )}
 
       <style jsx>{`
         @keyframes bmFadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }

@@ -147,3 +147,28 @@ export async function traerMovimientos(clienteId) {
 
   return { ok: true, movimientos: movimientos || [] }
 }
+
+// ── Eliminar cliente ──
+export async function borrarCliente(clienteId) {
+  const check = await verificarDueno()
+  if (check.error) return { error: check.error }
+
+  const admin = createAdminClient()
+  const cli = await clienteEsDeLaPescaderia(admin, clienteId, check.pescaderiaId)
+  if (!cli) return { error: 'Ese cliente no es de tu pescadería' }
+
+  // No permitir borrar si tiene saldo pendiente
+  if (Number(cli.cc_saldo) > 0) {
+    return { error: 'No podés borrar un cliente con saldo pendiente. Primero saldá su cuenta.' }
+  }
+
+  // Borrar primero sus movimientos de cuenta corriente
+  await admin.from('cc_movimientos').delete().eq('cliente_id', clienteId)
+
+  // Borrar el cliente
+  const { error } = await admin.from('clientes').delete().eq('id', clienteId)
+  if (error) return { error: error.message }
+
+  revalidatePath('/pescaderia/clientes')
+  return { ok: true }
+}

@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Checkout from './Checkout'
 import { crearPedido } from './actions'
 import BarraUsuario from '../../../components/BarraUsuario'
+import { createClient } from '../../../lib/supabase/client'
 
 export default function TiendaCliente({ productos, pescaderia, ccHabilitada }) {
   // carrito = array de { producto, cantidad }
@@ -15,6 +16,34 @@ export default function TiendaCliente({ productos, pescaderia, ccHabilitada }) {
   const [numeroPedido, setNumeroPedido] = useState(null)
   const [guardando, setGuardando] = useState(false)
   const [errorPedido, setErrorPedido] = useState(null)
+  const [necesitaLogin, setNecesitaLogin] = useState(false)
+
+  // Inicia sesión con Google y vuelve a esta misma tienda
+  async function iniciarSesion() {
+    // Guardar el carrito para no perderlo al volver del login
+    try {
+      localStorage.setItem('_bm_carrito_' + (pescaderia?.slug || ''), JSON.stringify(carrito))
+    } catch (e) {}
+    const supabase = createClient()
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.href },
+    })
+  }
+
+  // Al volver del login, recuperar el carrito que se había guardado
+  useEffect(() => {
+    try {
+      const guardado = localStorage.getItem('_bm_carrito_' + (pescaderia?.slug || ''))
+      if (guardado) {
+        const items = JSON.parse(guardado)
+        if (Array.isArray(items) && items.length > 0) {
+          setCarrito(items)
+        }
+        localStorage.removeItem('_bm_carrito_' + (pescaderia?.slug || ''))
+      }
+    } catch (e) {}
+  }, [])
 
   const categorias = [
     { id: 'todo', emoji: '🐟', label: 'Todo' },
@@ -276,6 +305,8 @@ export default function TiendaCliente({ productos, pescaderia, ccHabilitada }) {
             carrito={carrito}
             cargando={guardando}
             errorExterno={errorPedido}
+            necesitaLogin={necesitaLogin}
+            onLogin={iniciarSesion}
             onVolver={() => { setVerCheckout(false); setVerCarrito(true) }}
             onConfirmar={async (datos) => {
               setGuardando(true)
@@ -284,6 +315,10 @@ export default function TiendaCliente({ productos, pescaderia, ccHabilitada }) {
               setGuardando(false)
               if (resultado.error) {
                 setErrorPedido(resultado.error)
+                // Si el error es por falta de login, mostrar el botón de iniciar sesión
+                if (resultado.error.toLowerCase().includes('sesión') || resultado.error.toLowerCase().includes('sesion') || resultado.error.toLowerCase().includes('autenticad')) {
+                  setNecesitaLogin(true)
+                }
                 return
               }
               setVerCheckout(false)

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { configurarCC, registrarPago, registrarCargo, traerMovimientos } from './actions'
+import { configurarCC, registrarPago, registrarCargo, traerMovimientos, borrarCliente } from './actions'
 import BarraUsuario from '../../../components/BarraUsuario'
 
 export default function PanelClientes({ clientes, nombrePescaderia }) {
@@ -54,6 +54,15 @@ export default function PanelClientes({ clientes, nombrePescaderia }) {
     const res = await configurarCC(cli.id, habilitadaInput, limiteInput)
     if (res.error) setMensaje({ tipo: 'error', texto: res.error })
     else { setMensaje({ tipo: 'ok', texto: 'Configuración guardada ✓' }); setExpandido(null); setAccion(null) }
+    setCargando(false)
+  }
+
+  async function eliminarCliente(cli) {
+    if (!confirm(`¿Eliminar al cliente "${cli.nombre}"? Se borrará su historial de cuenta corriente. Esta acción no se puede deshacer.`)) return
+    setCargando(true); setMensaje(null)
+    const res = await borrarCliente(cli.id)
+    if (res.error) setMensaje({ tipo: 'error', texto: res.error })
+    else { setMensaje({ tipo: 'ok', texto: 'Cliente eliminado ✓' }); setExpandido(null); setAccion(null) }
     setCargando(false)
   }
 
@@ -186,6 +195,13 @@ export default function PanelClientes({ clientes, nombrePescaderia }) {
                         className="w-full bg-[#4db8ff] text-[#03174a] font-bold py-2.5 rounded-xl active:scale-[0.98] disabled:opacity-60">
                         {cargando ? 'Guardando...' : 'Guardar'}
                       </button>
+
+                      <div className="pt-2 mt-1 border-t border-white/8">
+                        <button onClick={() => eliminarCliente(cli)} disabled={cargando}
+                          className="w-full text-[#e74c3c] text-xs font-medium py-2 rounded-lg hover:bg-[#e74c3c]/10 transition-colors disabled:opacity-50">
+                          🗑 Eliminar cliente
+                        </button>
+                      </div>
                     </div>
                   )}
 
