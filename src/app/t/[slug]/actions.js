@@ -23,29 +23,49 @@ export async function crearPedido(pescaderiaId, datos, items) {
 
   const admin = createAdminClient()
 
-  // Buscar/crear la ficha de cliente de este usuario EN ESA pescadería
+  // Buscar/crear la ficha de cliente de este usuario EN ESA pescadería.
+  // Busca por usuario_id O por email para evitar duplicados.
   let clienteId = null
-  const { data: clienteExistente } = await admin
+
+  // 1. Buscar por usuario_id
+  const { data: porUsuario } = await admin
     .from('clientes')
     .select('id')
-    .eq('usuario_id', user.id)
     .eq('pescaderia_id', pescaderiaId)
+    .eq('usuario_id', user.id)
     .maybeSingle()
 
-  if (clienteExistente) {
-    clienteId = clienteExistente.id
+  if (porUsuario) {
+    clienteId = porUsuario.id
   } else {
-    const { data: nuevoCliente } = await admin
+    // 2. Buscar por email (por si la ficha existe pero sin usuario_id)
+    const { data: porEmail } = await admin
       .from('clientes')
-      .insert({
-        pescaderia_id: pescaderiaId,
-        usuario_id: user.id,
-        nombre: user.user_metadata?.full_name || user.email.split('@')[0],
-        email: user.email,
-      })
-      .select('id')
-      .single()
-    clienteId = nuevoCliente?.id || null
+      .select('id, usuario_id')
+      .eq('pescaderia_id', pescaderiaId)
+      .eq('email', user.email)
+      .maybeSingle()
+
+    if (porEmail) {
+      clienteId = porEmail.id
+      // Si esa ficha no tenía usuario_id, se lo completamos
+      if (!porEmail.usuario_id) {
+        await admin.from('clientes').update({ usuario_id: user.id }).eq('id', porEmail.id)
+      }
+    } else {
+      // 3. No existe: crear ficha nueva
+      const { data: nuevoCliente } = await admin
+        .from('clientes')
+        .insert({
+          pescaderia_id: pescaderiaId,
+          usuario_id: user.id,
+          nombre: user.user_metadata?.full_name || user.email.split('@')[0],
+          email: user.email,
+        })
+        .select('id')
+        .single()
+      clienteId = nuevoCliente?.id || null
+    }
   }
 
   const subtotal = items.reduce((acc, i) => acc + i.producto.precio * i.cantidad, 0)
