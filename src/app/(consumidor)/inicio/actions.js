@@ -59,7 +59,7 @@ export async function crearPedido(datos, items) {
     .insert({
       pescaderia_id: PESCADERIA_DEMO,
       cliente_id: clienteId,
-      estado: 'pendiente',
+      estado: 'nuevo',
       tipo_entrega: datos.entrega,
       direccion: datos.direccion || null,
       metodo_pago: datos.pago,
