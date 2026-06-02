@@ -15,7 +15,13 @@ export default function InstallPrompt() {
     if (standalone) { setInstalada(true); return }
 
     // ¿Es iPhone/iPad? (Safari no dispara el evento automático)
-    const ios = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase())
+    // Ojo: iPadOS 13+ se hace pasar por Mac de escritorio (el UA dice "Macintosh"),
+    // así que el iPad se detecta como "Mac con pantalla táctil".
+    const ua = window.navigator.userAgent.toLowerCase()
+    const esIphone = /iphone|ipod/.test(ua)
+    const esIpad = /ipad/.test(ua) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+    const ios = esIphone || esIpad
     setEsIOS(ios)
 
     // Android/Chrome: capturar el evento de instalación
