@@ -8,7 +8,6 @@ export default function PanelDeveloper({ pescaderias }) {
   const [cargando, setCargando] = useState(false)
   const [mensaje, setMensaje] = useState(null)
 
-  // Estado para asignar dueño
   const [asignandoId, setAsignandoId] = useState(null)
   const [emailDueno, setEmailDueno] = useState('')
   const [cargandoAsig, setCargandoAsig] = useState(false)
@@ -165,32 +164,58 @@ export default function PanelDeveloper({ pescaderias }) {
                     </div>
                   </div>
 
-                  {/* Botón / formulario de asignar dueño */}
+                  {/* Sección del dueño */}
                   <div className="mt-3 pt-3 border-t border-white/8">
                     {asignandoId === p.id ? (
-                      <div className="flex gap-2" style={{ animation: 'bmFadeUp 0.3s ease both' }}>
-                        <input
-                          type="email"
-                          value={emailDueno}
-                          onChange={(e) => setEmailDueno(e.target.value)}
-                          placeholder="email@deldueño.com"
-                          className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 outline-none focus:border-[#4db8ff]"
-                        />
+                      // Modo edición: campo para asignar/cambiar dueño
+                      <div style={{ animation: 'bmFadeUp 0.3s ease both' }}>
+                        <div className="text-[11px] text-white/40 uppercase tracking-wide mb-1.5">
+                          {p.dueno_email ? 'Cambiar dueño' : 'Asignar dueño'}
+                        </div>
+                        <div className="flex gap-2">
+                          <input
+                            type="email"
+                            value={emailDueno}
+                            onChange={(e) => setEmailDueno(e.target.value)}
+                            placeholder="email@deldueño.com"
+                            className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 outline-none focus:border-[#4db8ff]"
+                          />
+                          <button
+                            onClick={() => handleAsignar(p.id)}
+                            disabled={cargandoAsig}
+                            className="bg-[#2ecc71] text-[#03174a] font-bold text-xs px-3 py-2 rounded-lg active:scale-95 disabled:opacity-60"
+                          >
+                            {cargandoAsig ? '...' : 'Guardar'}
+                          </button>
+                          <button
+                            onClick={() => { setAsignandoId(null); setEmailDueno('') }}
+                            className="bg-white/8 text-white/50 text-xs px-3 py-2 rounded-lg"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                    ) : p.dueno_email ? (
+                      // Tiene dueño: mostrar bloqueado + opción de cambiar
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-lg bg-[#2ecc71]/15 border border-[#2ecc71]/30 flex items-center justify-center text-sm">
+                            👤
+                          </div>
+                          <div>
+                            <div className="text-[10px] text-white/40 uppercase tracking-wide">Dueño</div>
+                            <div className="text-sm text-white font-medium">{p.dueno_email}</div>
+                          </div>
+                        </div>
                         <button
-                          onClick={() => handleAsignar(p.id)}
-                          disabled={cargandoAsig}
-                          className="bg-[#2ecc71] text-[#03174a] font-bold text-xs px-3 py-2 rounded-lg active:scale-95 disabled:opacity-60"
+                          onClick={() => { setAsignandoId(p.id); setEmailDueno(''); setMensaje(null) }}
+                          className="text-xs text-white/40 hover:text-[#4db8ff] transition-colors"
                         >
-                          {cargandoAsig ? '...' : 'Asignar'}
-                        </button>
-                        <button
-                          onClick={() => { setAsignandoId(null); setEmailDueno('') }}
-                          className="bg-white/8 text-white/50 text-xs px-3 py-2 rounded-lg"
-                        >
-                          ✕
+                          Cambiar
                         </button>
                       </div>
                     ) : (
+                      // Sin dueño: botón para asignar
                       <button
                         onClick={() => { setAsignandoId(p.id); setEmailDueno(''); setMensaje(null) }}
                         className="text-xs text-[#4db8ff] font-medium hover:underline"
