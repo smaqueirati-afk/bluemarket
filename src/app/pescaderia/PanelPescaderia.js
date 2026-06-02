@@ -1,0 +1,206 @@
+'use client'
+
+import { useState } from 'react'
+import { cambiarEstadoPedido } from './actions'
+
+// Orden y datos de los estados del pedido
+const ESTADOS = [
+  { id: 'nuevo',     label: 'Nuevo',     color: '#4db8ff', emoji: '🆕' },
+  { id: 'preparando',label: 'Preparando',color: '#f39c12', emoji: '👨‍🍳' },
+  { id: 'listo',     label: 'Listo',     color: '#2ecc71', emoji: '✅' },
+  { id: 'en_camino', label: 'En camino', color: '#9b59b6', emoji: '🛵' },
+  { id: 'entregado', label: 'Entregado', color: '#2ecc71', emoji: '🎉' },
+  { id: 'cancelado', label: 'Cancelado', color: '#e74c3c', emoji: '❌' },
+]
+
+function datosEstado(id) {
+  return ESTADOS.find((e) => e.id === id) || ESTADOS[0]
+}
+
+// Cuál es el siguiente estado lógico
+const SIGUIENTE = {
+  nuevo: 'preparando',
+  preparando: 'listo',
+  listo: 'en_camino',
+  en_camino: 'entregado',
+}
+
+export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) {
+  const [filtro, setFiltro] = useState('activos')
+  const [actualizando, setActualizando] = useState(null)
+
+  function fmt(n) {
+    return '$' + Number(n).toLocaleString('es-AR')
+  }
+
+  function fmtHora(fecha) {
+    return new Date(fecha).toLocaleString('es-AR', {
+      day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
+    })
+  }
+
+  async function avanzar(pedido) {
+    const siguiente = SIGUIENTE[pedido.estado]
+    if (!siguiente) return
+    setActualizando(pedido.id)
+    await cambiarEstadoPedido(pedido.id, siguiente)
+    setActualizando(null)
+  }
+
+  async function cancelar(pedido) {
+    setActualizando(pedido.id)
+    await cambiarEstadoPedido(pedido.id, 'cancelado')
+    setActualizando(null)
+  }
+
+  // Filtrar pedidos
+  const activos = pedidos.filter((p) => !['entregado', 'cancelado'].includes(p.estado))
+  const finalizados = pedidos.filter((p) => ['entregado', 'cancelado'].includes(p.estado))
+  const lista = filtro === 'activos' ? activos : finalizados
+
+  // Métricas del día
+  const hoy = new Date().toDateString()
+  const pedidosHoy = pedidos.filter((p) => new Date(p.created_at).toDateString() === hoy)
+  const ventasHoy = pedidosHoy
+    .filter((p) => p.estado !== 'cancelado')
+    .reduce((acc, p) => acc + Number(p.total), 0)
+
+  return (
+    <div className="min-h-screen text-white bg-[linear-gradient(180deg,#051e5c_0%,#03174a_60%,#020f30_100%)]">
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] blur-3xl pointer-events-none"
+           style={{ background: 'radial-gradient(circle, rgba(77,184,255,0.12), transparent 70%)' }} />
+
+      <div className="relative max-w-3xl mx-auto p-5">
+
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-11 h-11 rounded-2xl bg-[#4db8ff]/12 border border-[#4db8ff]/30 flex items-center justify-center text-xl">
+            🐟
+          </div>
+          <div>
+            <h1 className="text-lg font-extrabold leading-tight">{pescaderia?.nombre || 'Mi pescadería'}</h1>
+            <p className="text-xs text-white/40">Hola, {nombreUsuario} 👋</p>
+          </div>
+        </div>
+
+        {/* Métricas del día */}
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-3.5 backdrop-blur-sm">
+            <div className="text-[10px] text-white/40 uppercase tracking-wide">Pedidos hoy</div>
+            <div className="text-xl font-extrabold mt-1 text-white">{pedidosHoy.length}</div>
+          </div>
+          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-3.5 backdrop-blur-sm">
+            <div className="text-[10px] text-white/40 uppercase tracking-wide">Activos</div>
+            <div className="text-xl font-extrabold mt-1 text-[#4db8ff]">{activos.length}</div>
+          </div>
+          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-3.5 backdrop-blur-sm">
+            <div className="text-[10px] text-white/40 uppercase tracking-wide">Ventas hoy</div>
+            <div className="text-xl font-extrabold mt-1 text-[#2ecc71]">{fmt(ventasHoy)}</div>
+          </div>
+        </div>
+
+        {/* Filtros */}
+        <div className="flex gap-2 mb-4">
+          <button onClick={() => setFiltro('activos')}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+              filtro === 'activos' ? 'bg-[#4db8ff] text-[#03174a]' : 'bg-white/[0.06] text-white/55 border border-white/10'
+            }`}>
+            Activos ({activos.length})
+          </button>
+          <button onClick={() => setFiltro('finalizados')}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+              filtro === 'finalizados' ? 'bg-[#4db8ff] text-[#03174a]' : 'bg-white/[0.06] text-white/55 border border-white/10'
+            }`}>
+            Finalizados ({finalizados.length})
+          </button>
+        </div>
+
+        {/* Lista de pedidos */}
+        {lista.length === 0 ? (
+          <div className="text-center py-16 bg-white/[0.03] border border-white/8 rounded-2xl">
+            <div className="text-4xl mb-3 opacity-40">📦</div>
+            <p className="text-white/40 text-sm">
+              {filtro === 'activos' ? 'No hay pedidos activos en este momento.' : 'Todavía no hay pedidos finalizados.'}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {lista.map((pedido, idx) => {
+              const est = datosEstado(pedido.estado)
+              const siguiente = SIGUIENTE[pedido.estado]
+              return (
+                <div key={pedido.id}
+                  className="bg-white/[0.06] border border-white/10 rounded-2xl p-4 backdrop-blur-sm"
+                  style={{ animation: 'bmFadeUp 0.4s ease both', animationDelay: `${idx * 0.05}s` }}>
+
+                  {/* Cabecera del pedido */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-lg font-extrabold text-white">#{pedido.numero}</span>
+                      <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg"
+                        style={{ background: `${est.color}22`, color: est.color }}>
+                        {est.emoji} {est.label}
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-white/35">{fmtHora(pedido.created_at)}</span>
+                  </div>
+
+                  {/* Datos del pedido */}
+                  <div className="space-y-1 text-sm mb-3">
+                    <div className="flex items-center gap-2 text-white/70">
+                      <span className="text-white/40">
+                        {pedido.tipo_entrega === 'delivery' ? '🏠 Envío' : '🏪 Retiro'}
+                      </span>
+                      {pedido.direccion && <span className="text-white/50">· {pedido.direccion}</span>}
+                    </div>
+                    <div className="flex items-center gap-2 text-white/70">
+                      <span className="text-white/40">
+                        {pedido.metodo_pago === 'efectivo' ? '💵 Efectivo' :
+                         pedido.metodo_pago === 'transferencia' ? '🏦 Transferencia' : '💳 ' + pedido.metodo_pago}
+                      </span>
+                    </div>
+                    {pedido.nota_cliente && (
+                      <div className="text-white/50 text-[13px] bg-white/[0.04] rounded-lg px-3 py-2 mt-2">
+                        📝 {pedido.nota_cliente}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Total y acciones */}
+                  <div className="flex items-center justify-between pt-3 border-t border-white/8">
+                    <span className="text-lg font-extrabold text-[#4db8ff]">{fmt(pedido.total)}</span>
+
+                    {!['entregado', 'cancelado'].includes(pedido.estado) && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => cancelar(pedido)}
+                          disabled={actualizando === pedido.id}
+                          className="text-xs text-white/40 hover:text-[#e74c3c] px-2 transition-colors disabled:opacity-50">
+                          Cancelar
+                        </button>
+                        {siguiente && (
+                          <button
+                            onClick={() => avanzar(pedido)}
+                            disabled={actualizando === pedido.id}
+                            className="bg-[#4db8ff] text-[#03174a] font-bold text-sm px-4 py-2 rounded-xl active:scale-95 transition-all disabled:opacity-60">
+                            {actualizando === pedido.id ? '...' : `→ ${datosEstado(siguiente).label}`}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+      </div>
+
+      <style jsx>{`
+        @keyframes bmFadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+      `}</style>
+    </div>
+  )
+}

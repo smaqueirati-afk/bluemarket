@@ -10,7 +10,6 @@ export async function GET(request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error) {
-      // Sesión creada. Buscar el rol del usuario para redirigir al portal correcto.
       const { data: { user } } = await supabase.auth.getUser()
       let destino = '/inicio' // consumidor por defecto
 
@@ -24,9 +23,9 @@ export async function GET(request) {
         if (perfil) {
           const rutas = {
             consumidor: '/inicio',
-            cliente: '/dashboard',
+            cliente: '/pescaderia',   // dueño de pescadería -> su panel
             repartidor: '/inicio',
-            developer: '/dashboard',
+            developer: '/dashboard',  // admin del SaaS -> panel developer
           }
           destino = rutas[perfil.rol] || '/inicio'
         }
@@ -36,6 +35,5 @@ export async function GET(request) {
     }
   }
 
-  // Si algo falla, volver al login
   return NextResponse.redirect(`${origin}/login`)
 }
