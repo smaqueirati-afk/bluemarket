@@ -106,14 +106,20 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) 
       <div className="relative max-w-3xl mx-auto p-5">
 
         {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-11 h-11 rounded-2xl bg-[#4db8ff]/12 border border-[#4db8ff]/30 flex items-center justify-center text-xl">
-            🐟
+        <div className="flex items-center justify-between gap-3 mb-6">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-11 h-11 rounded-2xl bg-[#4db8ff]/12 border border-[#4db8ff]/30 flex items-center justify-center text-xl shrink-0">
+              🐟
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-lg font-extrabold leading-tight truncate">{pescaderia?.nombre || 'Mi pescadería'}</h1>
+              <p className="text-xs text-white/40 truncate">Hola, {nombreUsuario} 👋</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-lg font-extrabold leading-tight">{pescaderia?.nombre || 'Mi pescadería'}</h1>
-            <p className="text-xs text-white/40">Hola, {nombreUsuario} 👋</p>
-          </div>
+          <a href="/pescaderia/productos"
+            className="shrink-0 bg-white/[0.08] border border-white/12 text-white text-xs font-medium px-3 py-2.5 rounded-xl active:scale-95 transition-all whitespace-nowrap">
+            🐟 Productos
+          </a>
         </div>
 
         {/* Métricas del día */}
@@ -134,16 +140,21 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) 
 
         {/* Tarjeta del link de la tienda */}
         <div className="bg-[linear-gradient(135deg,rgba(77,184,255,0.12),rgba(46,204,113,0.08))] border border-[#4db8ff]/25 rounded-2xl p-4 mb-5 sm:mb-6">
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-3">
             <span className="text-base">🔗</span>
-            <span className="text-sm font-bold text-white">Tu link de tienda</span>
+            <span className="text-[11px] font-bold text-white/50 uppercase tracking-wide">Tu tienda online</span>
           </div>
-          <p className="text-[12px] text-white/50 mb-3 leading-relaxed">
+
+          <div className="bg-black/25 border border-white/10 rounded-xl px-4 py-3 mb-3">
+            <div className="text-base font-extrabold text-white mb-1">{pescaderia?.nombre}</div>
+            <div className="overflow-x-auto bm-no-scrollbar">
+              <code className="text-[12px] text-[#7dd3fc] whitespace-nowrap">{linkTienda}</code>
+            </div>
+          </div>
+
+          <p className="text-[12px] text-white/45 mb-3 leading-relaxed">
             Compartí este link con tus clientes para que vean tus productos y te hagan pedidos.
           </p>
-          <div className="bg-black/25 border border-white/10 rounded-xl px-3 py-2.5 mb-3 overflow-x-auto bm-no-scrollbar">
-            <code className="text-[12px] text-[#7dd3fc] whitespace-nowrap">{linkTienda}</code>
-          </div>
           <div className="flex gap-2">
             <button onClick={compartirLink}
               className="flex-1 bg-[#4db8ff] text-[#03174a] font-bold text-sm py-2.5 rounded-xl active:scale-[0.98] transition-transform flex items-center justify-center gap-1.5">
