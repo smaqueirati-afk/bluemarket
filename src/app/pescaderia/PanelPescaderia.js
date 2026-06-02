@@ -106,8 +106,8 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) 
       <div className="relative max-w-3xl mx-auto p-5">
 
         {/* Header */}
-        <div className="flex items-center justify-between gap-3 mb-6">
-          <div className="flex items-center gap-3 min-w-0">
+        <div className="mb-6">
+          <div className="flex items-center gap-3 min-w-0 mb-3">
             <div className="w-11 h-11 rounded-2xl bg-[#4db8ff]/12 border border-[#4db8ff]/30 flex items-center justify-center text-xl shrink-0">
               🐟
             </div>
@@ -116,13 +116,13 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) 
               <p className="text-xs text-white/40 truncate">Hola, {nombreUsuario} 👋</p>
             </div>
           </div>
-          <div className="flex gap-2 shrink-0">
+          <div className="grid grid-cols-2 gap-2">
             <a href="/pescaderia/productos"
-              className="bg-white/[0.08] border border-white/12 text-white text-xs font-medium px-3 py-2.5 rounded-xl active:scale-95 transition-all whitespace-nowrap">
+              className="bg-white/[0.08] border border-white/12 text-white text-sm font-medium px-3 py-2.5 rounded-xl active:scale-95 transition-all text-center">
               🐟 Productos
             </a>
             <a href="/pescaderia/clientes"
-              className="bg-white/[0.08] border border-white/12 text-white text-xs font-medium px-3 py-2.5 rounded-xl active:scale-95 transition-all whitespace-nowrap">
+              className="bg-white/[0.08] border border-white/12 text-white text-sm font-medium px-3 py-2.5 rounded-xl active:scale-95 transition-all text-center">
               👥 Clientes
             </a>
           </div>
