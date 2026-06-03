@@ -163,15 +163,15 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) 
           </p>
           <div className="flex gap-2">
             <button onClick={compartirLink}
-              className="flex-1 bg-[#4db8ff] text-[#03174a] font-bold text-sm py-2.5 rounded-xl active:scale-[0.98] transition-transform flex items-center justify-center gap-1.5">
+              className="flex-[3] bg-[#4db8ff] text-[#03174a] font-bold text-sm py-2 rounded-xl active:scale-[0.98] transition-transform flex items-center justify-center gap-1.5">
               <span>📤</span> Compartir
             </button>
             <button onClick={copiarLink}
-              className="flex-1 bg-white/[0.08] border border-white/12 text-white font-medium text-sm py-2.5 rounded-xl active:scale-[0.98] transition-all flex items-center justify-center gap-1.5">
+              className="flex-[1] bg-white/[0.08] border border-white/12 text-white font-medium text-xs py-2 rounded-xl active:scale-[0.98] transition-all flex items-center justify-center gap-1">
               {copiado ? <><span>✓</span> Copiado</> : <><span>📋</span> Copiar</>}
             </button>
             <button onClick={() => setVerQR(!verQR)}
-              className="bg-white/[0.08] border border-white/12 text-white font-medium text-sm py-2.5 px-3 rounded-xl active:scale-[0.98] transition-all">
+              className="bg-white/[0.08] border border-white/12 text-white font-medium text-sm py-2 px-3 rounded-xl active:scale-[0.98] transition-all flex items-center justify-center">
               {verQR ? '✕' : '🔲'}
             </button>
           </div>

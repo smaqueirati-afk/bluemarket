@@ -122,18 +122,18 @@ export default function PanelDeveloper({ pescaderias }) {
 
         {/* Métricas */}
         <div className="grid grid-cols-3 gap-3 mb-7">
-          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-4 backdrop-blur-sm">
+          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-4 backdrop-blur-sm flex flex-col items-center justify-center text-center">
             <div className="text-[11px] text-white/40 uppercase tracking-wide">Total</div>
             <div className="text-2xl font-extrabold mt-1 text-white">{pescaderias.length}</div>
             <div className="text-[11px] text-white/30 mt-1">pescaderías</div>
           </div>
-          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-4 backdrop-blur-sm">
+          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-4 backdrop-blur-sm flex flex-col items-center justify-center text-center">
             <div className="text-[11px] text-white/40 uppercase tracking-wide">Activas</div>
             <div className="text-2xl font-extrabold mt-1 text-[#2ecc71]">{activas}</div>
             <div className="text-[11px] text-white/30 mt-1">funcionando</div>
           </div>
-          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-4 backdrop-blur-sm">
-            <div className="text-[11px] text-white/40 uppercase tracking-wide">En prueba</div>
+          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-4 backdrop-blur-sm flex flex-col items-center justify-center text-center">
+            <div className="text-[11px] text-white/40 uppercase tracking-wide">Prueba</div>
             <div className="text-2xl font-extrabold mt-1 text-[#f39c12]">{trials}</div>
             <div className="text-[11px] text-white/30 mt-1">trial</div>
           </div>
