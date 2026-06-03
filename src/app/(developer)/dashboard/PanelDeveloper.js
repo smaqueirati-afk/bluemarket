@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { crearPescaderia, asignarDueno, borrarPescaderia, reactivarUsuario } from './actions'
+import { crearPescaderia, asignarDueno, borrarPescaderia, reactivarUsuario, reactivarUsuarioPorEmail } from './actions'
 import BarraUsuario from '../../../components/BarraUsuario'
 
 export default function PanelDeveloper({ pescaderias }) {
@@ -17,6 +17,24 @@ export default function PanelDeveloper({ pescaderias }) {
   const [cargandoBorrar, setCargandoBorrar] = useState(false)
 
   const [reactivandoId, setReactivandoId] = useState(null)
+
+  const [mostrarReactivar, setMostrarReactivar] = useState(false)
+  const [emailReactivar, setEmailReactivar] = useState('')
+  const [cargandoReactivar, setCargandoReactivar] = useState(false)
+
+  async function handleReactivarPorEmail() {
+    setCargandoReactivar(true)
+    setMensaje(null)
+    const resultado = await reactivarUsuarioPorEmail(emailReactivar)
+    if (resultado.error) {
+      setMensaje({ tipo: 'error', texto: resultado.error })
+    } else {
+      setMensaje({ tipo: 'ok', texto: `${resultado.email} reactivado ✓ Ya puede ingresar con Google.` })
+      setEmailReactivar('')
+      setMostrarReactivar(false)
+    }
+    setCargandoReactivar(false)
+  }
 
   async function handleReactivar(authUserId) {
     setReactivandoId(authUserId)
@@ -184,6 +202,46 @@ export default function PanelDeveloper({ pescaderias }) {
             </button>
           </form>
         )}
+
+        {/* Reactivar usuario */}
+        <div className="mb-6">
+          <button
+            onClick={() => { setMostrarReactivar(!mostrarReactivar); setMensaje(null) }}
+            className="w-full flex items-center justify-between bg-white/[0.04] border border-[#f39c12]/30 rounded-2xl px-4 py-3 text-left transition-all hover:border-[#f39c12]/60"
+          >
+            <div className="flex items-center gap-2.5">
+              <span className="text-lg">↺</span>
+              <div>
+                <div className="text-sm font-semibold text-[#f39c12]">Reactivar usuario</div>
+                <div className="text-[11px] text-white/40">Si alguien no puede ingresar, restauralo por email</div>
+              </div>
+            </div>
+            <span className="text-white/30 text-xs">{mostrarReactivar ? '▲' : '▼'}</span>
+          </button>
+
+          {mostrarReactivar && (
+            <div className="mt-2 bg-white/[0.04] border border-white/10 rounded-2xl p-4"
+                 style={{ animation: 'bmFadeUp 0.3s ease both' }}>
+              <div className="text-[11px] text-white/40 uppercase tracking-wide mb-2">Email del usuario a reactivar</div>
+              <div className="flex gap-2">
+                <input
+                  type="email"
+                  value={emailReactivar}
+                  onChange={(e) => setEmailReactivar(e.target.value)}
+                  placeholder="usuario@gmail.com"
+                  className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 outline-none focus:border-[#f39c12]"
+                />
+                <button
+                  onClick={handleReactivarPorEmail}
+                  disabled={cargandoReactivar || !emailReactivar}
+                  className="bg-[#f39c12] text-[#03174a] font-bold text-xs px-4 py-2 rounded-lg active:scale-95 disabled:opacity-50 whitespace-nowrap"
+                >
+                  {cargandoReactivar ? '...' : 'Reactivar'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Lista de pescaderías */}
         <div>

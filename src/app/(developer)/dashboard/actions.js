@@ -132,6 +132,40 @@ export async function reactivarUsuario(authUserId) {
   return { ok: true, email: user.email }
 }
 
+// ── Reactivar usuario por email (busca en auth y lo restaura en la tabla usuarios) ──
+export async function reactivarUsuarioPorEmail(email) {
+  const check = await verificarDeveloper()
+  if (check.error) return { error: check.error }
+
+  const emailLimpio = email?.trim().toLowerCase()
+  if (!emailLimpio) return { error: 'Falta el email' }
+
+  const admin = createAdminClient()
+
+  // Buscar en auth.users por email usando listUsers con filtro
+  const { data: { users }, error: errList } = await admin.auth.admin.listUsers()
+  if (errList) return { error: errList.message }
+
+  const authUser = users.find((u) => u.email?.toLowerCase() === emailLimpio)
+  if (!authUser) return { error: 'No existe ningún usuario con ese email en el sistema.' }
+
+  // Reinsertar/actualizar en la tabla usuarios
+  const { error: errUpsert } = await admin
+    .from('usuarios')
+    .upsert({
+      id: authUser.id,
+      email: authUser.email,
+      nombre: authUser.user_metadata?.full_name || authUser.email.split('@')[0],
+      rol: 'sin_rol',
+      pescaderia_id: null,
+    }, { onConflict: 'id' })
+
+  if (errUpsert) return { error: errUpsert.message }
+
+  revalidatePath('/dashboard')
+  return { ok: true, email: authUser.email }
+}
+
 // ── Borrar pescadería (definitivo, en cascada) ──
 // Todas las FK que apuntan a pescaderias están en ON DELETE CASCADE,
 // así que un solo delete arrastra productos, pedidos, clientes,
