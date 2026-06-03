@@ -65,3 +65,21 @@
 @keyframes bm-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
 @keyframes bm-spin { to { transform: rotate(360deg); } }
 @keyframes bm-fade-up { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ═══════════════════════════════════════════════════════════════
+   FIX iOS · que el tap clickee en vez de seleccionar texto
+   En iOS, sin esto, tocar un botón selecciona el texto y abre el
+   menú Copiar/Traducir en lugar de disparar el onClick.
+   ═══════════════════════════════════════════════════════════════ */
+html, body {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Permitir selección/escritura donde sí hace falta */
+input, textarea, [contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+}
