@@ -174,7 +174,7 @@ export async function toggleTrial(pescaderiaId, activar) {
   const admin = createAdminClient()
 
   const trialHasta = activar
-    ? new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    ? new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     : null
 
   const { error } = await admin
