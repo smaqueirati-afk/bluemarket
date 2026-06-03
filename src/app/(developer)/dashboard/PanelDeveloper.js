@@ -267,8 +267,8 @@ export default function PanelDeveloper({ pescaderias }) {
                         🐟
                       </div>
                       <div className="min-w-0">
-                        <div className="font-semibold text-white truncate">{p.nombre}</div>
-                        <div className="text-xs text-white/40 mt-0.5 truncate">/{p.slug} · {p.telefono || 'sin teléfono'}</div>
+                        <div className="font-semibold text-white">{p.nombre}</div>
+                        <div className="text-xs text-white/40 mt-0.5">/{p.slug} · {p.telefono || 'sin teléfono'}</div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
