@@ -76,6 +76,14 @@ html, body {
   user-select: none;
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* iOS: el tap dispara el click al instante (sin esperar el doble-tap-zoom),
+   y el botón muestra el estado :active al presionar */
+button, a, [role="button"], label {
+  touch-action: manipulation;
+  cursor: pointer;
 }
 
 /* Permitir selección/escritura donde sí hace falta */
