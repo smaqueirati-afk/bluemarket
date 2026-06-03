@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { crearPescaderia, asignarDueno, borrarPescaderia, reactivarUsuario, reactivarUsuarioPorEmail } from './actions'
+import { crearPescaderia, asignarDueno, borrarPescaderia, reactivarUsuario, reactivarUsuarioPorEmail, toggleTrial } from './actions'
 import BarraUsuario from '../../../components/BarraUsuario'
 
 export default function PanelDeveloper({ pescaderias }) {
@@ -17,6 +17,25 @@ export default function PanelDeveloper({ pescaderias }) {
   const [cargandoBorrar, setCargandoBorrar] = useState(false)
 
   const [reactivandoId, setReactivandoId] = useState(null)
+
+  const [toggling, setToggling] = useState(null)
+
+  async function handleToggleTrial(pescaderiaId, activar) {
+    setToggling(pescaderiaId)
+    setMensaje(null)
+    const resultado = await toggleTrial(pescaderiaId, activar)
+    if (resultado.error) {
+      setMensaje({ tipo: 'error', texto: resultado.error })
+    } else {
+      setMensaje({
+        tipo: 'ok',
+        texto: activar
+          ? `Trial iniciado ✓ Vence el ${new Date(resultado.trial_hasta).toLocaleDateString('es-AR')}`
+          : 'Trial cancelado ✓'
+      })
+    }
+    setToggling(null)
+  }
 
   const [mostrarReactivar, setMostrarReactivar] = useState(false)
   const [emailReactivar, setEmailReactivar] = useState('')
@@ -285,6 +304,40 @@ export default function PanelDeveloper({ pescaderias }) {
                     >
                       🗑
                     </button>
+                  </div>
+
+                  {/* Trial */}
+                  <div className="mt-3 pt-3 border-t border-white/8 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <input
+                        type="checkbox"
+                        id={`trial-${p.id}`}
+                        checked={!!p.trial_hasta}
+                        disabled={toggling === p.id}
+                        onChange={(e) => handleToggleTrial(p.id, e.target.checked)}
+                        className="w-5 h-5 rounded accent-[#4db8ff] cursor-pointer"
+                      />
+                      <label htmlFor={`trial-${p.id}`} className="text-sm text-white/70 cursor-pointer select-none">
+                        Periodo de prueba
+                      </label>
+                    </div>
+                    {p.trial_hasta && (() => {
+                      const vence = new Date(p.trial_hasta)
+                      const hoy = new Date()
+                      const dias = Math.ceil((vence - hoy) / (1000 * 60 * 60 * 24))
+                      const vencido = dias < 0
+                      return (
+                        <span className={`text-[11px] font-bold px-2.5 py-1 rounded-lg ${
+                          vencido
+                            ? 'bg-[#e74c3c]/15 text-[#e74c3c]'
+                            : dias <= 7
+                            ? 'bg-[#f39c12]/15 text-[#f39c12]'
+                            : 'bg-[#2ecc71]/15 text-[#2ecc71]'
+                        }`}>
+                          {vencido ? '⚠ Vencido' : `${dias}d restantes`}
+                        </span>
+                      )
+                    })()}
                   </div>
 
                   {/* Sección del dueño */}

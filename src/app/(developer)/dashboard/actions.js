@@ -166,6 +166,28 @@ export async function reactivarUsuarioPorEmail(email) {
   return { ok: true, email: authUser.email }
 }
 
+// ── Iniciar / cancelar periodo de prueba ──
+export async function toggleTrial(pescaderiaId, activar) {
+  const check = await verificarDeveloper()
+  if (check.error) return { error: check.error }
+
+  const admin = createAdminClient()
+
+  const trialHasta = activar
+    ? new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    : null
+
+  const { error } = await admin
+    .from('pescaderias')
+    .update({ trial_hasta: trialHasta, plan: activar ? 'trial' : 'sin_plan' })
+    .eq('id', pescaderiaId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/dashboard')
+  return { ok: true, trial_hasta: trialHasta }
+}
+
 // ── Borrar pescadería (definitivo, en cascada) ──
 // Todas las FK que apuntan a pescaderias están en ON DELETE CASCADE,
 // así que un solo delete arrastra productos, pedidos, clientes,
