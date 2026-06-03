@@ -10,18 +10,18 @@ export default async function DashboardDeveloper() {
     .select('*')
     .order('created_at', { ascending: false })
 
-  // Traer los dueños (rol cliente) con nombre y email
+  // Traer los dueños (rol cliente) con id, nombre y email
   const admin = createAdminClient()
   const { data: duenos } = await admin
     .from('usuarios')
-    .select('nombre, email, pescaderia_id')
+    .select('id, nombre, email, pescaderia_id')
     .eq('rol', 'cliente')
 
-  // Mapa: pescaderia_id -> { nombre, email }
+  // Mapa: pescaderia_id -> { id, nombre, email }
   const duenoPorPescaderia = {}
   ;(duenos || []).forEach((d) => {
     if (d.pescaderia_id) {
-      duenoPorPescaderia[d.pescaderia_id] = { nombre: d.nombre, email: d.email }
+      duenoPorPescaderia[d.pescaderia_id] = { id: d.id, nombre: d.nombre, email: d.email }
     }
   })
 
@@ -29,6 +29,7 @@ export default async function DashboardDeveloper() {
     ...p,
     dueno_nombre: duenoPorPescaderia[p.id]?.nombre || null,
     dueno_email: duenoPorPescaderia[p.id]?.email || null,
+    dueno_auth_id: duenoPorPescaderia[p.id]?.id || null,
   }))
 
   return <PanelDeveloper pescaderias={pescaderiasConDueno} />
