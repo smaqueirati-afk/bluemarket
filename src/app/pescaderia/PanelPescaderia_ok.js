@@ -137,52 +137,49 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) 
         </div>
       )}
 
-      <div className="relative max-w-4xl mx-auto p-6">
+      <div className="relative max-w-3xl mx-auto p-5">
 
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-7">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-12 h-12 rounded-2xl bg-[#4db8ff]/12 border border-[#4db8ff]/30 flex items-center justify-center text-2xl shrink-0">
+        <div className="mb-6">
+          <div className="flex items-center gap-3 min-w-0 mb-3">
+            <div className="w-11 h-11 rounded-2xl bg-[#4db8ff]/12 border border-[#4db8ff]/30 flex items-center justify-center text-xl shrink-0">
               🐟
             </div>
             <div className="min-w-0">
-              <h1 className="text-2xl font-extrabold tracking-tight leading-tight truncate">{pescaderia?.nombre || 'Mi pescadería'}</h1>
-              <p className="text-xs text-white/40 mt-1 truncate">Hola, {nombreUsuario} 👋</p>
+              <h1 className="text-lg font-extrabold leading-tight truncate">{pescaderia?.nombre || 'Mi pescadería'}</h1>
+              <p className="text-xs text-white/40 truncate">Hola, {nombreUsuario} 👋</p>
             </div>
           </div>
-          <div className="flex gap-2 sm:shrink-0">
+          <div className="grid grid-cols-2 gap-2">
             <a href="/pescaderia/productos"
-              className="flex-1 sm:flex-none bg-white/[0.08] border border-white/12 text-white text-sm font-medium px-4 py-2.5 rounded-xl active:scale-95 transition-all text-center whitespace-nowrap">
+              className="bg-white/[0.08] border border-white/12 text-white text-sm font-medium px-3 py-2.5 rounded-xl active:scale-95 transition-all text-center">
               🐟 Productos
             </a>
             <a href="/pescaderia/clientes"
-              className="flex-1 sm:flex-none bg-white/[0.08] border border-white/12 text-white text-sm font-medium px-4 py-2.5 rounded-xl active:scale-95 transition-all text-center whitespace-nowrap">
+              className="bg-white/[0.08] border border-white/12 text-white text-sm font-medium px-3 py-2.5 rounded-xl active:scale-95 transition-all text-center">
               👥 Clientes
             </a>
           </div>
         </div>
 
         {/* Métricas del día */}
-        <div className="grid grid-cols-3 gap-3 mb-7">
-          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-4 backdrop-blur-sm flex flex-col items-center justify-center text-center">
-            <div className="text-[11px] text-white/40 uppercase tracking-wide">Pedidos hoy</div>
-            <div className="text-2xl font-extrabold mt-1 text-white">{pedidosHoy.length}</div>
-            <div className="text-[11px] text-white/30 mt-1">pedidos</div>
+        <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-5 sm:mb-6">
+          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-3 sm:p-3.5 backdrop-blur-sm">
+            <div className="text-[10px] text-white/40 uppercase tracking-wide leading-tight">Pedidos hoy</div>
+            <div className="text-lg sm:text-xl font-extrabold mt-1 text-white">{pedidosHoy.length}</div>
           </div>
-          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-4 backdrop-blur-sm flex flex-col items-center justify-center text-center">
-            <div className="text-[11px] text-white/40 uppercase tracking-wide">Activos</div>
-            <div className="text-2xl font-extrabold mt-1 text-[#4db8ff]">{activos.length}</div>
-            <div className="text-[11px] text-white/30 mt-1">en curso</div>
+          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-3 sm:p-3.5 backdrop-blur-sm">
+            <div className="text-[10px] text-white/40 uppercase tracking-wide leading-tight">Activos</div>
+            <div className="text-lg sm:text-xl font-extrabold mt-1 text-[#4db8ff]">{activos.length}</div>
           </div>
-          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-4 backdrop-blur-sm flex flex-col items-center justify-center text-center">
-            <div className="text-[11px] text-white/40 uppercase tracking-wide">Ventas hoy</div>
-            <div className="text-2xl font-extrabold mt-1 text-[#2ecc71] truncate">{fmt(ventasHoy)}</div>
-            <div className="text-[11px] text-white/30 mt-1">facturado</div>
+          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-3 sm:p-3.5 backdrop-blur-sm">
+            <div className="text-[10px] text-white/40 uppercase tracking-wide leading-tight">Ventas hoy</div>
+            <div className="text-sm sm:text-xl font-extrabold mt-1 text-[#2ecc71] truncate">{fmt(ventasHoy)}</div>
           </div>
         </div>
 
         {/* Tarjeta del link de la tienda */}
-        <div className="bg-[linear-gradient(135deg,rgba(77,184,255,0.12),rgba(46,204,113,0.08))] border border-[#4db8ff]/25 rounded-2xl p-4 mb-7">
+        <div className="bg-[linear-gradient(135deg,rgba(77,184,255,0.12),rgba(46,204,113,0.08))] border border-[#4db8ff]/25 rounded-2xl p-4 mb-5 sm:mb-6">
           <div className="flex items-center gap-2 mb-3">
             <span className="text-base">🔗</span>
             <span className="text-[11px] font-bold text-white/50 uppercase tracking-wide">Tu tienda online</span>
