@@ -122,7 +122,7 @@ export async function reactivarUsuario(authUserId) {
       id: user.id,
       email: user.email,
       nombre: user.user_metadata?.full_name || user.email.split('@')[0],
-      rol: 'sin_rol',
+      rol: 'consumidor',
       pescaderia_id: null,
     }, { onConflict: 'id' })
 
@@ -156,7 +156,7 @@ export async function reactivarUsuarioPorEmail(email) {
       id: authUser.id,
       email: authUser.email,
       nombre: authUser.user_metadata?.full_name || authUser.email.split('@')[0],
-      rol: 'sin_rol',
+      rol: 'consumidor',
       pescaderia_id: null,
     }, { onConflict: 'id' })
 
