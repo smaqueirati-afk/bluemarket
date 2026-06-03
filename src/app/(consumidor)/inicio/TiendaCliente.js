@@ -69,16 +69,14 @@ export default function TiendaCliente({ productos }) {
   const totalPrecio = carrito.reduce((acc, i) => acc + i.producto.precio * i.cantidad, 0)
 
   return (
-    <div className="min-h-screen text-white bg-[linear-gradient(180deg,#051e5c_0%,#03174a_60%,#020f30_100%)]">
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] blur-3xl pointer-events-none"
-           style={{ background: 'radial-gradient(circle, rgba(77,184,255,0.12), transparent 70%)' }} />
-      <div className="relative max-w-4xl mx-auto flex flex-col min-h-screen">
+    <div className="fixed inset-0 flex items-center justify-center bg-black">
+      <div className="relative w-full h-full max-w-[420px] sm:max-h-[900px] sm:rounded-[40px] sm:shadow-[0_30px_80px_rgba(0,0,0,0.55)] flex flex-col overflow-hidden bg-[linear-gradient(180deg,#051e5c_0%,#03174a_100%)]">
 
         <BarraUsuario perfil="consumidor" />
 
         {/* TOP BAR */}
-        <div className="px-6 pt-6 pb-1">
-          <div className="flex items-center justify-between mb-5">
+        <div className="shrink-0 px-4 pt-5 pb-1">
+          <div className="flex items-center justify-between mb-3.5">
             <div className="flex items-center gap-1.5 bg-white/[0.07] border border-white/12 rounded-full px-3 py-1.5 backdrop-blur-sm">
               <span>📍</span>
               <span className="text-[11px] text-white/55">Entrega en</span>
@@ -97,10 +95,10 @@ export default function TiendaCliente({ productos }) {
             </button>
           </div>
 
-          <h1 className="text-2xl font-extrabold text-white mb-0.5">
+          <h1 className="text-xl font-extrabold text-white mb-0.5">
             Frescos de <span className="text-[#4db8ff]">hoy</span> 🌊
           </h1>
-          <p className="text-[12px] text-white/45 mb-5">Recién llegados del mar a tu mesa</p>
+          <p className="text-[12px] text-white/45 mb-3.5">Recién llegados del mar a tu mesa</p>
 
           <div className="flex items-center gap-2.5 bg-white/10 border border-white/12 rounded-xl px-3.5 py-3 mb-3.5 backdrop-blur-sm">
             <span className="text-white/35">🔍</span>
@@ -125,7 +123,7 @@ export default function TiendaCliente({ productos }) {
         </div>
 
         {/* CONTENT */}
-        <div className="px-6 pb-10">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-24 bm-no-scrollbar">
           <div className="text-[13px] font-bold text-white mb-3 mt-1">
             {categoria === 'todo' ? 'Catálogo completo' : categorias.find(c => c.id === categoria)?.label}
             <span className="text-white/40 font-normal ml-2">({productosFiltrados.length})</span>
@@ -137,14 +135,14 @@ export default function TiendaCliente({ productos }) {
               <p className="text-white/40 text-sm">No hay productos en esta categoría.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               {productosFiltrados.map((p, idx) => {
                 const enCarrito = carrito.find((i) => i.producto.id === p.id)
                 return (
                   <div key={p.id}
                     className="bg-white/[0.06] border border-white/10 rounded-2xl overflow-hidden backdrop-blur-sm transition-all hover:border-[#4db8ff]/50"
                     style={{ animation: `bmFadeUp 0.4s ease both`, animationDelay: `${idx * 0.04}s` }}>
-                    <div className="h-[90px] sm:h-[110px] bg-[linear-gradient(135deg,#0a3a7a,#051e5c)] flex items-center justify-center text-3xl relative overflow-hidden">
+                    <div className="h-[78px] bg-[linear-gradient(135deg,#0a3a7a,#051e5c)] flex items-center justify-center text-3xl relative overflow-hidden">
                       <div className="absolute inset-0 opacity-30"
                            style={{ background: 'radial-gradient(circle at 70% 20%, rgba(125,211,252,0.4), transparent 60%)' }} />
                       <span className="relative">{p.emoji}</span>
@@ -187,7 +185,7 @@ export default function TiendaCliente({ productos }) {
 
         {/* BARRA FLOTANTE "VER CARRITO" */}
         {totalItems > 0 && !verCarrito && (
-          <div className="sticky bottom-4 mx-0 z-20 mt-4" style={{ animation: 'bmSlideUp 0.3s ease both' }}>
+          <div className="absolute bottom-4 left-4 right-4 z-20" style={{ animation: 'bmSlideUp 0.3s ease both' }}>
             <button
               onClick={() => setVerCarrito(true)}
               className="w-full bg-[#4db8ff] text-[#03174a] rounded-2xl px-5 py-3.5 flex items-center justify-between font-bold shadow-[0_8px_24px_rgba(77,184,255,0.4)] active:scale-[0.98] transition-transform">
@@ -202,12 +200,12 @@ export default function TiendaCliente({ productos }) {
 
         {/* PANEL DEL CARRITO */}
         {verCarrito && (
-          <div className="fixed inset-0 z-30 flex flex-col items-center justify-end sm:justify-center">
+          <div className="absolute inset-0 z-30 flex flex-col">
             {/* Fondo oscuro */}
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setVerCarrito(false)} />
 
             {/* Panel deslizable desde abajo */}
-            <div className="relative w-full sm:max-w-2xl bg-[#051e5c] border border-white/12 rounded-t-[28px] sm:rounded-[28px] max-h-[85vh] flex flex-col"
+            <div className="relative mt-auto bg-[#051e5c] border-t border-white/12 rounded-t-[28px] max-h-[85%] flex flex-col"
                  style={{ animation: 'bmSlideUp 0.35s ease both' }}>
               {/* Cabecera */}
               <div className="shrink-0 px-5 pt-4 pb-3 border-b border-white/8">
@@ -298,7 +296,7 @@ export default function TiendaCliente({ productos }) {
 
         {/* CONFIRMACIÓN */}
         {pedidoConfirmado && (
-          <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[linear-gradient(180deg,#051e5c_0%,#03174a_100%)] px-8 text-center"
+          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[linear-gradient(180deg,#051e5c_0%,#03174a_100%)] px-8 text-center"
                style={{ animation: 'bmFadeUp 0.4s ease both' }}>
             <div className="w-24 h-24 rounded-full bg-[#2ecc71]/15 border-2 border-[#2ecc71] flex items-center justify-center text-5xl mb-6"
                  style={{ animation: 'bmFloat 3s ease-in-out infinite' }}>
@@ -319,7 +317,6 @@ export default function TiendaCliente({ productos }) {
           </div>
         )}
 
-      </div>
       </div>
 
       <style jsx>{`
