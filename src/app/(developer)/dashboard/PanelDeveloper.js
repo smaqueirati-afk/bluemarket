@@ -343,10 +343,10 @@ export default function PanelDeveloper({ pescaderias }) {
                             <button
                               onClick={() => handleReactivar(p.dueno_auth_id)}
                               disabled={reactivandoId === p.dueno_auth_id}
-                              title="Reactivar usuario (si no puede ingresar)"
-                              className="flex items-center gap-1 text-xs text-[#f39c12] hover:text-[#f39c12]/80 transition-colors disabled:opacity-50 whitespace-nowrap"
+                              title="Reactivar usuario"
+                              className="text-[#f39c12] hover:text-[#f39c12]/80 transition-colors disabled:opacity-50 text-xl leading-none"
                             >
-                              {reactivandoId === p.dueno_auth_id ? '...' : <><span style={{display:'inline'}}>↺</span> Reactivar</>}
+                              {reactivandoId === p.dueno_auth_id ? '...' : '↺'}
                             </button>
                           )}
                         </div>
