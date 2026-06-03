@@ -269,16 +269,18 @@ export default function PanelDeveloper({ pescaderias }) {
                       <div className="min-w-0">
                         <div className="font-semibold text-white">{p.nombre}</div>
                         <div className="text-xs text-white/40 mt-0.5">/{p.slug} · {p.telefono || 'sin teléfono'}</div>
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg uppercase tracking-wide ${
+                            p.plan === 'trial' ? 'bg-[#f39c12]/15 text-[#f39c12]' : 'bg-[#4db8ff]/15 text-[#4db8ff]'
+                          }`}>
+                            {p.plan}
+                          </span>
+                          <span className={`w-2 h-2 rounded-full ${p.activa ? 'bg-[#2ecc71]' : 'bg-white/20'}`}
+                                style={p.activa ? { boxShadow: '0 0 8px rgba(46,204,113,0.6)' } : {}}></span>
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg uppercase tracking-wide ${
-                        p.plan === 'trial' ? 'bg-[#f39c12]/15 text-[#f39c12]' : 'bg-[#4db8ff]/15 text-[#4db8ff]'
-                      }`}>
-                        {p.plan}
-                      </span>
-                      <span className={`w-2 h-2 rounded-full ${p.activa ? 'bg-[#2ecc71]' : 'bg-white/20'}`}
-                            style={p.activa ? { boxShadow: '0 0 8px rgba(46,204,113,0.6)' } : {}}></span>
                       <button
                         onClick={() => { setBorrandoId(p.id); setMensaje(null) }}
                         title="Borrar pescadería"
