@@ -96,12 +96,46 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) 
     .filter((p) => p.estado !== 'cancelado')
     .reduce((acc, p) => acc + Number(p.total), 0)
 
+  // Alerta de vencimiento de trial
+  const diasTrial = (() => {
+    if (!pescaderia?.trial_hasta) return null
+    const vence = new Date(pescaderia.trial_hasta)
+    const hoy = new Date()
+    return Math.ceil((vence - hoy) / (1000 * 60 * 60 * 24))
+  })()
+  const mostrarAlertaTrial = diasTrial !== null && diasTrial <= 5
+
   return (
     <div className="min-h-screen text-white bg-[linear-gradient(180deg,#051e5c_0%,#03174a_60%,#020f30_100%)]">
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] blur-3xl pointer-events-none"
            style={{ background: 'radial-gradient(circle, rgba(77,184,255,0.12), transparent 70%)' }} />
 
       <BarraUsuario perfil="pescaderia" />
+
+      {/* Alerta vencimiento trial */}
+      {mostrarAlertaTrial && (
+        <div className={`relative z-10 mx-4 mt-4 rounded-2xl px-4 py-3.5 border flex items-start gap-3 ${
+          diasTrial <= 0
+            ? 'bg-[#e74c3c]/15 border-[#e74c3c]/40 text-[#e74c3c]'
+            : 'bg-[#f39c12]/15 border-[#f39c12]/40 text-[#f39c12]'
+        }`} style={{ animation: 'bmFadeUp 0.4s ease both' }}>
+          <span className="text-2xl shrink-0">{diasTrial <= 0 ? '🚨' : '⏳'}</span>
+          <div>
+            <div className="font-extrabold text-sm">
+              {diasTrial <= 0
+                ? '¡Tu periodo de prueba venció!'
+                : diasTrial === 1
+                ? '¡Tu periodo de prueba vence mañana!'
+                : `Tu periodo de prueba vence en ${diasTrial} días`}
+            </div>
+            <div className="text-[12px] mt-0.5 opacity-80">
+              {diasTrial <= 0
+                ? 'Contactá al administrador para continuar usando el sistema.'
+                : 'Contactá al administrador para no perder el acceso al sistema.'}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="relative max-w-3xl mx-auto p-5">
 
