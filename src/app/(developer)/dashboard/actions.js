@@ -102,6 +102,36 @@ export async function asignarDueno(pescaderiaId, email) {
   return { ok: true, email: usuario.email }
 }
 
+// ── Reactivar usuario (cuando quedó huérfano en auth tras borrar pescadería) ──
+export async function reactivarUsuario(authUserId) {
+  const check = await verificarDeveloper()
+  if (check.error) return { error: check.error }
+
+  if (!authUserId) return { error: 'Falta el id del usuario' }
+
+  const admin = createAdminClient()
+
+  // Obtener datos del usuario desde auth
+  const { data: { user }, error: errAuth } = await admin.auth.admin.getUserById(authUserId)
+  if (errAuth || !user) return { error: 'Usuario no encontrado en auth' }
+
+  // Reinsertar en la tabla usuarios (por si fue borrado en cascada)
+  const { error: errUpsert } = await admin
+    .from('usuarios')
+    .upsert({
+      id: user.id,
+      email: user.email,
+      nombre: user.user_metadata?.full_name || user.email.split('@')[0],
+      rol: 'sin_rol',
+      pescaderia_id: null,
+    }, { onConflict: 'id' })
+
+  if (errUpsert) return { error: errUpsert.message }
+
+  revalidatePath('/dashboard')
+  return { ok: true, email: user.email }
+}
+
 // ── Borrar pescadería (definitivo, en cascada) ──
 // Todas las FK que apuntan a pescaderias están en ON DELETE CASCADE,
 // así que un solo delete arrastra productos, pedidos, clientes,

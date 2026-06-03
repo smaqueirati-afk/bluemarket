@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { crearPescaderia, asignarDueno, borrarPescaderia } from './actions'
+import { crearPescaderia, asignarDueno, borrarPescaderia, reactivarUsuario } from './actions'
 import BarraUsuario from '../../../components/BarraUsuario'
 
 export default function PanelDeveloper({ pescaderias }) {
@@ -15,6 +15,20 @@ export default function PanelDeveloper({ pescaderias }) {
 
   const [borrandoId, setBorrandoId] = useState(null)
   const [cargandoBorrar, setCargandoBorrar] = useState(false)
+
+  const [reactivandoId, setReactivandoId] = useState(null)
+
+  async function handleReactivar(authUserId) {
+    setReactivandoId(authUserId)
+    setMensaje(null)
+    const resultado = await reactivarUsuario(authUserId)
+    if (resultado.error) {
+      setMensaje({ tipo: 'error', texto: resultado.error })
+    } else {
+      setMensaje({ tipo: 'ok', texto: `${resultado.email} reactivado ✓ Ya puede ingresar con Google.` })
+    }
+    setReactivandoId(null)
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -260,12 +274,24 @@ export default function PanelDeveloper({ pescaderias }) {
                             <div className="text-[11px] text-white/40">{p.dueno_email}</div>
                           </div>
                         </div>
-                        <button
-                          onClick={() => { setAsignandoId(p.id); setEmailDueno(''); setMensaje(null) }}
-                          className="text-xs text-white/40 hover:text-[#4db8ff] transition-colors"
-                        >
-                          Cambiar
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => { setAsignandoId(p.id); setEmailDueno(''); setMensaje(null) }}
+                            className="text-xs text-white/40 hover:text-[#4db8ff] transition-colors"
+                          >
+                            Cambiar
+                          </button>
+                          {p.dueno_auth_id && (
+                            <button
+                              onClick={() => handleReactivar(p.dueno_auth_id)}
+                              disabled={reactivandoId === p.dueno_auth_id}
+                              title="Reactivar usuario (si no puede ingresar)"
+                              className="text-xs text-[#f39c12] hover:text-[#f39c12]/80 transition-colors disabled:opacity-50"
+                            >
+                              {reactivandoId === p.dueno_auth_id ? '...' : '↺ Reactivar'}
+                            </button>
+                          )}
+                        </div>
                       </div>
                     ) : (
                       // Sin dueño: botón para asignar
