@@ -33,10 +33,31 @@ export default async function DashboardPescaderia() {
     .eq('pescaderia_id', perfil.pescaderia_id)
     .order('created_at', { ascending: false })
 
+  // Sumar el teléfono del cliente a cada pedido (para el botón de WhatsApp en reparto).
+  // Se engancha la tabla clientes por usuario_id dentro de esta pescadería.
+  let pedidosConTel = pedidos || []
+  const usuarioIds = [...new Set(pedidosConTel.map((p) => p.usuario_id).filter(Boolean))]
+  if (usuarioIds.length > 0) {
+    const { data: clientes } = await admin
+      .from('clientes')
+      .select('usuario_id, telefono, nombre')
+      .eq('pescaderia_id', perfil.pescaderia_id)
+      .in('usuario_id', usuarioIds)
+
+    const mapa = {}
+    for (const c of clientes || []) mapa[c.usuario_id] = c
+
+    pedidosConTel = pedidosConTel.map((p) => ({
+      ...p,
+      cliente_telefono: mapa[p.usuario_id]?.telefono ?? null,
+      cliente_nombre: mapa[p.usuario_id]?.nombre ?? null,
+    }))
+  }
+
   return (
     <PanelPescaderia
       pescaderia={pescaderia}
-      pedidos={pedidos || []}
+      pedidos={pedidosConTel}
       nombreUsuario={perfil.nombre}
     />
   )

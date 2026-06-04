@@ -27,6 +27,22 @@ const SIGUIENTE = {
   en_camino: 'entregado',
 }
 
+// Normaliza un teléfono a formato internacional para wa.me (Argentina: 549...)
+function waNumero(tel) {
+  if (!tel) return null
+  let n = String(tel).replace(/\D/g, '') // solo dígitos
+  if (!n) return null
+  if (n.startsWith('00')) n = n.slice(2)
+  if (n.startsWith('54')) {
+    let resto = n.slice(2)
+    if (resto.startsWith('0')) resto = resto.slice(1)
+    if (!resto.startsWith('9')) resto = '9' + resto
+    return '54' + resto
+  }
+  if (n.startsWith('0')) n = n.slice(1)
+  return '549' + n
+}
+
 export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) {
   const [filtro, setFiltro] = useState('activos')
   const [actualizando, setActualizando] = useState(null)
@@ -293,6 +309,9 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) 
             {lista.map((pedido, idx) => {
               const est = datosEstado(pedido.estado)
               const siguiente = SIGUIENTE[pedido.estado]
+              const telWa = filtro === 'reparto'
+                ? waNumero(pedido.cliente_telefono || pedido.telefono || pedido.telefono_contacto)
+                : null
               return (
                 <div key={pedido.id}
                   className="bg-white/[0.06] border border-white/10 rounded-2xl p-4 backdrop-blur-sm"
@@ -325,18 +344,27 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) 
                     </div>
 
                     {filtro === 'reparto' && pedido.direccion && (
-                      <div className="flex items-center justify-between gap-2 bg-[#9b59b6]/12 border border-[#9b59b6]/25 rounded-xl px-3 py-2.5 mt-1">
-                        <div className="min-w-0">
-                          <div className="text-[10px] text-[#c79be0] uppercase tracking-wide font-bold">Dirección de entrega</div>
-                          <div className="text-sm text-white font-medium break-words">📍 {pedido.direccion}</div>
+                      <div className="bg-[#9b59b6]/12 border border-[#9b59b6]/25 rounded-xl px-3 py-2.5 mt-1">
+                        <div className="text-[10px] text-[#c79be0] uppercase tracking-wide font-bold">Dirección de entrega</div>
+                        <div className="text-sm text-white font-medium break-words mb-2">📍 {pedido.direccion}</div>
+                        <div className="flex gap-2">
+                          <a
+                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pedido.direccion)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 bg-[#9b59b6] text-white text-xs font-bold px-3 py-2 rounded-lg active:scale-95 transition-transform text-center">
+                            🗺️ Cómo llego
+                          </a>
+                          {telWa && (
+                            <a
+                              href={`https://wa.me/${telWa}?text=${encodeURIComponent(`¡Hola${pedido.cliente_nombre ? ' ' + pedido.cliente_nombre : ''}! Soy de ${pescaderia?.nombre || 'la pescadería'}, voy en camino con tu pedido #${pedido.numero} 🐟`)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-1 bg-[#25D366] text-[#03351b] text-xs font-bold px-3 py-2 rounded-lg active:scale-95 transition-transform text-center">
+                              💬 WhatsApp
+                            </a>
+                          )}
                         </div>
-                        <a
-                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pedido.direccion)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="shrink-0 bg-[#9b59b6] text-white text-xs font-bold px-3 py-2 rounded-lg active:scale-95 transition-transform whitespace-nowrap">
-                          🗺️ Cómo llego
-                        </a>
                       </div>
                     )}
                     <div className="flex items-center gap-2 text-white/70">
