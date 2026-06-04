@@ -101,6 +101,12 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) 
     setActualizando(null)
   }
 
+  async function entregar(pedido) {
+    setActualizando(pedido.id)
+    await cambiarEstadoPedido(pedido.id, 'entregado')
+    setActualizando(null)
+  }
+
   // Métricas del día
   const hoy = new Date().toDateString()
   const pedidosHoy = pedidos.filter((p) => new Date(p.created_at).toDateString() === hoy)
@@ -392,13 +398,22 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) 
                           className="text-xs text-white/40 hover:text-[#e74c3c] px-2 transition-colors disabled:opacity-50">
                           Cancelar
                         </button>
-                        {siguiente && (
+                        {filtro === 'reparto' ? (
                           <button
-                            onClick={() => avanzar(pedido)}
+                            onClick={() => entregar(pedido)}
                             disabled={actualizando === pedido.id}
-                            className="bg-[#4db8ff] text-[#03174a] font-bold text-sm px-4 py-2 rounded-xl active:scale-95 transition-all disabled:opacity-60">
-                            {actualizando === pedido.id ? '...' : `→ ${datosEstado(siguiente).label}`}
+                            className="bg-[#2ecc71] text-[#03351b] font-bold text-sm px-4 py-2 rounded-xl active:scale-95 transition-all disabled:opacity-60">
+                            {actualizando === pedido.id ? '...' : '✓ Entregado'}
                           </button>
+                        ) : (
+                          siguiente && (
+                            <button
+                              onClick={() => avanzar(pedido)}
+                              disabled={actualizando === pedido.id}
+                              className="bg-[#4db8ff] text-[#03174a] font-bold text-sm px-4 py-2 rounded-xl active:scale-95 transition-all disabled:opacity-60">
+                              {actualizando === pedido.id ? '...' : `→ ${datosEstado(siguiente).label}`}
+                            </button>
+                          )
                         )}
                       </div>
                     )}
