@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { cambiarEstadoPedido } from './actions'
+import { cambiarEstadoPedido, guardarHorario } from './actions'
 import BarraUsuario from '../../components/BarraUsuario'
 import MapaReparto from '../../components/MapaReparto'
 
@@ -48,6 +48,8 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) 
   const [actualizando, setActualizando] = useState(null)
   const [copiado, setCopiado] = useState(false)
   const [verQR, setVerQR] = useState(false)
+  const [editandoHorario, setEditandoHorario] = useState(null)
+  const [horarioInput, setHorarioInput] = useState('')
 
   // Link de la tienda de esta pescadería
   const linkTienda = typeof window !== 'undefined'
@@ -104,6 +106,18 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) 
   async function entregar(pedido) {
     setActualizando(pedido.id)
     await cambiarEstadoPedido(pedido.id, 'entregado')
+    setActualizando(null)
+  }
+
+  function abrirHorario(pedido) {
+    setHorarioInput(pedido.horario || '')
+    setEditandoHorario(pedido.id)
+  }
+
+  async function guardarHorarioPedido(pedido) {
+    setActualizando(pedido.id)
+    await guardarHorario(pedido.id, horarioInput.trim())
+    setEditandoHorario(null)
     setActualizando(null)
   }
 
@@ -363,7 +377,7 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) 
                           </a>
                           {telWa && (
                             <a
-                              href={`https://wa.me/${telWa}?text=${encodeURIComponent(`¡Hola${pedido.cliente_nombre ? ' ' + pedido.cliente_nombre : ''}! Soy de ${pescaderia?.nombre || 'la pescadería'}, voy en camino con tu pedido #${pedido.numero} 🐟`)}`}
+                              href={`https://wa.me/${telWa}?text=${encodeURIComponent(`¡Hola${pedido.cliente_nombre ? ' ' + pedido.cliente_nombre : ''}! Soy de ${pescaderia?.nombre || 'la pescadería'}, voy en camino con tu pedido #${pedido.numero}${pedido.horario ? ` (horario estimado: ${pedido.horario})` : ''} 🐟`)}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="flex-1 bg-[#25D366] text-[#03351b] text-xs font-bold px-3 py-2 rounded-lg active:scale-95 transition-transform text-center">
@@ -371,6 +385,41 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) 
                             </a>
                           )}
                         </div>
+                      </div>
+                    )}
+
+                    {filtro === 'reparto' && (
+                      <div className="mt-1">
+                        {editandoHorario === pedido.id ? (
+                          <div className="flex gap-2 items-center">
+                            <input
+                              value={horarioInput}
+                              onChange={(e) => setHorarioInput(e.target.value)}
+                              placeholder="Ej: 18 a 19 hs"
+                              className="flex-1 min-w-0 bg-white/[0.06] border border-white/15 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#4db8ff]/60"
+                            />
+                            <button
+                              onClick={() => guardarHorarioPedido(pedido)}
+                              disabled={actualizando === pedido.id}
+                              className="bg-[#4db8ff] text-[#03174a] font-bold text-xs px-3 py-2 rounded-lg active:scale-95 transition-all disabled:opacity-60 shrink-0">
+                              {actualizando === pedido.id ? '...' : 'Guardar'}
+                            </button>
+                            <button
+                              onClick={() => setEditandoHorario(null)}
+                              className="text-white/40 hover:text-white text-sm px-1 shrink-0">
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => abrirHorario(pedido)}
+                            className="flex items-center gap-2 text-sm text-white/70 hover:text-white transition-colors">
+                            <span className="text-white/40">🕒</span>
+                            {pedido.horario
+                              ? <span>Entrega: <span className="text-white font-medium">{pedido.horario}</span> <span className="text-white/30 text-xs">(editar)</span></span>
+                              : <span className="text-white/45">Agregar horario de entrega</span>}
+                          </button>
+                        )}
                       </div>
                     )}
                     <div className="flex items-center gap-2 text-white/70">
