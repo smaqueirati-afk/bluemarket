@@ -1,3 +1,4 @@
+import { createClient } from '../../../lib/supabase/server'
 import { createAdminClient } from '../../../lib/supabase/admin'
 import TiendaCliente from './TiendaCliente'
 
@@ -15,5 +16,9 @@ export default async function InicioPage() {
     .eq('disponible', true)
     .order('destacado', { ascending: false })
 
-  return <TiendaCliente productos={productos || []} />
+  // Usuario logueado (puede no estarlo: la tienda es pública). Sirve para el botón de invitar.
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  return <TiendaCliente productos={productos || []} usuarioId={user?.id || null} />
 }

@@ -59,6 +59,7 @@ export default async function DashboardPescaderia() {
       pescaderia={pescaderia}
       pedidos={pedidosConTel}
       nombreUsuario={perfil.nombre}
+      usuarioId={user.id}
     />
   )
 }

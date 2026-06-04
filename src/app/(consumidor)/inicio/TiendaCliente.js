@@ -5,7 +5,7 @@ import Checkout from './Checkout'
 import { crearPedido } from './actions'
 import BarraUsuario from '../../../components/BarraUsuario'
 
-export default function TiendaCliente({ productos }) {
+export default function TiendaCliente({ productos, usuarioId }) {
   // carrito = array de { producto, cantidad }
   const [carrito, setCarrito] = useState([])
   const [categoria, setCategoria] = useState('todo')
@@ -15,6 +15,7 @@ export default function TiendaCliente({ productos }) {
   const [numeroPedido, setNumeroPedido] = useState(null)
   const [guardando, setGuardando] = useState(false)
   const [errorPedido, setErrorPedido] = useState(null)
+  const [copiadoInvite, setCopiadoInvite] = useState(false)
 
   const categorias = [
     { id: 'todo', emoji: '🐟', label: 'Todo' },
@@ -62,6 +63,26 @@ export default function TiendaCliente({ productos }) {
 
   function fmt(n) {
     return '$' + Number(n).toLocaleString('es-AR')
+  }
+
+  // Invitación a la red (solo para usuarios logueados)
+  const linkInvitacion = typeof window !== 'undefined' && usuarioId
+    ? `${window.location.origin}/invitacion/${usuarioId}`
+    : ''
+
+  async function invitar() {
+    const texto = `Te invito a BlueMarket 🐟\n${linkInvitacion}`
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'BlueMarket', text: texto, url: linkInvitacion })
+      } catch (e) { /* el usuario canceló */ }
+    } else {
+      try {
+        await navigator.clipboard.writeText(linkInvitacion)
+        setCopiadoInvite(true)
+        setTimeout(() => setCopiadoInvite(false), 2000)
+      } catch (e) { /* sin portapapeles */ }
+    }
   }
 
   // Totales
@@ -124,6 +145,20 @@ export default function TiendaCliente({ productos }) {
 
         {/* CONTENT */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-24 bm-no-scrollbar">
+          {usuarioId && linkInvitacion && (
+            <div className="flex items-center gap-3 bg-white/[0.06] border border-white/10 rounded-2xl px-3.5 py-3 mb-3 mt-1">
+              <div className="text-xl shrink-0">🤝</div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[13px] font-bold text-white leading-tight">Invitá a tu gente</div>
+                <div className="text-[11px] text-white/45">BlueMarket es una red por invitación</div>
+              </div>
+              <button
+                onClick={invitar}
+                className="shrink-0 bg-[#4db8ff] text-[#03174a] font-bold text-xs px-3.5 py-2 rounded-xl active:scale-95 transition-transform">
+                {copiadoInvite ? '✓ Copiado' : 'Invitar'}
+              </button>
+            </div>
+          )}
           <div className="text-[13px] font-bold text-white mb-3 mt-1">
             {categoria === 'todo' ? 'Catálogo completo' : categorias.find(c => c.id === categoria)?.label}
             <span className="text-white/40 font-normal ml-2">({productosFiltrados.length})</span>

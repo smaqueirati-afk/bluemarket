@@ -43,7 +43,7 @@ function waNumero(tel) {
   return '549' + n
 }
 
-export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) {
+export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario, usuarioId }) {
   const [filtro, setFiltro] = useState('activos')
   const [actualizando, setActualizando] = useState(null)
   const [copiado, setCopiado] = useState(false)
@@ -53,6 +53,7 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) 
   const [editandoMinimo, setEditandoMinimo] = useState(false)
   const [minimoInput, setMinimoInput] = useState('')
   const [guardandoMin, setGuardandoMin] = useState(false)
+  const [copiadoInvite, setCopiadoInvite] = useState(false)
 
   // Link de la tienda de esta pescadería
   const linkTienda = typeof window !== 'undefined'
@@ -78,6 +79,32 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) 
       } catch (e) { /* el usuario canceló */ }
     } else {
       // si el navegador no soporta compartir nativo, abrir WhatsApp
+      window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank')
+    }
+  }
+
+  // Link de invitación a la red (cada miembro tiene el suyo)
+  const linkInvitacion = typeof window !== 'undefined' && usuarioId
+    ? `${window.location.origin}/invitacion/${usuarioId}`
+    : ''
+
+  async function copiarInvitacion() {
+    try {
+      await navigator.clipboard.writeText(linkInvitacion)
+      setCopiadoInvite(true)
+      setTimeout(() => setCopiadoInvite(false), 2000)
+    } catch (e) {
+      setCopiadoInvite(false)
+    }
+  }
+
+  async function compartirInvitacion() {
+    const texto = `Te invito a BlueMarket 🐟\n${linkInvitacion}`
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'BlueMarket', text: texto, url: linkInvitacion })
+      } catch (e) { /* el usuario canceló */ }
+    } else {
       window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank')
     }
   }
@@ -297,6 +324,29 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) 
             </div>
           )}
         </div>
+
+        {/* Invitar a la red */}
+        {linkInvitacion && (
+          <div className="bg-white/[0.05] border border-white/10 rounded-2xl p-4 mb-4">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-base">🤝</span>
+              <span className="text-sm font-bold text-white">Invitar gente a BlueMarket</span>
+            </div>
+            <p className="text-[12px] text-white/45 mb-3 leading-relaxed">
+              BlueMarket es una red por invitación. Compartí tu link y quien entre por ahí queda recomendado por vos.
+            </p>
+            <div className="flex gap-2">
+              <button onClick={compartirInvitacion}
+                className="flex-[3] bg-[#4db8ff] text-[#03174a] font-bold text-sm py-2 rounded-xl active:scale-[0.98] transition-transform flex items-center justify-center gap-1.5">
+                <span>📤</span> Invitar
+              </button>
+              <button onClick={copiarInvitacion}
+                className="flex-[1] bg-white/[0.08] border border-white/12 text-white font-medium text-xs py-2 rounded-xl active:scale-[0.98] transition-all flex items-center justify-center gap-1">
+                {copiadoInvite ? <><span>✓</span> Copiado</> : <><span>📋</span> Copiar</>}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Filtros */}
         <div className="flex gap-2 mb-4 flex-wrap">
