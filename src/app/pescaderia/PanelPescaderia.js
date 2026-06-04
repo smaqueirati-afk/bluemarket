@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { cambiarEstadoPedido, guardarHorario } from './actions'
+import { cambiarEstadoPedido, guardarHorario, guardarMontoMinimoReparto } from './actions'
 import BarraUsuario from '../../components/BarraUsuario'
 import MapaReparto from '../../components/MapaReparto'
 
@@ -50,6 +50,9 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) 
   const [verQR, setVerQR] = useState(false)
   const [editandoHorario, setEditandoHorario] = useState(null)
   const [horarioInput, setHorarioInput] = useState('')
+  const [editandoMinimo, setEditandoMinimo] = useState(false)
+  const [minimoInput, setMinimoInput] = useState('')
+  const [guardandoMin, setGuardandoMin] = useState(false)
 
   // Link de la tienda de esta pescadería
   const linkTienda = typeof window !== 'undefined'
@@ -119,6 +122,18 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) 
     await guardarHorario(pedido.id, horarioInput.trim())
     setEditandoHorario(null)
     setActualizando(null)
+  }
+
+  function abrirMinimo() {
+    setMinimoInput(pescaderia?.monto_minimo_reparto ? String(pescaderia.monto_minimo_reparto) : '')
+    setEditandoMinimo(true)
+  }
+
+  async function guardarMinimo() {
+    setGuardandoMin(true)
+    await guardarMontoMinimoReparto(Number(minimoInput) || 0)
+    setGuardandoMin(false)
+    setEditandoMinimo(false)
   }
 
   // Métricas del día
@@ -306,6 +321,56 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) 
             Finalizados ({finalizados.length})
           </button>
         </div>
+
+        {/* Pedido mínimo para envío (configuración del dueño, solo en reparto) */}
+        {filtro === 'reparto' && (
+          <div className="bg-white/[0.05] border border-white/10 rounded-2xl p-4 mb-4">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="min-w-0">
+                <div className="text-[10px] text-white/40 uppercase tracking-wide font-bold">Pedido mínimo para envío</div>
+                {editandoMinimo ? (
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <div className="flex items-center bg-white/[0.06] border border-white/15 rounded-lg px-2 focus-within:border-[#4db8ff]/60">
+                      <span className="text-white/40 text-sm">$</span>
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        min="0"
+                        value={minimoInput}
+                        onChange={(e) => setMinimoInput(e.target.value)}
+                        placeholder="0"
+                        className="w-28 bg-transparent py-2 px-1 text-sm text-white focus:outline-none"
+                      />
+                    </div>
+                    <button
+                      onClick={guardarMinimo}
+                      disabled={guardandoMin}
+                      className="bg-[#4db8ff] text-[#03174a] font-bold text-xs px-3 py-2 rounded-lg active:scale-95 transition-all disabled:opacity-60 shrink-0">
+                      {guardandoMin ? '...' : 'Guardar'}
+                    </button>
+                    <button
+                      onClick={() => setEditandoMinimo(false)}
+                      className="text-white/40 hover:text-white text-sm px-1 shrink-0">
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <div className="text-xl font-extrabold text-white mt-0.5">
+                    {Number(pescaderia?.monto_minimo_reparto) > 0 ? fmt(pescaderia.monto_minimo_reparto) : 'Sin mínimo'}
+                  </div>
+                )}
+              </div>
+              {!editandoMinimo && (
+                <button
+                  onClick={abrirMinimo}
+                  className="bg-white/[0.08] border border-white/12 text-white text-xs font-medium px-3 py-2 rounded-lg active:scale-95 transition-all shrink-0">
+                  Editar
+                </button>
+              )}
+            </div>
+            <p className="text-[11px] text-white/35 mt-2">Los clientes no van a poder pedir envío por menos de este monto. Ponelo en 0 para no exigir mínimo.</p>
+          </div>
+        )}
 
         {/* Mapa del recorrido (solo en modo reparto) */}
         {filtro === 'reparto' && repartoHoy.length > 0 && (

@@ -79,3 +79,33 @@ export async function guardarHorario(pedidoId, horario) {
   revalidatePath('/pescaderia')
   return { ok: true }
 }
+
+export async function guardarMontoMinimoReparto(monto) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'No autenticado' }
+
+  const { data: perfil } = await supabase
+    .from('usuarios')
+    .select('rol, pescaderia_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!perfil || perfil.rol !== 'cliente' || !perfil.pescaderia_id) {
+    return { error: 'No autorizado' }
+  }
+
+  const valor = Math.max(0, Number(monto) || 0)
+
+  const admin = createAdminClient()
+
+  const { error } = await admin
+    .from('pescaderias')
+    .update({ monto_minimo_reparto: valor })
+    .eq('id', perfil.pescaderia_id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/pescaderia')
+  return { ok: true }
+}
