@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { cambiarEstadoPedido } from './actions'
 import BarraUsuario from '../../components/BarraUsuario'
+import MapaReparto from '../../components/MapaReparto'
 
 // Orden y datos de los estados del pedido
 const ESTADOS = [
@@ -269,6 +270,11 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) 
             Finalizados ({finalizados.length})
           </button>
         </div>
+
+        {/* Mapa del recorrido (solo en modo reparto) */}
+        {filtro === 'reparto' && repartoHoy.length > 0 && (
+          <MapaReparto pedidos={repartoHoy} ciudad={pescaderia?.localidad || pescaderia?.ciudad || ''} />
+        )}
 
         {/* Lista de pedidos */}
         {lista.length === 0 ? (
