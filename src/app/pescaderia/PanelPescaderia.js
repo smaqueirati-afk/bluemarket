@@ -84,17 +84,33 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) 
     setActualizando(null)
   }
 
-  // Filtrar pedidos
-  const activos = pedidos.filter((p) => !['entregado', 'cancelado'].includes(p.estado))
-  const finalizados = pedidos.filter((p) => ['entregado', 'cancelado'].includes(p.estado))
-  const lista = filtro === 'activos' ? activos : finalizados
-
   // Métricas del día
   const hoy = new Date().toDateString()
   const pedidosHoy = pedidos.filter((p) => new Date(p.created_at).toDateString() === hoy)
   const ventasHoy = pedidosHoy
     .filter((p) => p.estado !== 'cancelado')
     .reduce((acc, p) => acc + Number(p.total), 0)
+
+  // ¿Esta pescadería hace reparto? (si no llega la modalidad, igual lo mostramos)
+  const haceReparto = pescaderia?.modalidad
+    ? ['local_reparto', 'solo_reparto'].includes(pescaderia.modalidad)
+    : true
+
+  // Reparto del día: pedidos delivery recibidos HOY, ordenados del primero al último
+  const repartoHoy = pedidos
+    .filter((p) =>
+      p.tipo_entrega === 'delivery' &&
+      p.estado !== 'cancelado' &&
+      new Date(p.created_at).toDateString() === hoy
+    )
+    .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+
+  // Filtrar pedidos
+  const activos = pedidos.filter((p) => !['entregado', 'cancelado'].includes(p.estado))
+  const finalizados = pedidos.filter((p) => ['entregado', 'cancelado'].includes(p.estado))
+  const lista =
+    filtro === 'reparto' ? repartoHoy :
+    filtro === 'activos' ? activos : finalizados
 
   // Alerta de vencimiento de trial
   const diasTrial = (() => {
@@ -231,7 +247,15 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) 
         </div>
 
         {/* Filtros */}
-        <div className="flex gap-2 mb-4">
+        <div className="flex gap-2 mb-4 flex-wrap">
+          {haceReparto && (
+            <button onClick={() => setFiltro('reparto')}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
+                filtro === 'reparto' ? 'bg-[#9b59b6] text-white' : 'bg-white/[0.06] text-white/55 border border-white/10'
+              }`}>
+              🛵 Reparto hoy ({repartoHoy.length})
+            </button>
+          )}
           <button onClick={() => setFiltro('activos')}
             className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
               filtro === 'activos' ? 'bg-[#4db8ff] text-[#03174a]' : 'bg-white/[0.06] text-white/55 border border-white/10'
@@ -249,9 +273,13 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) 
         {/* Lista de pedidos */}
         {lista.length === 0 ? (
           <div className="text-center py-16 bg-white/[0.03] border border-white/8 rounded-2xl">
-            <div className="text-4xl mb-3 opacity-40">📦</div>
+            <div className="text-4xl mb-3 opacity-40">{filtro === 'reparto' ? '🛵' : '📦'}</div>
             <p className="text-white/40 text-sm">
-              {filtro === 'activos' ? 'No hay pedidos activos en este momento.' : 'Todavía no hay pedidos finalizados.'}
+              {filtro === 'reparto'
+                ? 'No hay pedidos de reparto para hoy.'
+                : filtro === 'activos'
+                ? 'No hay pedidos activos en este momento.'
+                : 'Todavía no hay pedidos finalizados.'}
             </p>
           </div>
         ) : (
@@ -267,6 +295,11 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) 
                   {/* Cabecera del pedido */}
                   <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
                     <div className="flex items-center gap-2 min-w-0">
+                      {filtro === 'reparto' && (
+                        <span className="w-7 h-7 rounded-full bg-[#9b59b6] text-white text-sm font-extrabold flex items-center justify-center shrink-0">
+                          {idx + 1}
+                        </span>
+                      )}
                       <span className="text-lg font-extrabold text-white shrink-0">#{pedido.numero}</span>
                       <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg shrink-0"
                         style={{ background: `${est.color}22`, color: est.color }}>
