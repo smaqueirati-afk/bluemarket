@@ -315,8 +315,24 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario }) 
                       <span className="text-white/40">
                         {pedido.tipo_entrega === 'delivery' ? '🏠 Envío' : '🏪 Retiro'}
                       </span>
-                      {pedido.direccion && <span className="text-white/50">· {pedido.direccion}</span>}
+                      {pedido.direccion && filtro !== 'reparto' && <span className="text-white/50">· {pedido.direccion}</span>}
                     </div>
+
+                    {filtro === 'reparto' && pedido.direccion && (
+                      <div className="flex items-center justify-between gap-2 bg-[#9b59b6]/12 border border-[#9b59b6]/25 rounded-xl px-3 py-2.5 mt-1">
+                        <div className="min-w-0">
+                          <div className="text-[10px] text-[#c79be0] uppercase tracking-wide font-bold">Dirección de entrega</div>
+                          <div className="text-sm text-white font-medium break-words">📍 {pedido.direccion}</div>
+                        </div>
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pedido.direccion)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="shrink-0 bg-[#9b59b6] text-white text-xs font-bold px-3 py-2 rounded-lg active:scale-95 transition-transform whitespace-nowrap">
+                          🗺️ Cómo llego
+                        </a>
+                      </div>
+                    )}
                     <div className="flex items-center gap-2 text-white/70">
                       <span className="text-white/40">
                         {pedido.metodo_pago === 'efectivo' ? '💵 Efectivo' :
