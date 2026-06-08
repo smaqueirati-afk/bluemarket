@@ -189,12 +189,30 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
     setActualizando(null)
   }
 
+  const [verificandoEntrega, setVerificandoEntrega] = useState(null) // pedido que se está verificando
+  const [inputClave, setInputClave] = useState('')
+  const [errorClave, setErrorClave] = useState(null)
+
   async function entregar(pedido) {
-    setActualizando(pedido.id)
-    const res = await cambiarEstadoPedido(pedido.id, 'entregado')
-    if (!res?.error) {
-      setPedidos((prev) => prev.map((p) => p.id === pedido.id ? { ...p, estado: 'entregado' } : p))
+    setVerificandoEntrega(pedido)
+    setInputClave('')
+    setErrorClave(null)
+  }
+
+  async function confirmarEntrega() {
+    if (!verificandoEntrega) return
+    if (inputClave.trim().toLowerCase() !== verificandoEntrega.palabra_clave?.toLowerCase()) {
+      setErrorClave('Palabra clave incorrecta. Pedísela al cliente.')
+      return
     }
+    setActualizando(verificandoEntrega.id)
+    const res = await cambiarEstadoPedido(verificandoEntrega.id, 'entregado')
+    if (!res?.error) {
+      setPedidos((prev) => prev.map((p) => p.id === verificandoEntrega.id ? { ...p, estado: 'entregado' } : p))
+    }
+    setVerificandoEntrega(null)
+    setInputClave('')
+    setErrorClave(null)
     setActualizando(null)
   }
 
@@ -655,6 +673,44 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
         )}
 
       </div>
+
+        {/* MODAL VERIFICAR PALABRA CLAVE */}
+        {verificandoEntrega && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-5">
+            <div className="w-full max-w-sm bg-[#051e5c] border border-white/15 rounded-2xl p-6"
+                 style={{ animation: 'bmFadeUp 0.25s ease both' }}>
+              <div className="text-center mb-5">
+                <div className="text-4xl mb-3">🔑</div>
+                <h3 className="text-lg font-extrabold text-white">Verificar entrega</h3>
+                <p className="text-white/45 text-sm mt-1">Pedido #{verificandoEntrega.numero}</p>
+                <p className="text-white/45 text-sm">Ingresá la palabra clave del cliente</p>
+              </div>
+              <input
+                value={inputClave}
+                onChange={(e) => { setInputClave(e.target.value); setErrorClave(null) }}
+                placeholder="ej: mar-perla-42"
+                autoFocus
+                className="w-full bg-white/[0.06] border border-white/15 rounded-xl px-4 py-3 text-white text-center text-lg font-bold placeholder:text-white/25 outline-none focus:border-[#4db8ff]/60 mb-2"
+              />
+              {errorClave && (
+                <div className="text-[#e74c3c] text-xs text-center mb-3">{errorClave}</div>
+              )}
+              <div className="flex gap-2 mt-3">
+                <button
+                  onClick={() => { setVerificandoEntrega(null); setErrorClave(null) }}
+                  className="flex-1 bg-white/8 text-white/60 py-2.5 rounded-xl text-sm">
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmarEntrega}
+                  disabled={!inputClave.trim() || actualizando === verificandoEntrega.id}
+                  className="flex-1 bg-[#2ecc71] text-[#03351b] font-bold py-2.5 rounded-xl text-sm active:scale-95 transition-all disabled:opacity-50">
+                  {actualizando === verificandoEntrega.id ? '...' : '✓ Confirmar entrega'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* TOAST pedido nuevo */}
         {toastPedido && (

@@ -5,6 +5,19 @@ import { createAdminClient } from '../../../lib/supabase/admin'
 
 const PESCADERIA_DEMO = 'aab4a81c-e409-4c2c-b9df-11077c7f7bcd'
 
+// Genera una palabra clave de 2 palabras random
+const PALABRAS = [
+  'mar','pez','ola','sal','red','sol','luna','agua','viento','coral',
+  'perla','orca','timon','ancla','faro','marea','remo','barco','bahia','isla',
+  'delfin','pulpo','trucha','merluza','langosta','cangrejo','almeja','ostra',
+]
+function generarPalabraClave() {
+  const a = PALABRAS[Math.floor(Math.random() * PALABRAS.length)]
+  const b = PALABRAS[Math.floor(Math.random() * PALABRAS.length)]
+  const n = Math.floor(Math.random() * 90) + 10
+  return `${a}-${b}-${n}`
+}
+
 // Guarda un pedido real en la base de datos.
 // datos = { entrega, pago, direccion, nota, total }
 // items = [{ producto, cantidad }]
@@ -52,6 +65,7 @@ export async function crearPedido(datos, items) {
   const subtotal = items.reduce((acc, i) => acc + i.producto.precio * i.cantidad, 0)
   const envio = datos.entrega === 'envio' ? 0 : 0  // por ahora envío gratis
   const total = subtotal + envio
+  const palabraClave = generarPalabraClave()
 
   // 4. Crear el pedido
   const { data: pedido, error: errPedido } = await admin
@@ -70,6 +84,7 @@ export async function crearPedido(datos, items) {
       descuento: 0,
       total,
       nota_cliente: datos.nota || null,
+      palabra_clave: palabraClave,
     })
     .select('id, numero')
     .single()
@@ -97,7 +112,7 @@ export async function crearPedido(datos, items) {
     return { error: 'El pedido se creó pero falló al guardar los productos: ' + errItems.message }
   }
 
-  return { ok: true, numero: pedido.numero, pedidoId: pedido.id }
+  return { ok: true, numero: pedido.numero, pedidoId: pedido.id, palabraClave }
 }
 
 // Marca un pedido como visto por el cliente (borra la notificación de cambio de estado)

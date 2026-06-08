@@ -23,6 +23,7 @@ export default function TiendaCliente({ productos, usuarioId }) {
   const [verCheckout, setVerCheckout] = useState(false)
   const [pedidoConfirmado, setPedidoConfirmado] = useState(false)
   const [numeroPedido, setNumeroPedido] = useState(null)
+  const [palabraClave, setPalabraClave] = useState(null)
   const [guardando, setGuardando] = useState(false)
   const [errorPedido, setErrorPedido] = useState(null)
   const [copiadoInvite, setCopiadoInvite] = useState(false)
@@ -40,7 +41,7 @@ export default function TiendaCliente({ productos, usuarioId }) {
       setCargandoPedidos(true)
       const { data } = await supabase
         .from('pedidos')
-        .select('id, numero, estado, estado_visto, total, created_at, tipo_entrega')
+        .select('id, numero, estado, estado_visto, total, created_at, tipo_entrega, palabra_clave')
         .eq('usuario_id', usuarioId)
         .order('created_at', { ascending: false })
         .limit(20)
@@ -445,6 +446,9 @@ export default function TiendaCliente({ productos, usuarioId }) {
                             <div className="text-xs text-white/40 mt-0.5">
                               ${Number(pedido.total).toLocaleString('es-AR')} · {pedido.tipo_entrega === 'delivery' ? '🏠 Envío' : '🏪 Retiro'}
                             </div>
+                            {pedido.palabra_clave && !['entregado','cancelado'].includes(pedido.estado) && (
+                              <div className="text-[11px] text-[#4db8ff] font-bold mt-1">🔑 {pedido.palabra_clave}</div>
+                            )}
                           </div>
                         </div>
                       )
@@ -474,6 +478,7 @@ export default function TiendaCliente({ productos, usuarioId }) {
               }
               setVerCheckout(false)
               setNumeroPedido(resultado.numero)
+              setPalabraClave(resultado.palabraClave)
               setPedidoConfirmado(true)
               setCarrito([])
             }}
@@ -491,6 +496,13 @@ export default function TiendaCliente({ productos, usuarioId }) {
             <h1 className="text-2xl font-extrabold text-white mb-2">¡Pedido confirmado!</h1>
             {numeroPedido && (
               <div className="text-[#4db8ff] font-bold text-lg mb-3">Pedido #{numeroPedido}</div>
+            )}
+            {palabraClave && (
+              <div className="bg-white/[0.07] border border-white/15 rounded-2xl px-6 py-4 mb-5 w-full">
+                <div className="text-[11px] text-white/45 uppercase tracking-wide mb-1">Tu palabra clave 🔑</div>
+                <div className="text-2xl font-extrabold text-[#4db8ff] tracking-wider">{palabraClave}</div>
+                <div className="text-[11px] text-white/40 mt-1.5">Guardala — te la van a pedir al entregar el pedido</div>
+              </div>
             )}
             <p className="text-white/55 text-sm leading-relaxed mb-8">
               Tu pedido fue recibido. La pescadería lo va a preparar y te avisará cuando esté listo. 🐟
