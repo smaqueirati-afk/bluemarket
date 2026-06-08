@@ -172,6 +172,10 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
   async function avanzar(pedido) {
     const siguiente = SIGUIENTE[pedido.estado]
     if (!siguiente) return
+    if (siguiente === 'entregado') {
+      entregar(pedido)
+      return
+    }
     setActualizando(pedido.id)
     const res = await cambiarEstadoPedido(pedido.id, siguiente)
     if (!res?.error) {
