@@ -89,9 +89,13 @@ export default function PanelClientes({ clientes, nombrePescaderia }) {
 
         {/* Header */}
         <div className="mb-5">
-          <a href="/pescaderia" className="text-xs text-[#4db8ff] hover:underline">← Volver a pedidos</a>
-          <h1 className="text-lg font-extrabold leading-tight mt-1">Clientes y cuenta corriente</h1>
-          <p className="text-xs text-white/40 truncate">{nombrePescaderia}</p>
+          <a href="/pescaderia"
+            className="inline-flex items-center gap-2 text-xs font-bold text-[#03174a] bg-[#4db8ff] px-3.5 py-2 rounded-xl active:scale-95 transition-all"
+            style={{ animation: 'bmPulseGlow 2.5s ease-in-out infinite', boxShadow: '0 0 12px rgba(77,184,255,0.5)' }}>
+            ← Volver a pedidos
+          </a>
+          <h1 className="text-lg font-extrabold leading-tight mt-3">Clientes y cuenta corriente</h1>
+          <p className="text-xs text-white/40">{nombrePescaderia}</p>
         </div>
 
         {/* Resumen deuda */}
@@ -275,6 +279,10 @@ export default function PanelClientes({ clientes, nombrePescaderia }) {
 
       <style jsx>{`
         @keyframes bmFadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes bmPulseGlow {
+          0%, 100% { box-shadow: 0 0 10px rgba(77,184,255,0.45), 0 0 0px rgba(77,184,255,0); }
+          50% { box-shadow: 0 0 18px rgba(77,184,255,0.85), 0 0 32px rgba(77,184,255,0.3); }
+        }
       `}</style>
     </div>
   )

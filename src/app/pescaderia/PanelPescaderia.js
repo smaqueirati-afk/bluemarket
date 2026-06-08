@@ -291,8 +291,8 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
               🐟
             </div>
             <div className="min-w-0">
-              <h1 className="text-2xl font-extrabold tracking-tight leading-tight truncate">{pescaderia?.nombre || 'Mi pescadería'}</h1>
-              <p className="text-xs text-white/40 mt-1 truncate">Hola, {nombreUsuario} 👋</p>
+              <h1 className="text-2xl font-extrabold tracking-tight leading-tight">{pescaderia?.nombre || 'Mi pescadería'}</h1>
+              <p className="text-xs text-white/40 mt-1">Hola, {nombreUsuario} 👋</p>
             </div>
           </div>
           <div className="flex gap-2 sm:shrink-0">
