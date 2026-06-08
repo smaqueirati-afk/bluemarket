@@ -1,9 +1,19 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Checkout from './Checkout'
-import { crearPedido } from './actions'
+import { crearPedido, marcarEstadoVisto } from './actions'
 import BarraUsuario from '../../../components/BarraUsuario'
+import { createClient } from '../../../lib/supabase/client'
+
+const ESTADOS = {
+  nuevo:      { label: 'Recibido',   emoji: '🆕', color: '#4db8ff' },
+  preparando: { label: 'Preparando', emoji: '👨‍🍳', color: '#f39c12' },
+  listo:      { label: 'Listo',      emoji: '✅', color: '#2ecc71' },
+  en_camino:  { label: 'En camino',  emoji: '🛵', color: '#9b59b6' },
+  entregado:  { label: 'Entregado',  emoji: '🎉', color: '#2ecc71' },
+  cancelado:  { label: 'Cancelado',  emoji: '❌', color: '#e74c3c' },
+}
 
 export default function TiendaCliente({ productos, usuarioId }) {
   // carrito = array de { producto, cantidad }
@@ -16,6 +26,86 @@ export default function TiendaCliente({ productos, usuarioId }) {
   const [guardando, setGuardando] = useState(false)
   const [errorPedido, setErrorPedido] = useState(null)
   const [copiadoInvite, setCopiadoInvite] = useState(false)
+  const [verMisPedidos, setVerMisPedidos] = useState(false)
+  const [misPedidos, setMisPedidos] = useState([])
+  const [cargandoPedidos, setCargandoPedidos] = useState(false)
+  const notifCount = misPedidos.filter(p => !p.estado_visto).length
+
+  // ── Cargar y escuchar pedidos del usuario en tiempo real ──
+  useEffect(() => {
+    if (!usuarioId) return
+    const supabase = createClient()
+    let clienteId = null
+
+    async function cargarPedidos() {
+      setCargandoPedidos(true)
+
+      // Primero buscar el cliente_id del usuario
+      const { data: cliente } = await supabase
+        .from('clientes')
+        .select('id')
+        .eq('usuario_id', usuarioId)
+        .eq('pescaderia_id', '11111111-1111-1111-1111-111111111111')
+        .maybeSingle()
+
+      if (!cliente) { setCargandoPedidos(false); return }
+      clienteId = cliente.id
+
+      const { data } = await supabase
+        .from('pedidos')
+        .select('id, numero, estado, estado_visto, total, created_at, tipo_entrega')
+        .eq('cliente_id', clienteId)
+        .order('created_at', { ascending: false })
+        .limit(20)
+      setMisPedidos(data || [])
+      setCargandoPedidos(false)
+
+      // Suscribir al realtime usando cliente_id
+      const channel = supabase
+        .channel(`mis-pedidos-${clienteId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'pedidos',
+            filter: `cliente_id=eq.${clienteId}`,
+          },
+          (payload) => {
+            setMisPedidos((prev) =>
+              prev.map((p) => p.id === payload.new.id ? { ...p, ...payload.new } : p)
+            )
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'pedidos',
+            filter: `cliente_id=eq.${clienteId}`,
+          },
+          (payload) => {
+            setMisPedidos((prev) => [payload.new, ...prev])
+          }
+        )
+        .subscribe()
+
+      return () => supabase.removeChannel(channel)
+    }
+
+    cargarPedidos()
+  }, [usuarioId])
+
+  async function verPedido(pedido) {
+    if (!pedido.estado_visto) {
+      // Marcar como visto optimisticamente
+      setMisPedidos((prev) =>
+        prev.map((p) => p.id === pedido.id ? { ...p, estado_visto: true } : p)
+      )
+      await marcarEstadoVisto(pedido.id)
+    }
+  }
 
   const categorias = [
     { id: 'todo', emoji: '🐟', label: 'Todo' },
@@ -103,17 +193,32 @@ export default function TiendaCliente({ productos, usuarioId }) {
               <span className="text-[11px] text-white/55">Entrega en</span>
               <strong className="text-[11px] text-white">Escobar, BA</strong>
             </div>
-            <button
-              onClick={() => setVerCarrito(true)}
-              className="relative w-10 h-10 bg-white/[0.07] border border-white/12 rounded-xl flex items-center justify-center backdrop-blur-sm active:scale-95 transition-transform">
-              <span className="text-white/70 text-lg">🛒</span>
-              {totalItems > 0 && (
-                <div className="absolute -top-1.5 -right-1.5 bg-[#4db8ff] text-[#03174a] text-[9px] font-extrabold min-w-[17px] h-[17px] rounded-lg px-1 flex items-center justify-center"
-                     style={{ boxShadow: '0 0 10px rgba(77,184,255,0.5)' }}>
-                  {totalItems}
-                </div>
+            <div className="flex items-center gap-2">
+              {usuarioId && (
+                <button
+                  onClick={() => setVerMisPedidos(true)}
+                  className="relative w-10 h-10 bg-white/[0.07] border border-white/12 rounded-xl flex items-center justify-center backdrop-blur-sm active:scale-95 transition-transform">
+                  <span className="text-white/70 text-lg">📦</span>
+                  {notifCount > 0 && (
+                    <div className="absolute -top-1.5 -right-1.5 bg-[#f39c12] text-[#03174a] text-[9px] font-extrabold min-w-[17px] h-[17px] rounded-lg px-1 flex items-center justify-center"
+                         style={{ boxShadow: '0 0 10px rgba(243,156,18,0.6)' }}>
+                      {notifCount}
+                    </div>
+                  )}
+                </button>
               )}
-            </button>
+              <button
+                onClick={() => setVerCarrito(true)}
+                className="relative w-10 h-10 bg-white/[0.07] border border-white/12 rounded-xl flex items-center justify-center backdrop-blur-sm active:scale-95 transition-transform">
+                <span className="text-white/70 text-lg">🛒</span>
+                {totalItems > 0 && (
+                  <div className="absolute -top-1.5 -right-1.5 bg-[#4db8ff] text-[#03174a] text-[9px] font-extrabold min-w-[17px] h-[17px] rounded-lg px-1 flex items-center justify-center"
+                       style={{ boxShadow: '0 0 10px rgba(77,184,255,0.5)' }}>
+                    {totalItems}
+                  </div>
+                )}
+              </button>
+            </div>
           </div>
 
           <h1 className="text-xl font-extrabold text-white mb-0.5">
@@ -307,6 +412,71 @@ export default function TiendaCliente({ productos, usuarioId }) {
           </div>
         )}
 
+
+        {/* PANEL MIS PEDIDOS */}
+        {verMisPedidos && (
+          <div className="absolute inset-0 z-30 flex flex-col">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setVerMisPedidos(false)} />
+            <div className="relative mt-auto bg-[#051e5c] border-t border-white/12 rounded-t-[28px] max-h-[85%] flex flex-col"
+                 style={{ animation: 'bmSlideUp 0.35s ease both' }}>
+              <div className="shrink-0 px-5 pt-4 pb-3 border-b border-white/8">
+                <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-4" />
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-extrabold text-white">Mis pedidos 📦</h2>
+                  <button onClick={() => setVerMisPedidos(false)} className="text-white/40 text-2xl leading-none px-1">×</button>
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto px-5 py-4 bm-no-scrollbar">
+                {cargandoPedidos ? (
+                  <div className="text-center py-10 text-white/40 text-sm">Cargando...</div>
+                ) : misPedidos.length === 0 ? (
+                  <div className="text-center py-10">
+                    <div className="text-4xl mb-3 opacity-40">📦</div>
+                    <p className="text-white/40 text-sm">Todavía no hiciste ningún pedido</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {misPedidos.map((pedido) => {
+                      const est = ESTADOS[pedido.estado] || ESTADOS.nuevo
+                      const esNuevo = !pedido.estado_visto
+                      return (
+                        <div
+                          key={pedido.id}
+                          onClick={() => verPedido(pedido)}
+                          className={`relative flex items-center gap-3 rounded-2xl p-3.5 border transition-all cursor-pointer active:scale-[0.98] ${
+                            esNuevo
+                              ? 'bg-[#f39c12]/10 border-[#f39c12]/40'
+                              : 'bg-white/[0.05] border-white/8'
+                          }`}>
+                          {esNuevo && (
+                            <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-[#f39c12]"
+                                 style={{ boxShadow: '0 0 6px rgba(243,156,18,0.8)' }} />
+                          )}
+                          <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl shrink-0"
+                               style={{ background: `${est.color}22`, border: `1px solid ${est.color}44` }}>
+                            {est.emoji}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-white text-sm">Pedido #{pedido.numero}</span>
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg"
+                                    style={{ background: `${est.color}22`, color: est.color }}>
+                                {est.label}
+                              </span>
+                            </div>
+                            <div className="text-xs text-white/40 mt-0.5">
+                              ${Number(pedido.total).toLocaleString('es-AR')} · {pedido.tipo_entrega === 'delivery' ? '🏠 Envío' : '🏪 Retiro'}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* CHECKOUT */}
         {verCheckout && (

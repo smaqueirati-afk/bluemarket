@@ -33,7 +33,7 @@ export async function cambiarEstadoPedido(pedidoId, nuevoEstado) {
 
   const { error } = await admin
     .from('pedidos')
-    .update({ estado: nuevoEstado })
+    .update({ estado: nuevoEstado, estado_visto: false })
     .eq('id', pedidoId)
 
   if (error) return { error: error.message }

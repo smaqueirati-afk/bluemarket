@@ -98,3 +98,30 @@ export async function crearPedido(datos, items) {
 
   return { ok: true, numero: pedido.numero, pedidoId: pedido.id }
 }
+
+// Marca un pedido como visto por el cliente (borra la notificación de cambio de estado)
+export async function marcarEstadoVisto(pedidoId) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'No autenticado' }
+
+  const admin = createAdminClient()
+
+  // Verificar que el pedido pertenece a este usuario via cliente_id
+  const { data: cliente } = await admin
+    .from('clientes')
+    .select('id')
+    .eq('usuario_id', user.id)
+    .eq('pescaderia_id', PESCADERIA_DEMO)
+    .maybeSingle()
+
+  if (!cliente) return { error: 'No autorizado' }
+
+  await admin
+    .from('pedidos')
+    .update({ estado_visto: true })
+    .eq('id', pedidoId)
+    .eq('cliente_id', cliente.id)
+
+  return { ok: true }
+}
