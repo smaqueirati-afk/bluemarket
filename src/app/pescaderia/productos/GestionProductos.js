@@ -138,16 +138,18 @@ export default function GestionProductos({ productos, nombrePescaderia }) {
       <div className="relative max-w-3xl mx-auto p-5">
 
         {/* Header */}
-        <div className="flex items-center justify-between gap-3 mb-5">
-          <div className="min-w-0">
-            <a href="/pescaderia" className="text-xs text-[#4db8ff] hover:underline">← Volver a pedidos</a>
-            <h1 className="text-lg font-extrabold leading-tight mt-1">Mis productos</h1>
-            <p className="text-xs text-white/40 truncate">{nombrePescaderia}</p>
+        <div className="mb-5">
+          <a href="/pescaderia" className="inline-flex items-center gap-1.5 bg-[#4db8ff] text-[#03174a] font-bold text-sm px-4 py-2.5 rounded-xl active:scale-95 transition-all mb-4">← Volver a pedidos</a>
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <h1 className="text-lg font-extrabold leading-tight">Mis productos</h1>
+              <p className="text-xs text-white/40 truncate">{nombrePescaderia}</p>
+            </div>
+            <button onClick={abrirNuevo}
+              className="shrink-0 bg-[#4db8ff] text-[#03174a] font-bold text-sm px-4 py-2.5 rounded-xl active:scale-95 transition-all whitespace-nowrap">
+              + Agregar
+            </button>
           </div>
-          <button onClick={abrirNuevo}
-            className="shrink-0 bg-[#4db8ff] text-[#03174a] font-bold text-sm px-4 py-2.5 rounded-xl active:scale-95 transition-all whitespace-nowrap">
-            + Agregar
-          </button>
         </div>
 
         {/* Mensaje */}
