@@ -308,21 +308,27 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
         </div>
 
         {/* Métricas del día */}
-        <div className="grid grid-cols-3 gap-3 mb-7">
-          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-4 backdrop-blur-sm flex flex-col items-center justify-center text-center">
-            <div className="text-[11px] text-white/40 uppercase tracking-wide">Pedidos hoy</div>
-            <div className="text-2xl font-extrabold mt-1 text-white">{pedidosHoy.length}</div>
-            <div className="text-[11px] text-white/30 mt-1">pedidos</div>
+        <div className="flex flex-col gap-2.5 mb-7">
+          <div className="bg-white/[0.06] border border-white/10 rounded-2xl px-4 py-3 backdrop-blur-sm flex items-center justify-between">
+            <span className="text-[11px] text-white/40 uppercase tracking-wide">Pedidos hoy</span>
+            <span className="flex items-baseline gap-1.5">
+              <span className="text-2xl font-extrabold text-white">{pedidosHoy.length}</span>
+              <span className="text-[11px] text-white/30">pedidos</span>
+            </span>
           </div>
-          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-4 backdrop-blur-sm flex flex-col items-center justify-center text-center">
-            <div className="text-[11px] text-white/40 uppercase tracking-wide">Activos</div>
-            <div className="text-2xl font-extrabold mt-1 text-[#4db8ff]">{activos.length}</div>
-            <div className="text-[11px] text-white/30 mt-1">en curso</div>
+          <div className="bg-white/[0.06] border border-white/10 rounded-2xl px-4 py-3 backdrop-blur-sm flex items-center justify-between">
+            <span className="text-[11px] text-white/40 uppercase tracking-wide">Activos</span>
+            <span className="flex items-baseline gap-1.5">
+              <span className="text-2xl font-extrabold text-[#4db8ff]">{activos.length}</span>
+              <span className="text-[11px] text-white/30">en curso</span>
+            </span>
           </div>
-          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-4 backdrop-blur-sm flex flex-col items-center justify-center text-center">
-            <div className="text-[11px] text-white/40 uppercase tracking-wide">Ventas hoy</div>
-            <div className="text-2xl font-extrabold mt-1 text-[#2ecc71] truncate">{fmt(ventasHoy)}</div>
-            <div className="text-[11px] text-white/30 mt-1">facturado</div>
+          <div className="bg-white/[0.06] border border-white/10 rounded-2xl px-4 py-3 backdrop-blur-sm flex items-center justify-between">
+            <span className="text-[11px] text-white/40 uppercase tracking-wide">Ventas hoy</span>
+            <span className="flex items-baseline gap-1.5">
+              <span className="text-2xl font-extrabold text-[#2ecc71]">{fmt(ventasHoy)}</span>
+              <span className="text-[11px] text-white/30">facturado</span>
+            </span>
           </div>
         </div>
 
