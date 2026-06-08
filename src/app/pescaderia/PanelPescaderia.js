@@ -173,19 +173,28 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
     const siguiente = SIGUIENTE[pedido.estado]
     if (!siguiente) return
     setActualizando(pedido.id)
-    await cambiarEstadoPedido(pedido.id, siguiente)
+    const res = await cambiarEstadoPedido(pedido.id, siguiente)
+    if (!res?.error) {
+      setPedidos((prev) => prev.map((p) => p.id === pedido.id ? { ...p, estado: siguiente } : p))
+    }
     setActualizando(null)
   }
 
   async function cancelar(pedido) {
     setActualizando(pedido.id)
-    await cambiarEstadoPedido(pedido.id, 'cancelado')
+    const res = await cambiarEstadoPedido(pedido.id, 'cancelado')
+    if (!res?.error) {
+      setPedidos((prev) => prev.map((p) => p.id === pedido.id ? { ...p, estado: 'cancelado' } : p))
+    }
     setActualizando(null)
   }
 
   async function entregar(pedido) {
     setActualizando(pedido.id)
-    await cambiarEstadoPedido(pedido.id, 'entregado')
+    const res = await cambiarEstadoPedido(pedido.id, 'entregado')
+    if (!res?.error) {
+      setPedidos((prev) => prev.map((p) => p.id === pedido.id ? { ...p, estado: 'entregado' } : p))
+    }
     setActualizando(null)
   }
 
@@ -291,8 +300,8 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
               🐟
             </div>
             <div className="min-w-0">
-              <h1 className="text-2xl font-extrabold tracking-tight leading-tight">{pescaderia?.nombre || 'Mi pescadería'}</h1>
-              <p className="text-xs text-white/40 mt-1">Hola, {nombreUsuario} 👋</p>
+              <h1 className="text-2xl font-extrabold tracking-tight leading-tight truncate">{pescaderia?.nombre || 'Mi pescadería'}</h1>
+              <p className="text-xs text-white/40 mt-1 truncate">Hola, {nombreUsuario} 👋</p>
             </div>
           </div>
           <div className="flex gap-2 sm:shrink-0">
