@@ -3,7 +3,7 @@
 import { createClient } from '../../../lib/supabase/server'
 import { createAdminClient } from '../../../lib/supabase/admin'
 
-const PESCADERIA_DEMO = '11111111-1111-1111-1111-111111111111'
+const PESCADERIA_DEMO = 'aab4a81c-e409-4c2c-b9df-11077c7f7bcd'
 
 // Guarda un pedido real en la base de datos.
 // datos = { entrega, pago, direccion, nota, total }

@@ -3,7 +3,7 @@ import { createAdminClient } from '../../../lib/supabase/admin'
 import TiendaCliente from './TiendaCliente'
 
 // ID de la pescadería de prueba (BlueMarket Escobar)
-const PESCADERIA_DEMO = '11111111-1111-1111-1111-111111111111'
+const PESCADERIA_DEMO = 'aab4a81c-e409-4c2c-b9df-11077c7f7bcd'
 
 export default async function InicioPage() {
   // Usamos el cliente admin para leer el catálogo (ver productos es público)

@@ -45,7 +45,7 @@ export default function TiendaCliente({ productos, usuarioId }) {
         .from('clientes')
         .select('id')
         .eq('usuario_id', usuarioId)
-        .eq('pescaderia_id', '11111111-1111-1111-1111-111111111111')
+        .eq('pescaderia_id', 'aab4a81c-e409-4c2c-b9df-11077c7f7bcd')
         .maybeSingle()
 
       if (!cliente) { setCargandoPedidos(false); return }
