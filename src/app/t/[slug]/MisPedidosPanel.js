@@ -62,6 +62,13 @@ export default function MisPedidosPanel({ pedidos, onCerrar }) {
                         ${Number(p.total).toLocaleString('es-AR')}
                       </span>
                     </div>
+
+                    {p.palabra_clave && p.estado !== 'entregado' && p.estado !== 'cancelado' && (
+                      <div className="mt-2.5 flex items-center justify-between bg-[#4db8ff]/10 border border-[#4db8ff]/25 rounded-xl px-3 py-2">
+                        <span className="text-[10px] text-white/55 uppercase tracking-wide font-bold">🔑 Palabra clave</span>
+                        <span className="text-sm font-extrabold text-[#4db8ff] tracking-widest">{p.palabra_clave}</span>
+                      </div>
+                    )}
                   </div>
                 )
               })}

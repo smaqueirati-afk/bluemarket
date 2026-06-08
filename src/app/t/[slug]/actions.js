@@ -112,7 +112,7 @@ export async function crearPedido(pescaderiaId, datos, items) {
       total,
       nota_cliente: datos.nota || null,
     })
-    .select('id, numero')
+    .select('id, numero, palabra_clave')
     .single()
 
   if (errPedido) {
@@ -163,7 +163,7 @@ export async function crearPedido(pescaderiaId, datos, items) {
     }
   }
 
-  return { ok: true, numero: pedido.numero, pedidoId: pedido.id }
+  return { ok: true, numero: pedido.numero, pedidoId: pedido.id, palabraClave: pedido.palabra_clave }
 }
 
 
@@ -189,7 +189,7 @@ export async function misPedidos(pescaderiaId) {
   // Traer sus pedidos con los items
   const { data: pedidos } = await admin
     .from('pedidos')
-    .select('id, numero, estado, tipo_entrega, total, created_at')
+    .select('id, numero, estado, tipo_entrega, total, created_at, palabra_clave')
     .eq('pescaderia_id', pescaderiaId)
     .eq('cliente_id', cli.id)
     .order('created_at', { ascending: false })
