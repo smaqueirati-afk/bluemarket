@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { cambiarEstadoPedido, guardarHorario, guardarMontoMinimoReparto } from './actions'
 import BarraUsuario from '../../components/BarraUsuario'
 import MapaReparto from '../../components/MapaReparto'
+import { createClient } from '../../lib/supabase/client'
 
 // Orden y datos de los estados del pedido
 const ESTADOS = [
@@ -43,7 +44,8 @@ function waNumero(tel) {
   return '549' + n
 }
 
-export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario, usuarioId }) {
+export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales, nombreUsuario, usuarioId }) {
+  const [pedidos, setPedidos] = useState(pedidosIniciales || [])
   const [filtro, setFiltro] = useState('activos')
   const [actualizando, setActualizando] = useState(null)
   const [copiado, setCopiado] = useState(false)
@@ -54,6 +56,54 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario, us
   const [minimoInput, setMinimoInput] = useState('')
   const [guardandoMin, setGuardandoMin] = useState(false)
   const [copiadoInvite, setCopiadoInvite] = useState(false)
+  const [toastPedido, setToastPedido] = useState(null) // { numero, total }
+  const toastTimer = useRef(null)
+
+  // ── Supabase Realtime: escuchar pedidos nuevos de esta pescadería ──
+  useEffect(() => {
+    if (!pescaderia?.id) return
+    const supabase = createClient()
+
+    const channel = supabase
+      .channel(`pedidos-${pescaderia.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'pedidos',
+          filter: `pescaderia_id=eq.${pescaderia.id}`,
+        },
+        (payload) => {
+          const nuevo = payload.new
+          // Agregar el pedido nuevo al principio de la lista
+          setPedidos((prev) => [nuevo, ...prev])
+          // Mostrar toast de notificación
+          if (toastTimer.current) clearTimeout(toastTimer.current)
+          setToastPedido({ numero: nuevo.numero, total: nuevo.total })
+          toastTimer.current = setTimeout(() => setToastPedido(null), 6000)
+          // Sonido de notificación (beep suave vía Web Audio API)
+          try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)()
+            const osc = ctx.createOscillator()
+            const gain = ctx.createGain()
+            osc.connect(gain)
+            gain.connect(ctx.destination)
+            osc.frequency.value = 880
+            gain.gain.setValueAtTime(0.3, ctx.currentTime)
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4)
+            osc.start(ctx.currentTime)
+            osc.stop(ctx.currentTime + 0.4)
+          } catch (e) {}
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+      if (toastTimer.current) clearTimeout(toastTimer.current)
+    }
+  }, [pescaderia?.id])
 
   // Link de la tienda de esta pescadería
   const linkTienda = typeof window !== 'undefined'
@@ -591,8 +641,28 @@ export default function PanelPescaderia({ pescaderia, pedidos, nombreUsuario, us
 
       </div>
 
+        {/* TOAST pedido nuevo */}
+        {toastPedido && (
+          <div
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-[#2ecc71] text-[#03351b] px-5 py-3.5 rounded-2xl shadow-[0_8px_32px_rgba(46,204,113,0.4)] font-bold text-sm"
+            style={{ animation: 'bmSlideUp 0.35s ease both' }}
+          >
+            <span className="text-xl">🆕</span>
+            <div>
+              <div>¡Pedido #{toastPedido.numero} recibido!</div>
+              <div className="text-[11px] font-normal opacity-75">
+                ${Number(toastPedido.total).toLocaleString('es-AR')}
+              </div>
+            </div>
+            <button onClick={() => setToastPedido(null)} className="ml-2 opacity-60 hover:opacity-100 text-lg leading-none">×</button>
+          </div>
+        )}
+
+      </div>
+
       <style jsx>{`
         @keyframes bmFadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes bmSlideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
     </div>
   )

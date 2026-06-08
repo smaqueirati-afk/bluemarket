@@ -2,12 +2,15 @@
 
 import { useState, useEffect } from 'react'
 import Checkout from './Checkout'
-import { crearPedido, misPedidos } from './actions'
+import CarritoPanel from './CarritoPanel'
+import MisPedidosPanel from './MisPedidosPanel'
+import ProductoCard from './ProductoCard'
 import BarraUsuario from '../../../components/BarraUsuario'
 import { createClient } from '../../../lib/supabase/client'
+import { crearPedido, misPedidos } from './actions'
 
 export default function TiendaCliente({ productos, pescaderia, ccHabilitada }) {
-  // carrito = array de { producto, cantidad }
+  // ── Estado global ──
   const [carrito, setCarrito] = useState([])
   const [categoria, setCategoria] = useState('todo')
   const [verCarrito, setVerCarrito] = useState(false)
@@ -18,27 +21,53 @@ export default function TiendaCliente({ productos, pescaderia, ccHabilitada }) {
   const [errorPedido, setErrorPedido] = useState(null)
   const [necesitaLogin, setNecesitaLogin] = useState(false)
   const [verMisPedidos, setVerMisPedidos] = useState(false)
-  const [misPedidosLista, setMisPedidosLista] = useState(null) // null = cargando, [] = vacío
+  const [misPedidosLista, setMisPedidosLista] = useState(null)
 
-  async function abrirMisPedidos() {
-    setVerMisPedidos(true)
-    setMisPedidosLista(null)
-    const res = await misPedidos(pescaderia?.id)
-    setMisPedidosLista(res.pedidos || [])
+  const categorias = [
+    { id: 'todo',       emoji: '🐟', label: 'Todo' },
+    { id: 'mariscos',   emoji: '🦐', label: 'Mariscos' },
+    { id: 'pescado',    emoji: '🐡', label: 'Pescado' },
+    { id: 'moluscos',   emoji: '🦑', label: 'Moluscos' },
+    { id: 'congelados', emoji: '❄️', label: 'Congelados' },
+  ]
+
+  const productosFiltrados =
+    categoria === 'todo' ? productos : productos.filter((p) => p.categoria === categoria)
+
+  // ── Totales ──
+  const totalItems = carrito.reduce((acc, i) => acc + i.cantidad, 0)
+  const totalPrecio = carrito.reduce((acc, i) => acc + i.producto.precio * i.cantidad, 0)
+
+  function fmt(n) {
+    return '$' + Number(n).toLocaleString('es-AR')
   }
 
-  const ESTADOS_INFO = {
-    nuevo: { label: 'Recibido', color: '#4db8ff', emoji: '🆕' },
-    preparando: { label: 'Preparando', color: '#f39c12', emoji: '👨‍🍳' },
-    listo: { label: 'Listo', color: '#2ecc71', emoji: '✅' },
-    en_camino: { label: 'En camino', color: '#9b59b6', emoji: '🛵' },
-    entregado: { label: 'Entregado', color: '#2ecc71', emoji: '🎉' },
-    cancelado: { label: 'Cancelado', color: '#e74c3c', emoji: '❌' },
+  // ── Info de entrega del top bar ──
+  const esReparto = pescaderia?.modalidad === 'solo_reparto' || pescaderia?.modalidad === 'local_reparto'
+  const dir = pescaderia?.direccion?.trim()
+  let entregaIcono, entregaLabel, entregaValor
+  if (esReparto) {
+    entregaIcono = '🛵'; entregaLabel = null; entregaValor = 'Envíos a domicilio'
+  } else if (dir) {
+    entregaIcono = '📍'; entregaLabel = 'Retirás en'; entregaValor = dir
+  } else {
+    entregaIcono = '📍'; entregaLabel = null; entregaValor = 'Retiro en el local'
   }
 
-  // Inicia sesión con Google y vuelve a esta misma tienda
+  // ── Recuperar carrito guardado al volver del login ──
+  useEffect(() => {
+    try {
+      const guardado = localStorage.getItem('_bm_carrito_' + (pescaderia?.slug || ''))
+      if (guardado) {
+        const items = JSON.parse(guardado)
+        if (Array.isArray(items) && items.length > 0) setCarrito(items)
+        localStorage.removeItem('_bm_carrito_' + (pescaderia?.slug || ''))
+      }
+    } catch (e) {}
+  }, [])
+
+  // ── Login con Google ──
   async function iniciarSesion() {
-    // Guardar el carrito para no perderlo al volver del login
     try {
       localStorage.setItem('_bm_carrito_' + (pescaderia?.slug || ''), JSON.stringify(carrito))
     } catch (e) {}
@@ -49,42 +78,13 @@ export default function TiendaCliente({ productos, pescaderia, ccHabilitada }) {
     })
   }
 
-  // Al volver del login, recuperar el carrito que se había guardado
-  useEffect(() => {
-    try {
-      const guardado = localStorage.getItem('_bm_carrito_' + (pescaderia?.slug || ''))
-      if (guardado) {
-        const items = JSON.parse(guardado)
-        if (Array.isArray(items) && items.length > 0) {
-          setCarrito(items)
-        }
-        localStorage.removeItem('_bm_carrito_' + (pescaderia?.slug || ''))
-      }
-    } catch (e) {}
-  }, [])
-
-  const categorias = [
-    { id: 'todo', emoji: '🐟', label: 'Todo' },
-    { id: 'mariscos', emoji: '🦐', label: 'Mariscos' },
-    { id: 'pescado', emoji: '🐡', label: 'Pescado' },
-    { id: 'moluscos', emoji: '🦑', label: 'Moluscos' },
-    { id: 'congelados', emoji: '❄️', label: 'Congelados' },
-  ]
-
-  const productosFiltrados =
-    categoria === 'todo'
-      ? productos
-      : productos.filter((p) => p.categoria === categoria)
-
   // ── Funciones del carrito ──
   function agregar(producto) {
     setCarrito((prev) => {
       const existe = prev.find((item) => item.producto.id === producto.id)
       if (existe) {
         return prev.map((item) =>
-          item.producto.id === producto.id
-            ? { ...item, cantidad: item.cantidad + 1 }
-            : item
+          item.producto.id === producto.id ? { ...item, cantidad: item.cantidad + 1 } : item
         )
       }
       return [...prev, { producto, cantidad: 1 }]
@@ -103,34 +103,38 @@ export default function TiendaCliente({ productos, pescaderia, ccHabilitada }) {
     })
   }
 
-  function eliminar(productoId) {
-    setCarrito((prev) => prev.filter((i) => i.producto.id !== productoId))
+  // ── Mis pedidos ──
+  async function abrirMisPedidos() {
+    setVerMisPedidos(true)
+    setMisPedidosLista(null)
+    const res = await misPedidos(pescaderia?.id)
+    setMisPedidosLista(res.pedidos || [])
   }
 
-  function fmt(n) {
-    return '$' + Number(n).toLocaleString('es-AR')
-  }
-
-  // Totales
-  const totalItems = carrito.reduce((acc, i) => acc + i.cantidad, 0)
-  const totalPrecio = carrito.reduce((acc, i) => acc + i.producto.precio * i.cantidad, 0)
-
-  // Cartel de entrega del top bar, según la modalidad de la pescadería
-  const esReparto = pescaderia?.modalidad === 'solo_reparto' || pescaderia?.modalidad === 'local_reparto'
-  const dir = pescaderia?.direccion?.trim()
-  let entregaIcono, entregaLabel, entregaValor
-  if (esReparto) {
-    entregaIcono = '🛵'
-    entregaLabel = null
-    entregaValor = 'Envíos a domicilio'
-  } else if (dir) {
-    entregaIcono = '📍'
-    entregaLabel = 'Retirás en'
-    entregaValor = dir
-  } else {
-    entregaIcono = '📍'
-    entregaLabel = null
-    entregaValor = 'Retiro en el local'
+  // ── Confirmar pedido ──
+  async function handleConfirmar(datos) {
+    setGuardando(true)
+    setErrorPedido(null)
+    const resultado = await crearPedido(pescaderia?.id, datos, carrito)
+    setGuardando(false)
+    if (resultado.error) {
+      setErrorPedido(resultado.error)
+      // Si hay problema de stock, volver al carrito para que el cliente lo vea
+      if (resultado.stockInvalido) {
+        setVerCheckout(false)
+        setVerCarrito(true)
+        return
+      }
+      const msg = resultado.error.toLowerCase()
+      if (msg.includes('sesión') || msg.includes('sesion') || msg.includes('autenticad')) {
+        setNecesitaLogin(true)
+      }
+      return
+    }
+    setVerCheckout(false)
+    setNumeroPedido(resultado.numero)
+    setPedidoConfirmado(true)
+    setCarrito([])
   }
 
   return (
@@ -150,17 +154,21 @@ export default function TiendaCliente({ productos, pescaderia, ccHabilitada }) {
             <div className="flex items-center gap-2">
               <button
                 onClick={abrirMisPedidos}
-                className="h-10 px-3 bg-white/[0.07] border border-white/12 rounded-xl flex items-center gap-1.5 backdrop-blur-sm active:scale-95 transition-transform">
+                className="h-10 px-3 bg-white/[0.07] border border-white/12 rounded-xl flex items-center gap-1.5 backdrop-blur-sm active:scale-95 transition-transform"
+              >
                 <span className="text-base">📋</span>
                 <span className="text-[12px] text-white/70 font-medium">Mis pedidos</span>
               </button>
               <button
                 onClick={() => setVerCarrito(true)}
-                className="relative w-10 h-10 bg-white/[0.07] border border-white/12 rounded-xl flex items-center justify-center backdrop-blur-sm active:scale-95 transition-transform">
+                className="relative w-10 h-10 bg-white/[0.07] border border-white/12 rounded-xl flex items-center justify-center backdrop-blur-sm active:scale-95 transition-transform"
+              >
                 <span className="text-white/70 text-lg">🛒</span>
                 {totalItems > 0 && (
-                  <div className="absolute -top-1.5 -right-1.5 bg-[#4db8ff] text-[#03174a] text-[9px] font-extrabold min-w-[17px] h-[17px] rounded-lg px-1 flex items-center justify-center"
-                       style={{ boxShadow: '0 0 10px rgba(77,184,255,0.5)' }}>
+                  <div
+                    className="absolute -top-1.5 -right-1.5 bg-[#4db8ff] text-[#03174a] text-[9px] font-extrabold min-w-[17px] h-[17px] rounded-lg px-1 flex items-center justify-center"
+                    style={{ boxShadow: '0 0 10px rgba(77,184,255,0.5)' }}
+                  >
                     {totalItems}
                   </div>
                 )}
@@ -173,11 +181,13 @@ export default function TiendaCliente({ productos, pescaderia, ccHabilitada }) {
           </h1>
           <p className="text-[12px] text-white/45 mb-3.5">Frescos del mar a tu mesa</p>
 
+          {/* Buscador (decorativo por ahora) */}
           <div className="flex items-center gap-2.5 bg-white/10 border border-white/12 rounded-xl px-3.5 py-3 mb-3.5 backdrop-blur-sm">
             <span className="text-white/35">🔍</span>
             <span className="text-sm text-white/35">Buscar merluza, langostinos...</span>
           </div>
 
+          {/* Filtros de categoría */}
           <div className="flex gap-2 overflow-x-auto pb-3 bm-no-scrollbar">
             {categorias.map((cat) => (
               <button
@@ -195,10 +205,10 @@ export default function TiendaCliente({ productos, pescaderia, ccHabilitada }) {
           </div>
         </div>
 
-        {/* CONTENT */}
+        {/* CATÁLOGO */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-24 bm-no-scrollbar">
           <div className="text-[13px] font-bold text-white mb-3 mt-1">
-            {categoria === 'todo' ? 'Catálogo completo' : categorias.find(c => c.id === categoria)?.label}
+            {categoria === 'todo' ? 'Catálogo completo' : categorias.find((c) => c.id === categoria)?.label}
             <span className="text-white/40 font-normal ml-2">({productosFiltrados.length})</span>
           </div>
 
@@ -209,49 +219,16 @@ export default function TiendaCliente({ productos, pescaderia, ccHabilitada }) {
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3">
-              {productosFiltrados.map((p, idx) => {
-                const enCarrito = carrito.find((i) => i.producto.id === p.id)
-                return (
-                  <div key={p.id}
-                    className="bg-white/[0.06] border border-white/10 rounded-2xl overflow-hidden backdrop-blur-sm transition-all hover:border-[#4db8ff]/50"
-                    style={{ animation: `bmFadeUp 0.4s ease both`, animationDelay: `${idx * 0.04}s` }}>
-                    <div className="h-[78px] bg-[linear-gradient(135deg,#0a3a7a,#051e5c)] flex items-center justify-center text-3xl relative overflow-hidden">
-                      <div className="absolute inset-0 opacity-30"
-                           style={{ background: 'radial-gradient(circle at 70% 20%, rgba(125,211,252,0.4), transparent 60%)' }} />
-                      <span className="relative">{p.emoji}</span>
-                    </div>
-                    <div className="px-3 pt-2.5 pb-3">
-                      <div className="text-[13px] font-semibold text-white leading-tight">{p.nombre}</div>
-                      <div className="text-[10px] text-white/35 mt-1">
-                        Por {p.unidad} · Stock: {p.stock}
-                      </div>
-                      <div className="flex items-center justify-between mt-2.5">
-                        <div className="text-[15px] font-extrabold text-[#4db8ff]">{fmt(p.precio)}</div>
-                        {enCarrito ? (
-                          <div className="flex items-center gap-1.5">
-                            <button onClick={() => quitar(p.id)}
-                              className="w-7 h-7 bg-white/10 rounded-lg text-white text-lg font-bold flex items-center justify-center active:scale-90 transition-all">
-                              −
-                            </button>
-                            <span className="text-sm font-bold text-white w-4 text-center">{enCarrito.cantidad}</span>
-                            <button onClick={() => agregar(p)}
-                              className="w-7 h-7 bg-[#4db8ff] rounded-lg text-[#03174a] text-lg font-extrabold flex items-center justify-center active:scale-90 transition-all">
-                              +
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => agregar(p)}
-                            className="w-8 h-8 bg-[#4db8ff] rounded-lg text-[#03174a] text-xl font-extrabold flex items-center justify-center active:scale-90 transition-all hover:shadow-[0_0_14px_rgba(77,184,255,0.5)]"
-                          >
-                            +
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
+              {productosFiltrados.map((p, idx) => (
+                <ProductoCard
+                  key={p.id}
+                  producto={p}
+                  idx={idx}
+                  enCarrito={carrito.find((i) => i.producto.id === p.id)}
+                  onAgregar={agregar}
+                  onQuitar={quitar}
+                />
+              ))}
             </div>
           )}
         </div>
@@ -261,7 +238,8 @@ export default function TiendaCliente({ productos, pescaderia, ccHabilitada }) {
           <div className="absolute bottom-4 left-4 right-4 z-20" style={{ animation: 'bmSlideUp 0.3s ease both' }}>
             <button
               onClick={() => setVerCarrito(true)}
-              className="w-full bg-[#4db8ff] text-[#03174a] rounded-2xl px-5 py-3.5 flex items-center justify-between font-bold shadow-[0_8px_24px_rgba(77,184,255,0.4)] active:scale-[0.98] transition-transform">
+              className="w-full bg-[#4db8ff] text-[#03174a] rounded-2xl px-5 py-3.5 flex items-center justify-between font-bold shadow-[0_8px_24px_rgba(77,184,255,0.4)] active:scale-[0.98] transition-transform"
+            >
               <span className="flex items-center gap-2">
                 <span className="bg-[#03174a] text-white w-6 h-6 rounded-lg text-xs flex items-center justify-center">{totalItems}</span>
                 Ver carrito
@@ -273,165 +251,48 @@ export default function TiendaCliente({ productos, pescaderia, ccHabilitada }) {
 
         {/* PANEL DEL CARRITO */}
         {verCarrito && (
-          <div className="absolute inset-0 z-30 flex flex-col">
-            {/* Fondo oscuro */}
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setVerCarrito(false)} />
-
-            {/* Panel deslizable desde abajo */}
-            <div className="relative mt-auto bg-[#051e5c] border-t border-white/12 rounded-t-[28px] max-h-[85%] flex flex-col"
-                 style={{ animation: 'bmSlideUp 0.35s ease both' }}>
-              {/* Cabecera */}
-              <div className="shrink-0 px-5 pt-4 pb-3 border-b border-white/8">
-                <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-4" />
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-extrabold text-white">Tu carrito 🛒</h2>
-                  <button onClick={() => setVerCarrito(false)} className="text-white/40 text-2xl leading-none px-1">×</button>
-                </div>
-              </div>
-
-              {/* Items */}
-              <div className="flex-1 overflow-y-auto px-5 py-4 bm-no-scrollbar">
-                {carrito.length === 0 ? (
-                  <div className="text-center py-10">
-                    <div className="text-4xl mb-3 opacity-40">🛒</div>
-                    <p className="text-white/40 text-sm">Tu carrito está vacío</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {carrito.map((item) => (
-                      <div key={item.producto.id} className="flex items-center gap-3 bg-white/[0.05] border border-white/8 rounded-2xl p-3">
-                        <div className="w-12 h-12 rounded-xl bg-[linear-gradient(135deg,#0a3a7a,#051e5c)] flex items-center justify-center text-2xl shrink-0">
-                          {item.producto.emoji}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-semibold text-white truncate">{item.producto.nombre}</div>
-                          <div className="text-xs text-[#4db8ff] font-bold mt-0.5">{fmt(item.producto.precio)} <span className="text-white/35 font-normal">/ {item.producto.unidad}</span></div>
-                        </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <button onClick={() => quitar(item.producto.id)}
-                            className="w-7 h-7 bg-white/10 rounded-lg text-white text-lg font-bold flex items-center justify-center active:scale-90">
-                            −
-                          </button>
-                          <span className="text-sm font-bold text-white w-5 text-center">{item.cantidad}</span>
-                          <button onClick={() => agregar(item.producto)}
-                            className="w-7 h-7 bg-[#4db8ff] rounded-lg text-[#03174a] text-lg font-extrabold flex items-center justify-center active:scale-90">
-                            +
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Footer con total y botón */}
-              {carrito.length > 0 && (
-                <div className="shrink-0 px-5 py-4 border-t border-white/8 bg-[#03174a]">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-white/55 text-sm">Total</span>
-                    <span className="text-2xl font-extrabold text-white">{fmt(totalPrecio)}</span>
-                  </div>
-                  <button
-                    onClick={() => { setVerCarrito(false); setVerCheckout(true) }}
-                    className="w-full bg-[#4db8ff] text-[#03174a] font-bold py-3.5 rounded-xl active:scale-[0.98] transition-transform">
-                    Continuar con el pedido
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
+          <CarritoPanel
+            carrito={carrito}
+            error={errorPedido}
+            onCerrar={() => { setVerCarrito(false); setErrorPedido(null) }}
+            onAgregar={agregar}
+            onQuitar={quitar}
+            onIrCheckout={() => { setVerCarrito(false); setVerCheckout(true) }}
+          />
         )}
-
 
         {/* CHECKOUT */}
         {verCheckout && (
-          <Checkout ccHabilitada={ccHabilitada}
+          <Checkout
+            ccHabilitada={ccHabilitada}
             carrito={carrito}
             cargando={guardando}
             errorExterno={errorPedido}
             necesitaLogin={necesitaLogin}
             onLogin={iniciarSesion}
             onVolver={() => { setVerCheckout(false); setVerCarrito(true) }}
-            onConfirmar={async (datos) => {
-              setGuardando(true)
-              setErrorPedido(null)
-              const resultado = await crearPedido(pescaderia?.id, datos, carrito)
-              setGuardando(false)
-              if (resultado.error) {
-                setErrorPedido(resultado.error)
-                // Si el error es por falta de login, mostrar el botón de iniciar sesión
-                if (resultado.error.toLowerCase().includes('sesión') || resultado.error.toLowerCase().includes('sesion') || resultado.error.toLowerCase().includes('autenticad')) {
-                  setNecesitaLogin(true)
-                }
-                return
-              }
-              setVerCheckout(false)
-              setNumeroPedido(resultado.numero)
-              setPedidoConfirmado(true)
-              setCarrito([])
-            }}
+            onConfirmar={handleConfirmar}
           />
         )}
 
         {/* PANEL MIS PEDIDOS */}
         {verMisPedidos && (
-          <div className="absolute inset-0 z-50 flex flex-col">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setVerMisPedidos(false)} />
-            <div className="relative mt-auto bg-[#051e5c] border-t border-white/12 rounded-t-3xl max-h-[85%] flex flex-col"
-                 style={{ animation: 'bmSlideUp 0.3s ease both' }}>
-              <div className="shrink-0 flex items-center justify-between px-5 pt-5 pb-3">
-                <h2 className="text-lg font-extrabold text-white">Mis pedidos 📋</h2>
-                <button onClick={() => setVerMisPedidos(false)} className="text-white/40 text-2xl leading-none px-1">×</button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto px-5 pb-6">
-                {misPedidosLista === null ? (
-                  <div className="text-center py-12 text-white/45 text-sm">Cargando tus pedidos...</div>
-                ) : misPedidosLista.length === 0 ? (
-                  <div className="text-center py-12">
-                    <div className="text-4xl mb-3 opacity-40">📦</div>
-                    <p className="text-white/45 text-sm">Todavía no hiciste pedidos en esta pescadería.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {misPedidosLista.map((p) => {
-                      const est = ESTADOS_INFO[p.estado] || ESTADOS_INFO.nuevo
-                      return (
-                        <div key={p.id} className="bg-white/[0.06] border border-white/10 rounded-2xl p-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="font-extrabold text-white">Pedido #{p.numero}</span>
-                            <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg"
-                              style={{ background: `${est.color}22`, color: est.color }}>
-                              {est.emoji} {est.label}
-                            </span>
-                          </div>
-                          <div className="text-[12px] text-white/50 mb-2">
-                            {p.items.map((it) => `${it.cantidad} ${it.nombre}`).join(' · ')}
-                          </div>
-                          <div className="flex items-center justify-between pt-2 border-t border-white/8">
-                            <span className="text-[11px] text-white/40">
-                              {new Date(p.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                            <span className="text-base font-extrabold text-[#4db8ff]">
-                              ${Number(p.total).toLocaleString('es-AR')}
-                            </span>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+          <MisPedidosPanel
+            pedidos={misPedidosLista}
+            onCerrar={() => setVerMisPedidos(false)}
+          />
         )}
 
         {/* CONFIRMACIÓN */}
         {pedidoConfirmado && (
-          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[linear-gradient(180deg,#051e5c_0%,#03174a_100%)] px-8 text-center"
-               style={{ animation: 'bmFadeUp 0.4s ease both' }}>
-            <div className="w-24 h-24 rounded-full bg-[#2ecc71]/15 border-2 border-[#2ecc71] flex items-center justify-center text-5xl mb-6"
-                 style={{ animation: 'bmFloat 3s ease-in-out infinite' }}>
+          <div
+            className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[linear-gradient(180deg,#051e5c_0%,#03174a_100%)] px-8 text-center"
+            style={{ animation: 'bmFadeUp 0.4s ease both' }}
+          >
+            <div
+              className="w-24 h-24 rounded-full bg-[#2ecc71]/15 border-2 border-[#2ecc71] flex items-center justify-center text-5xl mb-6"
+              style={{ animation: 'bmFloat 3s ease-in-out infinite' }}
+            >
               ✓
             </div>
             <h1 className="text-2xl font-extrabold text-white mb-2">¡Pedido confirmado!</h1>
@@ -443,7 +304,8 @@ export default function TiendaCliente({ productos, pescaderia, ccHabilitada }) {
             </p>
             <button
               onClick={() => setPedidoConfirmado(false)}
-              className="bg-[#4db8ff] text-[#03174a] font-bold px-8 py-3 rounded-xl active:scale-95 transition-transform">
+              className="bg-[#4db8ff] text-[#03174a] font-bold px-8 py-3 rounded-xl active:scale-95 transition-transform"
+            >
               Volver a la tienda
             </button>
           </div>
@@ -452,9 +314,9 @@ export default function TiendaCliente({ productos, pescaderia, ccHabilitada }) {
       </div>
 
       <style jsx>{`
-        @keyframes bmFadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes bmFadeUp  { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes bmSlideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes bmFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        @keyframes bmFloat   { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
       `}</style>
     </div>
   )
