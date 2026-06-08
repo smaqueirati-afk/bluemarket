@@ -45,6 +45,8 @@ export default async function TiendaPorSlug({ params }) {
     <TiendaCliente
       productos={productos || []}
       pescaderia={pescaderia}
+      pescaderiaId={pescaderia.id}
+      usuarioId={user?.id || null}
       ccHabilitada={ccHabilitada}
     />
   )

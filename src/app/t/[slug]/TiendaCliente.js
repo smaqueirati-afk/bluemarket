@@ -5,7 +5,7 @@ import Checkout from './Checkout'
 import { crearPedido } from './actions'
 import BarraUsuario from '../../../components/BarraUsuario'
 
-export default function TiendaCliente({ productos, usuarioId }) {
+export default function TiendaCliente({ productos, usuarioId, pescaderiaId }) {
   // carrito = array de { producto, cantidad }
   const [carrito, setCarrito] = useState([])
   const [categoria, setCategoria] = useState('todo')
@@ -318,7 +318,7 @@ export default function TiendaCliente({ productos, usuarioId }) {
             onConfirmar={async (datos) => {
               setGuardando(true)
               setErrorPedido(null)
-              const resultado = await crearPedido(datos, carrito)
+              const resultado = await crearPedido(pescaderiaId, datos, carrito)
               setGuardando(false)
               if (resultado.error) {
                 setErrorPedido(resultado.error)
