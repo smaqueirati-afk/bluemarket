@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Checkout from './Checkout'
-import { crearPedido } from './actions'
+import { crearPedido, misPedidos } from './actions'
 import BarraUsuario from '../../../components/BarraUsuario'
+import { createClient } from '../../../lib/supabase/client'
 
 export default function TiendaCliente({ productos, usuarioId, pescaderiaId }) {
   // carrito = array de { producto, cantidad }
@@ -16,6 +17,8 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId }) {
   const [guardando, setGuardando] = useState(false)
   const [errorPedido, setErrorPedido] = useState(null)
   const [copiadoInvite, setCopiadoInvite] = useState(false)
+  const [misPedidosList, setMisPedidosList] = useState([])
+  const [verMisPedidos, setVerMisPedidos] = useState(false)
 
   const categorias = [
     { id: 'todo', emoji: '🐟', label: 'Todo' },
@@ -70,6 +73,34 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId }) {
     ? `${window.location.origin}/invitacion/${usuarioId}`
     : ''
 
+
+  // ── Cargar mis pedidos y suscribirse a cambios en tiempo real ──
+  useEffect(() => {
+    if (!pescaderiaId || !usuarioId) return
+
+    async function cargar() {
+      const res = await misPedidos(pescaderiaId)
+      if (res.pedidos) setMisPedidosList(res.pedidos)
+    }
+    cargar()
+
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`mis-pedidos-${usuarioId}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'pedidos',
+      }, (payload) => {
+        setMisPedidosList((prev) =>
+          prev.map((p) => p.id === payload.new.id ? { ...p, estado: payload.new.estado } : p)
+        )
+      })
+      .subscribe()
+
+    return () => supabase.removeChannel(channel)
+  }, [pescaderiaId, usuarioId])
+
   async function invitar() {
     const texto = `Te invito a BlueMarket 🐟\n${linkInvitacion}`
     if (navigator.share) {
@@ -103,17 +134,31 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId }) {
               <span className="text-[11px] text-white/55">Entrega en</span>
               <strong className="text-[11px] text-white">Escobar, BA</strong>
             </div>
-            <button
-              onClick={() => setVerCarrito(true)}
-              className="relative w-10 h-10 bg-white/[0.07] border border-white/12 rounded-xl flex items-center justify-center backdrop-blur-sm active:scale-95 transition-transform">
-              <span className="text-white/70 text-lg">🛒</span>
-              {totalItems > 0 && (
-                <div className="absolute -top-1.5 -right-1.5 bg-[#4db8ff] text-[#03174a] text-[9px] font-extrabold min-w-[17px] h-[17px] rounded-lg px-1 flex items-center justify-center"
-                     style={{ boxShadow: '0 0 10px rgba(77,184,255,0.5)' }}>
-                  {totalItems}
-                </div>
+            <div className="flex items-center gap-2">
+              {usuarioId && (
+                <button
+                  onClick={() => setVerMisPedidos(true)}
+                  className="relative w-10 h-10 bg-white/[0.07] border border-white/12 rounded-xl flex items-center justify-center backdrop-blur-sm active:scale-95 transition-transform">
+                  <span className="text-white/70 text-lg">📦</span>
+                  {misPedidosList.filter(p => !['entregado','cancelado'].includes(p.estado)).length > 0 && (
+                    <div className="absolute -top-1.5 -right-1.5 bg-[#f39c12] text-[#03174a] text-[9px] font-extrabold min-w-[17px] h-[17px] rounded-lg px-1 flex items-center justify-center">
+                      {misPedidosList.filter(p => !['entregado','cancelado'].includes(p.estado)).length}
+                    </div>
+                  )}
+                </button>
               )}
-            </button>
+              <button
+                onClick={() => setVerCarrito(true)}
+                className="relative w-10 h-10 bg-white/[0.07] border border-white/12 rounded-xl flex items-center justify-center backdrop-blur-sm active:scale-95 transition-transform">
+                <span className="text-white/70 text-lg">🛒</span>
+                {totalItems > 0 && (
+                  <div className="absolute -top-1.5 -right-1.5 bg-[#4db8ff] text-[#03174a] text-[9px] font-extrabold min-w-[17px] h-[17px] rounded-lg px-1 flex items-center justify-center"
+                       style={{ boxShadow: '0 0 10px rgba(77,184,255,0.5)' }}>
+                    {totalItems}
+                  </div>
+                )}
+              </button>
+            </div>
           </div>
 
           <h1 className="text-xl font-extrabold text-white mb-0.5">
@@ -328,8 +373,70 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId }) {
               setNumeroPedido(resultado.numero)
               setPedidoConfirmado(true)
               setCarrito([])
+              // Recargar mis pedidos
+              misPedidos(pescaderiaId).then(r => r.pedidos && setMisPedidosList(r.pedidos))
             }}
           />
+        )}
+
+
+        {/* PANEL MIS PEDIDOS */}
+        {verMisPedidos && (
+          <div className="absolute inset-0 z-30 flex flex-col">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setVerMisPedidos(false)} />
+            <div className="relative mt-auto bg-[#051e5c] border-t border-white/12 rounded-t-[28px] max-h-[85%] flex flex-col"
+                 style={{ animation: 'bmSlideUp 0.35s ease both' }}>
+              <div className="shrink-0 px-5 pt-4 pb-3 border-b border-white/8">
+                <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-4" />
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-extrabold text-white">Mis pedidos 📦</h2>
+                  <button onClick={() => setVerMisPedidos(false)} className="text-white/40 text-2xl leading-none px-1">×</button>
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto px-5 py-4 bm-no-scrollbar">
+                {misPedidosList.length === 0 ? (
+                  <div className="text-center py-10">
+                    <div className="text-4xl mb-3 opacity-40">📦</div>
+                    <p className="text-white/40 text-sm">Todavía no hiciste pedidos.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {misPedidosList.map((p) => {
+                      const colores = {
+                        nuevo: { bg: '#4db8ff22', color: '#4db8ff', emoji: '🆕' },
+                        preparando: { bg: '#f39c1222', color: '#f39c12', emoji: '👨‍🍳' },
+                        listo: { bg: '#2ecc7122', color: '#2ecc71', emoji: '✅' },
+                        en_camino: { bg: '#9b59b622', color: '#9b59b6', emoji: '🛵' },
+                        entregado: { bg: '#2ecc7122', color: '#2ecc71', emoji: '🎉' },
+                        cancelado: { bg: '#e74c3c22', color: '#e74c3c', emoji: '❌' },
+                      }
+                      const est = colores[p.estado] || colores.nuevo
+                      return (
+                        <div key={p.id} className="bg-white/[0.06] border border-white/10 rounded-2xl p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-extrabold text-white">#{p.numero}</span>
+                            <span className="text-xs font-bold px-2.5 py-1 rounded-lg"
+                              style={{ background: est.bg, color: est.color }}>
+                              {est.emoji} {p.estado.replace('_', ' ')}
+                            </span>
+                          </div>
+                          <div className="text-xs text-white/40 mb-2">
+                            {new Date(p.created_at).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                          {p.items?.map((it, i) => (
+                            <div key={i} className="text-xs text-white/60">{it.cantidad}× {it.nombre}</div>
+                          ))}
+                          <div className="text-base font-extrabold text-[#4db8ff] mt-2">
+                            ${Number(p.total).toLocaleString('es-AR')}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         )}
 
         {/* CONFIRMACIÓN */}
