@@ -59,6 +59,7 @@ export async function crearPedido(datos, items) {
     .insert({
       pescaderia_id: PESCADERIA_DEMO,
       cliente_id: clienteId,
+      usuario_id: user.id,
       estado: 'nuevo',
       tipo_entrega: datos.entrega === 'envio' ? 'delivery' : 'retiro',
       direccion: datos.direccion || null,
@@ -107,21 +108,11 @@ export async function marcarEstadoVisto(pedidoId) {
 
   const admin = createAdminClient()
 
-  // Verificar que el pedido pertenece a este usuario via cliente_id
-  const { data: cliente } = await admin
-    .from('clientes')
-    .select('id')
-    .eq('usuario_id', user.id)
-    .eq('pescaderia_id', PESCADERIA_DEMO)
-    .maybeSingle()
-
-  if (!cliente) return { error: 'No autorizado' }
-
   await admin
     .from('pedidos')
     .update({ estado_visto: true })
     .eq('id', pedidoId)
-    .eq('cliente_id', cliente.id)
+    .eq('usuario_id', user.id)
 
   return { ok: true }
 }

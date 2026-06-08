@@ -35,66 +35,44 @@ export default function TiendaCliente({ productos, usuarioId }) {
   useEffect(() => {
     if (!usuarioId) return
     const supabase = createClient()
-    let clienteId = null
 
     async function cargarPedidos() {
       setCargandoPedidos(true)
-
-      // Primero buscar el cliente_id del usuario
-      const { data: cliente } = await supabase
-        .from('clientes')
-        .select('id')
-        .eq('usuario_id', usuarioId)
-        .eq('pescaderia_id', 'aab4a81c-e409-4c2c-b9df-11077c7f7bcd')
-        .maybeSingle()
-
-      if (!cliente) { setCargandoPedidos(false); return }
-      clienteId = cliente.id
-
       const { data } = await supabase
         .from('pedidos')
         .select('id, numero, estado, estado_visto, total, created_at, tipo_entrega')
-        .eq('cliente_id', clienteId)
+        .eq('usuario_id', usuarioId)
         .order('created_at', { ascending: false })
         .limit(20)
       setMisPedidos(data || [])
       setCargandoPedidos(false)
-
-      // Suscribir al realtime usando cliente_id
-      const channel = supabase
-        .channel(`mis-pedidos-${clienteId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'pedidos',
-            filter: `cliente_id=eq.${clienteId}`,
-          },
-          (payload) => {
-            setMisPedidos((prev) =>
-              prev.map((p) => p.id === payload.new.id ? { ...p, ...payload.new } : p)
-            )
-          }
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'pedidos',
-            filter: `cliente_id=eq.${clienteId}`,
-          },
-          (payload) => {
-            setMisPedidos((prev) => [payload.new, ...prev])
-          }
-        )
-        .subscribe()
-
-      return () => supabase.removeChannel(channel)
     }
 
     cargarPedidos()
+
+    const channel = supabase
+      .channel(`mis-pedidos-${usuarioId}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'pedidos',
+        filter: `usuario_id=eq.${usuarioId}`,
+      }, (payload) => {
+        setMisPedidos((prev) =>
+          prev.map((p) => p.id === payload.new.id ? { ...p, ...payload.new } : p)
+        )
+      })
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'pedidos',
+        filter: `usuario_id=eq.${usuarioId}`,
+      }, (payload) => {
+        setMisPedidos((prev) => [payload.new, ...prev])
+      })
+      .subscribe()
+
+    return () => supabase.removeChannel(channel)
   }, [usuarioId])
 
   async function verPedido(pedido) {
