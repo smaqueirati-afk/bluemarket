@@ -200,7 +200,7 @@ export default function GestionProductos({ productos, nombrePescaderia }) {
               <h1 className="text-lg font-extrabold leading-tight">Mis productos</h1>
               <p className="text-xs text-white/40 mt-0.5">{nombrePescaderia}</p>
             </div>
-            <div className="flex gap-2 shrink-0">
+            <div className="flex flex-col gap-2 shrink-0">
               <button onClick={abrirCatalogo}
                 className="bg-[#2ecc71]/15 border border-[#2ecc71]/30 text-[#2ecc71] font-bold text-sm px-3 py-2.5 rounded-xl active:scale-95 transition-all flex items-center gap-1.5">
                 📦 <span>Catálogo</span>
