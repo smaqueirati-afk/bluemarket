@@ -131,9 +131,8 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
         <div className="shrink-0 px-4 pt-5 pb-1">
           <div className="flex items-center justify-between mb-3.5">
             <div className="flex items-center gap-1.5 bg-white/[0.07] border border-white/12 rounded-full px-3 py-1.5 backdrop-blur-sm">
-              <span>📍</span>
-              <span className="text-[11px] text-white/55">Entrega en</span>
-              <strong className="text-[11px] text-white">Escobar, BA</strong>
+              <span>🐟</span>
+              <strong className="text-[11px] text-white">{pescaderia?.nombre || 'Pescadería'}</strong>
             </div>
             <div className="flex items-center gap-2">
               {usuarioId && (

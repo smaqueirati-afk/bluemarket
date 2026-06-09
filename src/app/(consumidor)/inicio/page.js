@@ -1,42 +1,51 @@
+import { redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
 import { createClient } from '../../../lib/supabase/server'
 import { createAdminClient } from '../../../lib/supabase/admin'
-import TiendaCliente from './TiendaCliente'
-
-// ID de la pescadería de prueba (BlueMarket Escobar)
-const PESCADERIA_DEMO = 'aab4a81c-e409-4c2c-b9df-11077c7f7bcd'
 
 export default async function InicioPage() {
-  // Usamos el cliente admin para leer el catálogo (ver productos es público)
+  // La compra es SOLO por el link de la pescadería.
+  // Este portal redirige al consumidor a la tienda de SU pescadería.
   const admin = createAdminClient()
-
-  // Usuario logueado (puede no estarlo: la tienda es pública). Sirve para el botón de invitar.
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // La pescadería del consumidor: la asignada en su perfil; si no tiene, la demo
-  let pescaderiaId = PESCADERIA_DEMO
+  let slug = null
+
+  // 1. Por el perfil del usuario (pescadería asignada)
   if (user) {
     const { data: perfil } = await admin
       .from('usuarios')
       .select('pescaderia_id')
       .eq('id', user.id)
       .maybeSingle()
-    if (perfil?.pescaderia_id) pescaderiaId = perfil.pescaderia_id
+    if (perfil?.pescaderia_id) {
+      const { data: pesc } = await admin
+        .from('pescaderias')
+        .select('slug')
+        .eq('id', perfil.pescaderia_id)
+        .maybeSingle()
+      if (pesc?.slug) slug = pesc.slug
+    }
   }
 
-  const { data: productos } = await admin
-    .from('productos')
-    .select('*')
-    .eq('pescaderia_id', pescaderiaId)
-    .eq('disponible', true)
-    .order('destacado', { ascending: false })
+  // 2. Fallback: última pescadería visitada por link (cookie)
+  if (!slug) {
+    const ck = await cookies()
+    slug = ck.get('bm_pescaderia_slug')?.value || null
+  }
 
-  // Nombre de la pescadería a la que el consumidor le hace el pedido
-  const { data: pescaderia } = await admin
-    .from('pescaderias')
-    .select('nombre')
-    .eq('id', pescaderiaId)
-    .maybeSingle()
+  // 3. Si sabemos a qué pescadería pertenece, lo mandamos a su tienda
+  if (slug) redirect(`/t/${slug}`)
 
-  return <TiendaCliente productos={productos || []} usuarioId={user?.id || null} pescaderiaNombre={pescaderia?.nombre || null} />
+  // 4. Sin pescadería asociada: mensaje claro
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center text-center px-8 bg-[linear-gradient(180deg,#051e5c_0%,#03174a_100%)]">
+      <div className="text-5xl mb-4">🐟</div>
+      <h1 className="text-xl font-extrabold text-white mb-2">Todavía no estás vinculado a una pescadería</h1>
+      <p className="text-white/55 text-sm leading-relaxed max-w-xs">
+        Para comprar, abrí el link que te compartió tu pescadería.
+      </p>
+    </div>
+  )
 }
