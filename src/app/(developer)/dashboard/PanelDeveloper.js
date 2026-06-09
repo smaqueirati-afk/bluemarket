@@ -3,11 +3,13 @@
 import { useState } from 'react'
 import { crearPescaderia, asignarDueno, borrarPescaderia, reactivarUsuario, reactivarUsuarioPorEmail, toggleTrial } from './actions'
 import BarraUsuario from '../../../components/BarraUsuario'
+import PescaderiaDetalle from './PescaderiaDetalle'
 
 export default function PanelDeveloper({ pescaderias }) {
   const [mostrarForm, setMostrarForm] = useState(false)
   const [cargando, setCargando] = useState(false)
   const [mensaje, setMensaje] = useState(null)
+  const [pescaderiaSeleccionada, setPescaderiaSeleccionada] = useState(null)
 
   const [asignandoId, setAsignandoId] = useState(null)
   const [emailDueno, setEmailDueno] = useState('')
@@ -122,6 +124,15 @@ export default function PanelDeveloper({ pescaderias }) {
       <BarraUsuario perfil="developer" />
 
       <div className="relative max-w-4xl mx-auto p-6">
+
+        {/* ── VISTA DETALLE ── */}
+        {pescaderiaSeleccionada ? (
+          <PescaderiaDetalle
+            pescaderia={pescaderiaSeleccionada}
+            onVolver={() => setPescaderiaSeleccionada(null)}
+          />
+        ) : (
+          <>
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-7">
@@ -297,13 +308,23 @@ export default function PanelDeveloper({ pescaderias }) {
                               style={p.activa ? { boxShadow: '0 0 8px rgba(46,204,113,0.6)' } : {}}></span>
                       </div>
                     </div>
-                    <button
-                      onClick={() => { setBorrandoId(p.id); setMensaje(null) }}
-                      title="Borrar pescadería"
-                      className="w-11 h-11 rounded-xl bg-white/[0.04] border border-white/8 flex items-center justify-center text-xl text-white/35 hover:text-[#e74c3c] hover:border-[#e74c3c]/40 transition-colors active:scale-90 shrink-0"
-                    >
-                      🗑
-                    </button>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => { setPescaderiaSeleccionada(p); setMensaje(null) }}
+                        title="Ver detalle"
+                        className="h-11 px-3 rounded-xl bg-white/[0.06] border border-white/10 flex items-center gap-1.5 text-xs font-semibold text-white/60 hover:text-[#4db8ff] hover:border-[#4db8ff]/40 transition-colors active:scale-90"
+                      >
+                        <span>Ver</span>
+                        <span className="text-base">→</span>
+                      </button>
+                      <button
+                        onClick={() => { setBorrandoId(p.id); setMensaje(null) }}
+                        title="Borrar pescadería"
+                        className="w-11 h-11 rounded-xl bg-white/[0.04] border border-white/8 flex items-center justify-center text-xl text-white/35 hover:text-[#e74c3c] hover:border-[#e74c3c]/40 transition-colors active:scale-90 shrink-0"
+                      >
+                        🗑
+                      </button>
+                    </div>
                   </div>
 
                   {/* Trial */}
@@ -418,6 +439,8 @@ export default function PanelDeveloper({ pescaderias }) {
             </div>
           )}
         </div>
+
+        )} {/* fin de vista lista */}
 
       </div>
 

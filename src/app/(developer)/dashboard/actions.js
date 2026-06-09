@@ -209,3 +209,57 @@ export async function borrarPescaderia(pescaderiaId) {
   revalidatePath('/dashboard')
   return { ok: true }
 }
+
+
+// ── Traer detalle completo de una pescadería: clientes + pedidos ──
+export async function getPescaderiaDetalle(pescaderiaId) {
+  const check = await verificarDeveloper()
+  if (check.error) return { error: check.error }
+
+  if (!pescaderiaId) return { error: 'Falta el id' }
+
+  const admin = createAdminClient()
+
+  // Clientes
+  const { data: clientes } = await admin
+    .from('clientes')
+    .select('id, nombre, email, telefono, cc_habilitada, cc_saldo, created_at')
+    .eq('pescaderia_id', pescaderiaId)
+    .order('created_at', { ascending: false })
+
+  // Pedidos (últimos 100) con items
+  const { data: pedidos } = await admin
+    .from('pedidos')
+    .select('id, numero, estado, tipo_entrega, metodo_pago, total, created_at, cliente_id, usuario_id')
+    .eq('pescaderia_id', pescaderiaId)
+    .order('created_at', { ascending: false })
+    .limit(100)
+
+  // Mapa cliente_id -> nombre para enriquecer los pedidos
+  const mapaClientes = {}
+  for (const c of clientes || []) mapaClientes[c.id] = c.nombre || c.email
+
+  const pedidosEnriquecidos = (pedidos || []).map((p) => ({
+    ...p,
+    cliente_nombre: p.cliente_id ? (mapaClientes[p.cliente_id] || 'Sin nombre') : 'Anónimo',
+  }))
+
+  // Métricas rápidas
+  const totalFacturado = (pedidos || []).reduce((acc, p) => acc + Number(p.total || 0), 0)
+  const pedidosMes = (pedidos || []).filter((p) => {
+    const fecha = new Date(p.created_at)
+    const ahora = new Date()
+    return fecha.getMonth() === ahora.getMonth() && fecha.getFullYear() === ahora.getFullYear()
+  }).length
+
+  return {
+    clientes: clientes || [],
+    pedidos: pedidosEnriquecidos,
+    metricas: {
+      totalClientes: (clientes || []).length,
+      totalPedidos: (pedidos || []).length,
+      totalFacturado,
+      pedidosMes,
+    },
+  }
+}
