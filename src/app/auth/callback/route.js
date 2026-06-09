@@ -2,6 +2,12 @@ import { NextResponse } from 'next/server'
 import { createClient } from '../../../lib/supabase/server'
 import { createAdminClient } from '../../../lib/supabase/admin'
 
+// Cuentas que SIEMPRE son developer (nunca pueden ser dueñas de una pescadería).
+// Agregá acá los mails que quieras blindar como developer.
+const DEVELOPER_EMAILS = [
+  'smaqueira.ti@gmail.com',
+]
+
 function slugify(nombre) {
   return nombre
     .toLowerCase()
@@ -34,23 +40,28 @@ export async function GET(request) {
         const invite = request.cookies.get('bm_invite')?.value
         const admin = createAdminClient()
 
+        // ── Cuentas developer blindadas ──
+        // En cada login: si el mail está en la lista, se fuerza rol developer
+        // y se limpia cualquier pescadería. Nunca puede quedar como dueña.
+        if (user.email && DEVELOPER_EMAILS.includes(user.email.toLowerCase())) {
+          await admin.from('usuarios').upsert({
+            id: user.id,
+            email: user.email,
+            nombre: user.user_metadata?.full_name || user.email.split('@')[0],
+            rol: 'developer',
+            pescaderia_id: null,
+          }, { onConflict: 'id' })
+
+          const response = NextResponse.redirect(`${origin}/dashboard`)
+          response.cookies.delete('bm_alta')
+          return response
+        }
+
         // ── Alta de pescadería por invitación ──
         // Si viene del formulario de /invitacion, crear la pescadería y
         // dejar al usuario logueado como dueño.
         const altaRaw = request.cookies.get('bm_alta')?.value
         if (altaRaw) {
-          // Safeguard: un developer NUNCA se convierte en dueño de una pescadería.
-          // Si abre un link de invitación por error, lo mandamos a su panel sin tocar su cuenta.
-          const { data: yo } = await admin
-            .from('usuarios')
-            .select('rol')
-            .eq('id', user.id)
-            .maybeSingle()
-          if (yo?.rol === 'developer') {
-            const response = NextResponse.redirect(`${origin}/dashboard`)
-            response.cookies.delete('bm_alta')
-            return response
-          }
           try {
             const alta = JSON.parse(decodeURIComponent(altaRaw))
             if (alta?.nombre) {
