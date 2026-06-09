@@ -1,6 +1,6 @@
 import { createAdminClient } from '../../../lib/supabase/admin'
 import { createClient } from '../../../lib/supabase/server'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import TiendaCliente from './TiendaCliente'
 
 export default async function TiendaPorSlug({ params }) {
@@ -27,10 +27,11 @@ export default async function TiendaPorSlug({ params }) {
     .eq('disponible', true)
     .order('destacado', { ascending: false })
 
-  // 3. Si hay un usuario logueado, ver si tiene cuenta corriente habilitada en esta pescadería
+  // 3. Verificar login y cuenta corriente
   let ccHabilitada = false
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect(`/login?next=/t/${slug}`)
   if (user) {
     const { data: cli } = await admin
       .from('clientes')
