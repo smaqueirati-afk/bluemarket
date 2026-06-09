@@ -323,7 +323,19 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
             </div>
             <div className="min-w-0">
               <h1 className="text-2xl font-extrabold tracking-tight leading-tight">{pescaderia?.nombre || 'Mi pescadería'}</h1>
-              <p className="text-xs text-white/40 mt-1 truncate">Hola, {nombreUsuario} 👋</p>
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                <p className="text-xs text-white/40">Hola, {nombreUsuario} 👋</p>
+                {pescaderia?.modalidad && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border"
+                    style={{
+                      background: pescaderia.modalidad === 'solo_local' ? 'rgba(77,184,255,0.12)' : pescaderia.modalidad === 'solo_reparto' ? 'rgba(155,89,182,0.15)' : 'rgba(46,204,113,0.12)',
+                      color: pescaderia.modalidad === 'solo_local' ? '#4db8ff' : pescaderia.modalidad === 'solo_reparto' ? '#9b59b6' : '#2ecc71',
+                      borderColor: pescaderia.modalidad === 'solo_local' ? 'rgba(77,184,255,0.3)' : pescaderia.modalidad === 'solo_reparto' ? 'rgba(155,89,182,0.35)' : 'rgba(46,204,113,0.3)',
+                    }}>
+                    {pescaderia.modalidad === 'solo_local' ? '🏪 Solo local' : pescaderia.modalidad === 'solo_reparto' ? '🛵 Solo reparto' : '🏪🛵 Local + reparto'}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           <div className="flex gap-2 sm:shrink-0">
