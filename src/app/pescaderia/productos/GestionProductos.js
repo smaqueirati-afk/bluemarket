@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { crearProducto, editarProducto, toggleDisponible, borrarProducto } from './actions'
 import BarraUsuario from '../../../components/BarraUsuario'
+import { createClient } from '../../../lib/supabase/client'
 
 const CATEGORIAS = [
   { id: 'pescado', label: 'Pescado', emoji: '🐟' },
@@ -57,7 +58,7 @@ function adivinarEmoji(nombre) {
   return null // no encontró coincidencia
 }
 
-const FORM_VACIO = { nombre: '', precio: '', categoria: 'pescado', unidad: 'kg', emoji: '🐟', stock: '', descripcion: '' }
+const FORM_VACIO = { nombre: '', precio: '', categoria: 'pescado', unidad: 'kg', emoji: '🐟', stock: '', descripcion: '', foto_url: '' }
 
 export default function GestionProductos({ productos, nombrePescaderia }) {
   const [form, setForm] = useState(FORM_VACIO)
@@ -66,6 +67,8 @@ export default function GestionProductos({ productos, nombrePescaderia }) {
   const [cargando, setCargando] = useState(false)
   const [mensaje, setMensaje] = useState(null)
   const [accionando, setAccionando] = useState(null)
+  const [subiendoFoto, setSubiendoFoto] = useState(false)
+  const fotoRef = useRef(null)
 
   function fmt(n) {
     return '$' + Number(n).toLocaleString('es-AR')
@@ -87,6 +90,7 @@ export default function GestionProductos({ productos, nombrePescaderia }) {
       emoji: p.emoji || '',
       stock: p.stock ?? '',
       descripcion: p.descripcion || '',
+      foto_url: p.foto_url || '',
     })
     setEditandoId(p.id)
     setMostrarForm(true)
@@ -99,12 +103,34 @@ export default function GestionProductos({ productos, nombrePescaderia }) {
     setForm(FORM_VACIO)
   }
 
+  async function subirFoto(archivo) {
+    if (!archivo) return null
+    setSubiendoFoto(true)
+    try {
+      const supabase = createClient()
+      const ext = archivo.name.split('.').pop()
+      const path = `${Date.now()}.${ext}`
+      const { error } = await supabase.storage.from('Productos').upload(path, archivo, { upsert: true })
+      if (error) { setMensaje({ tipo: 'error', texto: 'Error al subir foto: ' + error.message }); return null }
+      const { data } = supabase.storage.from('Productos').getPublicUrl(path)
+      return data.publicUrl
+    } finally {
+      setSubiendoFoto(false)
+    }
+  }
+
   async function guardar() {
     setCargando(true)
     setMensaje(null)
+    let fotoUrl = form.foto_url
+    if (fotoRef.current?.files?.[0]) {
+      fotoUrl = await subirFoto(fotoRef.current.files[0])
+      if (!fotoUrl) { setCargando(false); return }
+    }
+    const formConFoto = { ...form, foto_url: fotoUrl }
     const resultado = editandoId
-      ? await editarProducto(editandoId, form)
-      : await crearProducto(form)
+      ? await editarProducto(editandoId, formConFoto)
+      : await crearProducto(formConFoto)
 
     if (resultado.error) {
       setMensaje({ tipo: 'error', texto: resultado.error })
@@ -229,8 +255,28 @@ export default function GestionProductos({ productos, nombrePescaderia }) {
             </div>
 
             <div>
+              <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">Foto del producto (opcional)</label>
+              <div className="flex items-center gap-3">
+                {form.foto_url && (
+                  <img src={form.foto_url} alt="foto" className="w-14 h-14 rounded-xl object-cover border border-white/20 shrink-0" />
+                )}
+                <label className="flex-1 flex items-center gap-2 bg-white/5 border border-white/10 border-dashed rounded-xl px-3.5 py-2.5 cursor-pointer hover:bg-white/8 transition-all">
+                  <span className="text-lg">📷</span>
+                  <span className="text-sm text-white/50">{subiendoFoto ? 'Subiendo...' : form.foto_url ? 'Cambiar foto' : 'Subir foto'}</span>
+                  <input ref={fotoRef} type="file" accept="image/*" className="hidden" disabled={subiendoFoto} />
+                </label>
+                {form.foto_url && (
+                  <button type="button" onClick={() => setForm({ ...form, foto_url: '' })}
+                    className="text-[#e74c3c] text-xs px-2 py-1 rounded-lg bg-[#e74c3c]/10 border border-[#e74c3c]/20">
+                    ✕
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div>
               <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">
-                Emoji (así se ve en la tienda)
+                Emoji (así se ve si no hay foto)
               </label>
               <div className="flex items-center gap-3 mb-2.5">
                 <div className="w-14 h-14 rounded-xl bg-[#4db8ff]/12 border border-[#4db8ff]/30 flex items-center justify-center text-3xl shrink-0">
@@ -288,8 +334,10 @@ export default function GestionProductos({ productos, nombrePescaderia }) {
                 }`}
                 style={{ animation: 'bmFadeUp 0.4s ease both', animationDelay: `${idx * 0.04}s` }}>
                 <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-xl bg-[#4db8ff]/12 border border-[#4db8ff]/25 flex items-center justify-center text-xl shrink-0">
-                    {p.emoji || '🐟'}
+                  <div className="w-11 h-11 rounded-xl bg-[#4db8ff]/12 border border-[#4db8ff]/25 flex items-center justify-center text-xl shrink-0 overflow-hidden">
+                    {p.foto_url
+                      ? <img src={p.foto_url} alt={p.nombre} className="w-full h-full object-cover" />
+                      : (p.emoji || '🐟')}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
