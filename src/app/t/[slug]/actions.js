@@ -23,16 +23,18 @@ export async function crearPedido(pescaderiaId, datos, items) {
 
   const admin = createAdminClient()
 
-  // ── Gate: el envío a domicilio es solo para usuarios invitados (acceso_aprobado) ──
-  if (datos.entrega === 'envio') {
-    const { data: perfilUsuario } = await admin
-      .from('usuarios')
-      .select('acceso_aprobado')
-      .eq('id', user.id)
-      .maybeSingle()
-    if (!perfilUsuario?.acceso_aprobado) {
-      return { error: 'El envío a domicilio está disponible solo para usuarios invitados. Podés elegir retiro en el local.' }
-    }
+  // ── Gate: las opciones de entrega dependen de la modalidad de la pescadería ──
+  const { data: pescModalidad } = await admin
+    .from('pescaderias')
+    .select('modalidad')
+    .eq('id', pescaderiaId)
+    .maybeSingle()
+  const modalidad = pescModalidad?.modalidad
+  if (datos.entrega === 'envio' && modalidad === 'solo_local') {
+    return { error: 'Esta pescadería no hace envíos, solo retiro en el local.' }
+  }
+  if (datos.entrega === 'retiro' && modalidad === 'solo_reparto') {
+    return { error: 'Esta pescadería es solo reparto, no tiene retiro en el local.' }
   }
 
   // ── Validación de stock y disponibilidad al momento de confirmar ──
