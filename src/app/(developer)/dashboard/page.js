@@ -6,7 +6,6 @@ import PanelDeveloper from './PanelDeveloper'
 export default async function DashboardDeveloper() {
   const supabase = await createClient()
 
-  // Verificar que sea developer
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
@@ -18,7 +17,6 @@ export default async function DashboardDeveloper() {
 
   if (perfil?.rol !== 'developer') redirect('/inicio')
 
-  // Usar admin para saltear RLS y ver todas las pescaderías
   const admin = createAdminClient()
 
   const { data: pescaderias } = await admin
@@ -26,13 +24,11 @@ export default async function DashboardDeveloper() {
     .select('*')
     .order('created_at', { ascending: false })
 
-  // Traer todos los usuarios con rol 'cliente' (dueños de pescaderías)
   const { data: duenos } = await admin
     .from('usuarios')
     .select('id, nombre, email, pescaderia_id')
     .eq('rol', 'cliente')
 
-  // Mapa: pescaderia_id -> { id, nombre, email }
   const duenoPorPescaderia = {}
   ;(duenos || []).forEach((d) => {
     if (d.pescaderia_id) {
@@ -47,5 +43,11 @@ export default async function DashboardDeveloper() {
     dueno_auth_id: duenoPorPescaderia[p.id]?.id || null,
   }))
 
-  return <PanelDeveloper pescaderias={pescaderiasConDueno} />
+  const { data: catalogo } = await admin
+    .from('catalogo_master')
+    .select('*')
+    .eq('activo', true)
+    .order('nombre', { ascending: true })
+
+  return <PanelDeveloper pescaderias={pescaderiasConDueno} catalogo={catalogo || []} />
 }

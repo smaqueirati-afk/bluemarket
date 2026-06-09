@@ -7,7 +7,7 @@ import PescaderiaDetalle from './PescaderiaDetalle'
 import CatalogoMaster from './CatalogoMaster'
 
 export default function PanelDeveloper({ pescaderias, catalogo }) {
-  const [pestana, setPestana] = useState('pescaderias') // 'pescaderias' | 'catalogo'
+  const [pestana, setPestana] = useState('pescaderias')
   const [mostrarForm, setMostrarForm] = useState(false)
   const [cargando, setCargando] = useState(false)
   const [mensaje, setMensaje] = useState(null)
@@ -141,10 +141,14 @@ export default function PanelDeveloper({ pescaderias, catalogo }) {
           </div>
         )}
 
-        {/* ── CONTENIDO PESCADERÍAS ── */}
-        {pestana === 'pescaderias' && (
-        <div>
+        {/* ── CATÁLOGO MASTER ── */}
+        {pestana === 'catalogo' && !pescaderiaSeleccionada && (
+          <CatalogoMaster productos={catalogo || []} pescaderias={pescaderias} />
+        )}
+
         {/* ── VISTA DETALLE ── */}
+        {pestana === 'pescaderias' && (
+        <>
         {pescaderiaSeleccionada ? (
           <PescaderiaDetalle
             pescaderia={pescaderiaSeleccionada}
@@ -461,6 +465,8 @@ export default function PanelDeveloper({ pescaderias, catalogo }) {
 
           </>
         )}
+        </>
+        )}
 
       </div>
 
@@ -500,14 +506,6 @@ export default function PanelDeveloper({ pescaderias, catalogo }) {
           </div>
         </div>
       )}
-
-        </div>
-        )}
-
-        {/* Vista catálogo */}
-        {pestana === 'catalogo' && !pescaderiaSeleccionada && (
-          <CatalogoMaster productos={catalogo || []} pescaderias={pescaderias} />
-        )}
 
       <style jsx>{`
         @keyframes bmFadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
