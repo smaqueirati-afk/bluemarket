@@ -6,7 +6,7 @@ import { crearPedido, misPedidos } from './actions'
 import BarraUsuario from '../../../components/BarraUsuario'
 import { createClient } from '../../../lib/supabase/client'
 
-export default function TiendaCliente({ productos, usuarioId, pescaderiaId }) {
+export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHabilitada, soloDelivery }) {
   // carrito = array de { producto, cantidad }
   const [carrito, setCarrito] = useState([])
   const [categoria, setCategoria] = useState('todo')
@@ -359,6 +359,18 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId }) {
             carrito={carrito}
             cargando={guardando}
             errorExterno={errorPedido}
+            soloDelivery={soloDelivery}
+            ccHabilitada={ccHabilitada}
+            necesitaLogin={!usuarioId}
+            onLogin={async () => {
+              const supabase = createClient()
+              // Guardar la URL actual para volver después del login
+              document.cookie = `bm_return=${encodeURIComponent(window.location.pathname)};path=/;max-age=1800;samesite=lax`
+              await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: { redirectTo: `${window.location.origin}/auth/callback` },
+              })
+            }}
             onVolver={() => { setVerCheckout(false); setErrorPedido(null); setVerCarrito(true) }}
             onConfirmar={async (datos) => {
               setGuardando(true)

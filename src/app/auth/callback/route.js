@@ -12,14 +12,17 @@ export async function GET(request) {
 
     if (!error) {
       const { data: { user } } = await supabase.auth.getUser()
-      let destino = '/inicio' // consumidor por defecto
+      let destino = '/inicio'
       let limpiarInvite = false
+      let pescaderiaSlugCookie = request.cookies.get('bm_pescaderia_slug')?.value || null
+      const returnTo = request.cookies.get('bm_return')?.value || null
 
       if (user) {
-        // Si llega con una invitación válida, registrar quién lo trajo y aprobar el acceso.
         const invite = request.cookies.get('bm_invite')?.value
+        const admin = createAdminClient()
+
         if (invite && invite !== user.id) {
-          const admin = createAdminClient()
+          // Registrar quién invitó. Si viene con slug de pescadería, vincular al cliente.
           await admin
             .from('usuarios')
             .update({ invitado_por: invite, acceso_aprobado: true })
@@ -29,23 +32,55 @@ export async function GET(request) {
 
         const { data: perfil } = await supabase
           .from('usuarios')
-          .select('rol')
+          .select('rol, pescaderia_id')
           .eq('id', user.id)
           .single()
 
         if (perfil) {
-          const rutas = {
-            consumidor: '/inicio',
-            cliente: '/pescaderia',   // dueño de pescadería -> su panel
-            repartidor: '/inicio',
-            developer: '/dashboard',  // admin del SaaS -> panel developer
+          if (perfil.rol === 'cliente' && perfil.pescaderia_id) {
+            // Dueño de pescadería: va a su panel
+            destino = '/pescaderia'
+          } else if (perfil.rol === 'developer') {
+            destino = '/dashboard'
+          } else {
+            // Si venía de una tienda (botón "Continuar con Google" en checkout), volver ahí
+            if (returnTo && returnTo.startsWith('/t/')) {
+              destino = returnTo
+            } else if (perfil.pescaderia_id) {
+              // Ya tiene pescadería asignada: buscar el slug
+              const { data: pesc } = await admin
+                .from('pescaderias')
+                .select('slug')
+                .eq('id', perfil.pescaderia_id)
+                .single()
+              if (pesc?.slug) {
+                destino = `/t/${pesc.slug}`
+                pescaderiaSlugCookie = null
+              }
+            } else if (pescaderiaSlugCookie) {
+              // Viene de una invitación con slug: asignar la pescadería al usuario
+              const { data: pesc } = await admin
+                .from('pescaderias')
+                .select('id, slug')
+                .eq('slug', pescaderiaSlugCookie)
+                .single()
+              if (pesc) {
+                await admin
+                  .from('usuarios')
+                  .update({ pescaderia_id: pesc.id })
+                  .eq('id', user.id)
+                destino = `/t/${pesc.slug}`
+              }
+            }
           }
-          destino = rutas[perfil.rol] || '/inicio'
         }
       }
 
       const response = NextResponse.redirect(`${origin}${destino}`)
       if (limpiarInvite) response.cookies.delete('bm_invite')
+      if (pescaderiaSlugCookie === null) response.cookies.delete('bm_pescaderia_slug')
+      else if (pescaderiaSlugCookie) response.cookies.delete('bm_pescaderia_slug')
+      if (returnTo) response.cookies.delete('bm_return')
       return response
     }
   }
