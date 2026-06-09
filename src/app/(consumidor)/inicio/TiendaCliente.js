@@ -162,10 +162,12 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaNombre }
         {/* TOP BAR */}
         <div className="shrink-0 px-4 pt-5 pb-1">
           <div className="flex items-center justify-between mb-3.5">
-            <div className="flex items-center gap-1.5 bg-white/[0.07] border border-white/12 rounded-full px-3 py-1.5 backdrop-blur-sm">
-              <span>🐟</span>
-              <span className="text-[11px] text-white/55">Pedido a</span>
-              <strong className="text-[11px] text-white truncate max-w-[150px]">{pescaderiaNombre || 'la pescadería'}</strong>
+            <div className="flex items-center gap-2 bg-white/[0.07] border border-white/12 rounded-2xl px-3.5 py-2 backdrop-blur-sm">
+              <span className="text-lg">🐟</span>
+              <div className="flex flex-col leading-tight">
+                <span className="text-[10px] text-white/55">Pedido a la pescadería</span>
+                <strong className="text-[13px] text-white truncate max-w-[180px]">{pescaderiaNombre || 'la pescadería'}</strong>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               {usuarioId && (
@@ -442,7 +444,10 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaNombre }
                               ${Number(pedido.total).toLocaleString('es-AR')} · {pedido.tipo_entrega === 'delivery' ? '🏠 Envío' : '🏪 Retiro'}
                             </div>
                             {pedido.palabra_clave && !['entregado','cancelado'].includes(pedido.estado) && (
-                              <div className="text-[11px] text-[#4db8ff] font-bold mt-1">🔑 {pedido.palabra_clave}</div>
+                              <div className="mt-2 flex items-center gap-2 bg-[#4db8ff]/15 border border-[#4db8ff]/30 rounded-lg px-2.5 py-1.5 w-fit">
+                                <span className="text-[9px] text-white/50 uppercase tracking-wide font-bold">🔑 Clave</span>
+                                <span className="text-sm font-extrabold text-[#4db8ff] tracking-wide">{pedido.palabra_clave}</span>
+                              </div>
                             )}
                           </div>
                         </div>
