@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { crearProducto, editarProducto, toggleDisponible, borrarProducto } from './actions'
+import { crearProducto, editarProducto, toggleDisponible, borrarProducto, importarDesdeCatalogo } from './actions'
 import BarraUsuario from '../../../components/BarraUsuario'
 import { createClient } from '../../../lib/supabase/client'
 
@@ -69,6 +69,11 @@ export default function GestionProductos({ productos, nombrePescaderia }) {
   const [accionando, setAccionando] = useState(null)
   const [subiendoFoto, setSubiendoFoto] = useState(false)
   const fotoRef = useRef(null)
+  const [verCatalogo, setVerCatalogo] = useState(false)
+  const [catalogo, setCatalogo] = useState([])
+  const [cargandoCatalogo, setCargandoCatalogo] = useState(false)
+  const [seleccionados, setSeleccionados] = useState([])
+  const [importando, setImportando] = useState(false)
 
   function fmt(n) {
     return '$' + Number(n).toLocaleString('es-AR')
@@ -101,6 +106,30 @@ export default function GestionProductos({ productos, nombrePescaderia }) {
     setMostrarForm(false)
     setEditandoId(null)
     setForm(FORM_VACIO)
+  }
+
+  async function abrirCatalogo() {
+    setVerCatalogo(true)
+    setSeleccionados([])
+    if (catalogo.length > 0) return
+    setCargandoCatalogo(true)
+    const supabase = createClient()
+    const { data } = await supabase.from('catalogo_master').select('*').eq('activo', true).order('nombre')
+    setCatalogo(data || [])
+    setCargandoCatalogo(false)
+  }
+
+  function toggleSel(id) {
+    setSeleccionados((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])
+  }
+
+  async function confirmarImport() {
+    if (!seleccionados.length) return
+    setImportando(true); setMensaje(null)
+    const res = await importarDesdeCatalogo(seleccionados)
+    if (res.error) setMensaje({ tipo: 'error', texto: res.error })
+    else { setMensaje({ tipo: 'ok', texto: `${res.cantidad} producto${res.cantidad > 1 ? 's' : ''} importado${res.cantidad > 1 ? 's' : ''} ✓` }); setVerCatalogo(false); window.location.reload() }
+    setImportando(false)
   }
 
   async function subirFoto(archivo) {
@@ -171,10 +200,16 @@ export default function GestionProductos({ productos, nombrePescaderia }) {
               <h1 className="text-lg font-extrabold leading-tight">Mis productos</h1>
               <p className="text-xs text-white/40 truncate">{nombrePescaderia}</p>
             </div>
-            <button onClick={abrirNuevo}
-              className="shrink-0 bg-[#4db8ff] text-[#03174a] font-bold text-sm px-4 py-2.5 rounded-xl active:scale-95 transition-all whitespace-nowrap">
-              + Agregar
-            </button>
+            <div className="flex gap-2">
+              <button onClick={abrirCatalogo}
+                className="shrink-0 bg-[#2ecc71]/15 border border-[#2ecc71]/30 text-[#2ecc71] font-bold text-sm px-3 py-2.5 rounded-xl active:scale-95 transition-all whitespace-nowrap">
+                📦 Catálogo
+              </button>
+              <button onClick={abrirNuevo}
+                className="shrink-0 bg-[#4db8ff] text-[#03174a] font-bold text-sm px-4 py-2.5 rounded-xl active:scale-95 transition-all whitespace-nowrap">
+                + Agregar
+              </button>
+            </div>
           </div>
         </div>
 
@@ -371,8 +406,66 @@ export default function GestionProductos({ productos, nombrePescaderia }) {
 
       </div>
 
+      {/* Modal catálogo master */}
+      {verCatalogo && (
+        <div className="fixed inset-0 z-50 flex flex-col">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setVerCatalogo(false)} />
+          <div className="relative mt-auto bg-[#051e5c] border-t border-white/12 rounded-t-[28px] max-h-[85%] flex flex-col"
+               style={{ animation: 'bmSlideUp 0.35s ease both' }}>
+            <div className="shrink-0 px-5 pt-4 pb-3 border-b border-white/8">
+              <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-4" />
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-extrabold text-white">Catálogo master 📦</h2>
+                  <p className="text-xs text-white/40 mt-0.5">{seleccionados.length > 0 ? `${seleccionados.length} seleccionados` : 'Elegí los productos a importar'}</p>
+                </div>
+                <button onClick={() => setVerCatalogo(false)} className="text-white/40 text-2xl leading-none px-1">×</button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto px-5 py-4 bm-no-scrollbar">
+              {cargandoCatalogo ? (
+                <div className="text-center py-10 text-white/40 text-sm">Cargando catálogo...</div>
+              ) : catalogo.length === 0 ? (
+                <div className="text-center py-10">
+                  <div className="text-4xl mb-3 opacity-40">📦</div>
+                  <p className="text-white/40 text-sm">El catálogo master está vacío.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {catalogo.map((p) => (
+                    <div key={p.id}
+                      onClick={() => toggleSel(p.id)}
+                      className={`flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition-all ${seleccionados.includes(p.id) ? 'bg-[#2ecc71]/10 border-[#2ecc71]/40' : 'bg-white/[0.04] border-white/10'}`}>
+                      <div className="w-11 h-11 rounded-xl bg-[#4db8ff]/12 border border-[#4db8ff]/25 flex items-center justify-center text-xl shrink-0 overflow-hidden">
+                        {p.foto_url ? <img src={p.foto_url} alt={p.nombre} className="w-full h-full object-cover" /> : (p.emoji || '🐟')}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-white text-sm truncate">{p.nombre}</div>
+                        <div className="text-xs text-white/40">{p.categoria} · {p.unidad}{p.precio_sugerido ? ` · $${Number(p.precio_sugerido).toLocaleString('es-AR')} sugerido` : ''}</div>
+                      </div>
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${seleccionados.includes(p.id) ? 'bg-[#2ecc71] border-[#2ecc71]' : 'border-white/30'}`}>
+                        {seleccionados.includes(p.id) && <span className="text-[#03174a] text-[10px] font-bold">✓</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            {seleccionados.length > 0 && (
+              <div className="shrink-0 px-5 py-4 border-t border-white/8">
+                <button onClick={confirmarImport} disabled={importando}
+                  className="w-full bg-[#2ecc71] text-[#03174a] font-bold py-3.5 rounded-xl active:scale-[0.98] disabled:opacity-60">
+                  {importando ? 'Importando...' : `Importar ${seleccionados.length} producto${seleccionados.length > 1 ? 's' : ''}`}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <style jsx>{`
         @keyframes bmFadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes bmSlideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
       `}</style>
     </div>
   )
