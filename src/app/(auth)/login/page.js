@@ -5,9 +5,6 @@ import { createClient } from '../../../lib/supabase/client'
 
 export default function LoginPage() {
   const [cargando, setCargando] = useState(false)
-  const [modo, setModo] = useState(null) // null | 'magic'
-  const [email, setEmail] = useState('')
-  const [enviado, setEnviado] = useState(false)
   const [error, setError] = useState(null)
 
   async function loginConGoogle() {
@@ -19,18 +16,6 @@ export default function LoginPage() {
       options: { redirectTo: `${window.location.origin}/auth/callback` },
     })
     if (error) { setError('Error: ' + error.message); setCargando(false) }
-  }
-
-  async function enviarMagicLink() {
-    if (!email.trim()) { setError('Ingresá tu email'); return }
-    setCargando(true); setError(null)
-    const supabase = createClient()
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim().toLowerCase(),
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
-    })
-    if (error) { setError(error.message); setCargando(false) }
-    else { setEnviado(true); setCargando(false) }
   }
 
   const burbujas = [
@@ -79,72 +64,20 @@ export default function LoginPage() {
           <div className="w-full bg-white/[0.07] border border-white/12 rounded-[20px] p-7 backdrop-blur-md"
                style={{ animation: 'bmFadeUp 0.9s ease both' }}>
 
-            {/* Estado: magic link enviado */}
-            {enviado ? (
-              <div className="text-center py-2" style={{ animation: 'bmFadeUp 0.4s ease both' }}>
-                <div className="text-4xl mb-3">📬</div>
-                <h2 className="text-lg font-bold text-white mb-2">¡Revisá tu email!</h2>
-                <p className="text-sm text-white/55 leading-relaxed mb-5">
-                  Te enviamos un link a <strong className="text-white">{email}</strong>.<br />
-                  Tocalo para entrar sin contraseña.
-                </p>
-                <button onClick={() => { setEnviado(false); setModo(null); setEmail('') }}
-                  className="text-[#4db8ff] text-sm underline">
-                  Usar otro método
-                </button>
-              </div>
+            <>
+              <h2 className="text-lg font-semibold text-white mb-1.5">Bienvenido</h2>
+              <p className="text-[13px] text-white/55 mb-5 leading-relaxed">
+                Ingresá con tu cuenta de Google para continuar.
+              </p>
 
-            ) : modo === 'magic' ? (
-              /* Formulario magic link */
-              <div style={{ animation: 'bmFadeUp 0.3s ease both' }}>
-                <button onClick={() => { setModo(null); setError(null) }}
-                  className="text-[#4db8ff] text-xs mb-4 flex items-center gap-1">
-                  ← Volver
-                </button>
-                <h2 className="text-lg font-semibold text-white mb-1.5">Ingresá con email</h2>
-                <p className="text-[13px] text-white/55 mb-5 leading-relaxed">
-                  Te mandamos un link para entrar sin contraseña.
-                </p>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && enviarMagicLink()}
-                  placeholder="tu@email.com"
-                  className="w-full bg-white/5 border border-white/15 rounded-xl px-4 py-3 text-sm text-white placeholder-white/30 outline-none focus:border-[#4db8ff] mb-3"
-                />
-                {error && <p className="text-[#e74c3c] text-xs mb-3">{error}</p>}
-                <button onClick={enviarMagicLink} disabled={cargando}
-                  className="w-full bg-[#4db8ff] text-[#03174a] font-bold py-3.5 rounded-xl active:scale-[0.98] disabled:opacity-60">
-                  {cargando ? 'Enviando...' : 'Enviar link de acceso'}
-                </button>
-              </div>
+              {error && <p className="text-[#e74c3c] text-xs mb-3">{error}</p>}
 
-            ) : (
-              /* Pantalla principal */
-              <>
-                <h2 className="text-lg font-semibold text-white mb-1.5">Bienvenido</h2>
-                <p className="text-[13px] text-white/55 mb-5 leading-relaxed">
-                  Elegí cómo querés ingresar.
-                </p>
-
-                {error && <p className="text-[#e74c3c] text-xs mb-3">{error}</p>}
-
-                <div className="space-y-3">
-                  <button onClick={loginConGoogle} disabled={cargando}
-                    className="w-full flex items-center justify-center gap-3 py-3.5 bg-white rounded-xl text-[15px] font-semibold text-[#1a1a2e] transition-all hover:shadow-[0_6px_24px_rgba(255,255,255,0.2)] active:scale-[0.98] disabled:opacity-70">
-                    <span className="font-extrabold text-lg text-[#4285F4]">G</span>
-                    {cargando ? 'Conectando...' : 'Continuar con Google'}
-                  </button>
-
-                  <button onClick={() => { setModo('magic'); setError(null) }}
-                    className="w-full flex items-center justify-center gap-3 py-3.5 bg-white/[0.08] border border-white/15 rounded-xl text-[15px] font-semibold text-white transition-all active:scale-[0.98]">
-                    <span className="text-lg">✉️</span>
-                    Continuar con email
-                  </button>
-                </div>
-              </>
-            )}
+              <button onClick={loginConGoogle} disabled={cargando}
+                className="w-full flex items-center justify-center gap-3 py-3.5 bg-white rounded-xl text-[15px] font-semibold text-[#1a1a2e] transition-all hover:shadow-[0_6px_24px_rgba(255,255,255,0.2)] active:scale-[0.98] disabled:opacity-70">
+                <span className="font-extrabold text-lg text-[#4285F4]">G</span>
+                {cargando ? 'Conectando...' : 'Continuar con Google'}
+              </button>
+            </>
           </div>
 
           <p className="text-[11px] text-white/30 text-center leading-relaxed">
