@@ -29,6 +29,7 @@ export default async function TiendaPorSlug({ params }) {
 
   // 3. Si hay un usuario logueado, ver si tiene cuenta corriente habilitada en esta pescadería
   let ccHabilitada = false
+  let accesoAprobado = false
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (user) {
@@ -39,6 +40,13 @@ export default async function TiendaPorSlug({ params }) {
       .eq('usuario_id', user.id)
       .maybeSingle()
     ccHabilitada = !!cli?.cc_habilitada
+
+    const { data: perfilUser } = await admin
+      .from('usuarios')
+      .select('acceso_aprobado')
+      .eq('id', user.id)
+      .maybeSingle()
+    accesoAprobado = !!perfilUser?.acceso_aprobado
   }
 
   return (
@@ -48,6 +56,7 @@ export default async function TiendaPorSlug({ params }) {
       pescaderiaId={pescaderia.id}
       usuarioId={user?.id || null}
       ccHabilitada={ccHabilitada}
+      accesoAprobado={accesoAprobado}
     />
   )
 }

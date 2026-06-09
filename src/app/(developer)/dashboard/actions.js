@@ -260,9 +260,22 @@ export async function getPescaderiaDetalle(pescaderiaId) {
   // Clientes
   const { data: clientes } = await admin
     .from('clientes')
-    .select('id, nombre, email, telefono, cc_habilitada, cc_saldo, created_at')
+    .select('id, nombre, email, telefono, cc_habilitada, cc_saldo, created_at, usuario_id')
     .eq('pescaderia_id', pescaderiaId)
     .order('created_at', { ascending: false })
+
+  // El/los dueño(s) de la pescadería no deben figurar como clientes
+  const { data: duenos } = await admin
+    .from('usuarios')
+    .select('id, email')
+    .eq('pescaderia_id', pescaderiaId)
+    .eq('rol', 'cliente')
+  const duenoIds = new Set((duenos || []).map((d) => d.id))
+  const duenoEmails = new Set((duenos || []).map((d) => (d.email || '').toLowerCase()))
+
+  const clientesVisibles = (clientes || []).filter(
+    (c) => !duenoIds.has(c.usuario_id) && !duenoEmails.has((c.email || '').toLowerCase())
+  )
 
   // Pedidos (últimos 100) con items
   const { data: pedidos } = await admin
@@ -290,10 +303,10 @@ export async function getPescaderiaDetalle(pescaderiaId) {
   }).length
 
   return {
-    clientes: clientes || [],
+    clientes: clientesVisibles,
     pedidos: pedidosEnriquecidos,
     metricas: {
-      totalClientes: (clientes || []).length,
+      totalClientes: clientesVisibles.length,
       totalPedidos: (pedidos || []).length,
       totalFacturado,
       pedidosMes,

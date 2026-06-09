@@ -3,8 +3,8 @@
 import { useState } from 'react'
 
 // Pantalla de checkout. Recibe el carrito y una función para volver/confirmar.
-export default function Checkout({ carrito, onVolver, onConfirmar, cargando, errorExterno, ccHabilitada, necesitaLogin, onLogin }) {
-  const [entrega, setEntrega] = useState('envio')   // 'envio' | 'retiro'
+export default function Checkout({ carrito, onVolver, onConfirmar, cargando, errorExterno, ccHabilitada, necesitaLogin, onLogin, invitado }) {
+  const [entrega, setEntrega] = useState(invitado ? 'envio' : 'retiro')   // 'envio' | 'retiro'
   const [pago, setPago] = useState('efectivo')       // 'efectivo' | 'transferencia'
   const [direccion, setDireccion] = useState('')
   const [nota, setNota] = useState('')
@@ -50,13 +50,16 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
         <div>
           <h2 className="text-xs text-white/50 uppercase tracking-wide mb-2.5 font-bold">¿Cómo lo recibís?</h2>
           <div className="grid grid-cols-2 gap-2.5">
-            <button onClick={() => setEntrega('envio')}
+            <button onClick={() => invitado && setEntrega('envio')}
+              disabled={!invitado}
               className={`p-3.5 rounded-2xl border text-left transition-all ${
-                entrega === 'envio' ? 'bg-[#4db8ff]/15 border-[#4db8ff]' : 'bg-white/[0.05] border-white/10'
+                !invitado
+                  ? 'bg-white/[0.02] border-white/8 opacity-50 cursor-not-allowed'
+                  : entrega === 'envio' ? 'bg-[#4db8ff]/15 border-[#4db8ff]' : 'bg-white/[0.05] border-white/10'
               }`}>
               <div className="text-2xl mb-1">🏠</div>
               <div className="text-sm font-bold text-white">Envío a domicilio</div>
-              <div className="text-[11px] text-white/45 mt-0.5">Te lo llevamos</div>
+              <div className="text-[11px] text-white/45 mt-0.5">{invitado ? 'Te lo llevamos' : '🔒 Solo invitados'}</div>
             </button>
             <button onClick={() => setEntrega('retiro')}
               className={`p-3.5 rounded-2xl border text-left transition-all ${
