@@ -4,8 +4,10 @@ import { useState } from 'react'
 import { crearPescaderia, asignarDueno, borrarPescaderia, reactivarUsuario, reactivarUsuarioPorEmail, toggleTrial } from './actions'
 import BarraUsuario from '../../../components/BarraUsuario'
 import PescaderiaDetalle from './PescaderiaDetalle'
+import CatalogoMaster from './CatalogoMaster'
 
-export default function PanelDeveloper({ pescaderias }) {
+export default function PanelDeveloper({ pescaderias, catalogo }) {
+  const [pestana, setPestana] = useState('pescaderias') // 'pescaderias' | 'catalogo'
   const [mostrarForm, setMostrarForm] = useState(false)
   const [cargando, setCargando] = useState(false)
   const [mensaje, setMensaje] = useState(null)
@@ -125,6 +127,23 @@ export default function PanelDeveloper({ pescaderias }) {
 
       <div className="relative max-w-4xl mx-auto p-6">
 
+        {/* Tabs */}
+        {!pescaderiaSeleccionada && (
+          <div className="flex gap-2 mb-6">
+            <button onClick={() => setPestana('pescaderias')}
+              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${pestana === 'pescaderias' ? 'bg-[#4db8ff] text-[#03174a]' : 'bg-white/[0.07] text-white/60 border border-white/10'}`}>
+              🏪 Pescaderías
+            </button>
+            <button onClick={() => setPestana('catalogo')}
+              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${pestana === 'catalogo' ? 'bg-[#4db8ff] text-[#03174a]' : 'bg-white/[0.07] text-white/60 border border-white/10'}`}>
+              📦 Catálogo master
+            </button>
+          </div>
+        )}
+
+        {/* ── CONTENIDO PESCADERÍAS ── */}
+        {pestana === 'pescaderias' && (
+        <div>
         {/* ── VISTA DETALLE ── */}
         {pescaderiaSeleccionada ? (
           <PescaderiaDetalle
@@ -481,6 +500,14 @@ export default function PanelDeveloper({ pescaderias }) {
           </div>
         </div>
       )}
+
+        </div>
+        )}
+
+        {/* Vista catálogo */}
+        {pestana === 'catalogo' && !pescaderiaSeleccionada && (
+          <CatalogoMaster productos={catalogo || []} pescaderias={pescaderias} />
+        )}
 
       <style jsx>{`
         @keyframes bmFadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
