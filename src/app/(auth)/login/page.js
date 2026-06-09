@@ -25,12 +25,13 @@ export default function LoginPage() {
   async function enviarOTP() {
     if (!email.trim()) { setError('Ingresá tu email'); return }
     setCargando(true); setError(null)
-    const supabase = createClient()
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim().toLowerCase(),
-      options: { shouldCreateUser: true },
+    const res = await fetch('/api/otp/enviar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim().toLowerCase() }),
     })
-    if (error) { setError(error.message); setCargando(false) }
+    const data = await res.json()
+    if (data.error) { setError(data.error); setCargando(false) }
     else { setCodigoEnviado(true); setCargando(false) }
   }
 
@@ -38,13 +39,21 @@ export default function LoginPage() {
     const token = codigo.join('')
     if (token.length < 6) { setError('Ingresá los 6 dígitos'); return }
     setCargando(true); setError(null)
-    const supabase = createClient()
-    const { error } = await supabase.auth.verifyOtp({
-      email: email.trim().toLowerCase(),
-      token,
-      type: 'email',
+    const res = await fetch('/api/otp/verificar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim().toLowerCase(), codigo: token }),
     })
-    if (error) { setError('Código incorrecto o vencido'); setCargando(false) }
+    const data = await res.json()
+    if (data.error) { setError(data.error); setCargando(false); return }
+
+    // Intercambiar el token por sesión usando Supabase client
+    const supabase = createClient()
+    const { error: errSession } = await supabase.auth.verifyOtp({
+      token_hash: data.token,
+      type: 'magiclink',
+    })
+    if (errSession) { setError('Error al iniciar sesión, intentá de nuevo'); setCargando(false) }
     else { window.location.href = '/auth/callback' }
   }
 
