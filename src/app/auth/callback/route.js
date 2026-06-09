@@ -15,7 +15,8 @@ export async function GET(request) {
       let destino = '/inicio'
       let limpiarInvite = false
       let pescaderiaSlugCookie = request.cookies.get('bm_pescaderia_slug')?.value || null
-      const returnTo = request.cookies.get('bm_return')?.value || null
+      const returnToRaw = request.cookies.get('bm_return')?.value || null
+      const returnTo = returnToRaw ? decodeURIComponent(returnToRaw) : null
 
       if (user) {
         const invite = request.cookies.get('bm_invite')?.value
