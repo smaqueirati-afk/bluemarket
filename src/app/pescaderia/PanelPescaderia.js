@@ -637,6 +637,28 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
                     )}
                   </div>
 
+                  {/* Contacto del cliente */}
+                  {(pedido.cliente_telefono || pedido.cliente_email) && (
+                    <div className="flex gap-2 pt-3 border-t border-white/8 flex-wrap">
+                      {pedido.cliente_telefono && (() => {
+                        const tel = waNumero(pedido.cliente_telefono)
+                        return tel ? (
+                          <a href={`https://wa.me/${tel}?text=${encodeURIComponent(`¡Hola${pedido.cliente_nombre ? ' ' + pedido.cliente_nombre : ''}! Soy de ${pescaderia?.nombre || 'la pescadería'}, tu pedido #${pedido.numero} está en camino 🐟`)}`}
+                            target="_blank" rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 bg-[#25D366]/15 border border-[#25D366]/30 text-[#25D366] text-xs font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform">
+                            💬 WhatsApp
+                          </a>
+                        ) : null
+                      })()}
+                      {pedido.cliente_email && (
+                        <a href={`mailto:${pedido.cliente_email}?subject=Tu pedido #${pedido.numero}&body=Hola${pedido.cliente_nombre ? ' ' + pedido.cliente_nombre : ''}, te escribimos de ${pescaderia?.nombre || 'la pescadería'} sobre tu pedido #${pedido.numero}.`}
+                          className="flex items-center gap-1.5 bg-white/[0.07] border border-white/15 text-white/70 text-xs font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform">
+                          ✉️ {pedido.cliente_email}
+                        </a>
+                      )}
+                    </div>
+                  )}
+
                   {/* Total y acciones */}
                   <div className="flex items-center justify-between gap-2 pt-3 border-t border-white/8 flex-wrap">
                     <span className="text-lg font-extrabold text-[#4db8ff]">{fmt(pedido.total)}</span>

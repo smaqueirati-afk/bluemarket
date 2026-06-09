@@ -8,7 +8,14 @@ import { createClient } from '../../../lib/supabase/client'
 
 export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHabilitada, soloDelivery, pescaderia }) {
   // carrito = array de { producto, cantidad }
-  const [carrito, setCarrito] = useState([])
+  const [carrito, setCarrito] = useState(() => {
+    if (typeof window === 'undefined') return []
+    try {
+      const saved = sessionStorage.getItem('bm_carrito')
+      if (saved) { sessionStorage.removeItem('bm_carrito'); return JSON.parse(saved) }
+    } catch {}
+    return []
+  })
   const [categoria, setCategoria] = useState('todo')
   const [verCarrito, setVerCarrito] = useState(false)
   const [verCheckout, setVerCheckout] = useState(false)
@@ -101,6 +108,13 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
 
     return () => supabase.removeChannel(channel)
   }, [pescaderiaId, usuarioId])
+
+  // Si el usuario acaba de loguearse y hay carrito guardado, abrir checkout
+  useEffect(() => {
+    if (usuarioId && carrito.length > 0 && !verCheckout && !pedidoConfirmado) {
+      setVerCheckout(true)
+    }
+  }, [usuarioId])
 
   async function invitar() {
     const texto = `Te invito a BlueMarket 🐟\n${linkInvitacion}`
@@ -365,6 +379,8 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
             necesitaLogin={!usuarioId}
             onLogin={async () => {
               const supabase = createClient()
+              // Guardar carrito para restaurarlo después del login
+              try { sessionStorage.setItem('bm_carrito', JSON.stringify(carrito)) } catch {}
               // Guardar la URL actual para volver después del login
               document.cookie = `bm_return=${encodeURIComponent(window.location.pathname)};path=/;max-age=1800;samesite=lax`
               await supabase.auth.signInWithOAuth({
@@ -440,8 +456,16 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
                           {p.items?.map((it, i) => (
                             <div key={i} className="text-xs text-white/60">{it.cantidad}× {it.nombre}</div>
                           ))}
-                          <div className="text-base font-extrabold text-[#4db8ff] mt-2">
-                            ${Number(p.total).toLocaleString('es-AR')}
+                          <div className="flex items-center justify-between mt-2">
+                            <div className="text-base font-extrabold text-[#4db8ff]">
+                              ${Number(p.total).toLocaleString('es-AR')}
+                            </div>
+                            {p.palabra_clave && !['entregado','cancelado'].includes(p.estado) && (
+                              <div className="bg-white/[0.07] border border-white/15 rounded-xl px-3 py-1.5 text-right">
+                                <div className="text-[9px] text-white/40 uppercase tracking-wide">🔑 Clave</div>
+                                <div className="text-sm font-extrabold text-[#4db8ff] tracking-wider">{p.palabra_clave}</div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       )
