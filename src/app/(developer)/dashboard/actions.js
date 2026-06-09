@@ -74,32 +74,69 @@ export async function asignarDueno(pescaderiaId, email) {
 
   const admin = createAdminClient()
 
-  const { data: usuario, error: errBusca } = await admin
+  // 1. Buscar en la tabla usuarios
+  let usuarioId = null
+  let usuarioEmail = emailLimpio
+
+  const { data: usuario } = await admin
     .from('usuarios')
     .select('id, email, rol')
     .eq('email', emailLimpio)
-    .single()
+    .maybeSingle()
 
-  if (errBusca || !usuario) {
-    return { error: 'No se encontró ese email. La persona tiene que entrar una vez con Google antes de asignarla.' }
+  if (usuario) {
+    usuarioId = usuario.id
+  } else {
+    // 2. No está en usuarios: buscar en auth.users (puede no haber hecho login todavía)
+    const { data: { users }, error: errList } = await admin.auth.admin.listUsers()
+    if (errList) return { error: errList.message }
+
+    const authUser = users.find((u) => u.email?.toLowerCase() === emailLimpio)
+    if (!authUser) {
+      return { error: `No se encontró ninguna cuenta con ese email. La persona tiene que entrar una vez con Google antes de poder asignarla.` }
+    }
+
+    // Crear registro en usuarios
+    const { error: errUpsert } = await admin
+      .from('usuarios')
+      .upsert({
+        id: authUser.id,
+        email: authUser.email,
+        nombre: authUser.user_metadata?.full_name || authUser.email.split('@')[0],
+        rol: 'consumidor',
+      }, { onConflict: 'id' })
+
+    if (errUpsert) return { error: errUpsert.message }
+    usuarioId = authUser.id
   }
 
+  // 3. Asignar rol cliente y pescadería
   const { error: errUpdate } = await admin
     .from('usuarios')
     .update({ rol: 'cliente', pescaderia_id: pescaderiaId })
-    .eq('id', usuario.id)
+    .eq('id', usuarioId)
 
   if (errUpdate) return { error: errUpdate.message }
 
-  await admin.from('clientes').insert({
-    pescaderia_id: pescaderiaId,
-    usuario_id: usuario.id,
-    nombre: usuario.email.split('@')[0],
-    email: usuario.email,
-  })
+  // 4. Crear ficha en clientes si no existe
+  const { data: fichaExistente } = await admin
+    .from('clientes')
+    .select('id')
+    .eq('pescaderia_id', pescaderiaId)
+    .eq('usuario_id', usuarioId)
+    .maybeSingle()
+
+  if (!fichaExistente) {
+    await admin.from('clientes').insert({
+      pescaderia_id: pescaderiaId,
+      usuario_id: usuarioId,
+      nombre: usuarioEmail.split('@')[0],
+      email: usuarioEmail,
+    })
+  }
 
   revalidatePath('/dashboard')
-  return { ok: true, email: usuario.email }
+  return { ok: true, email: usuarioEmail }
 }
 
 // ── Reactivar usuario (cuando quedó huérfano en auth tras borrar pescadería) ──

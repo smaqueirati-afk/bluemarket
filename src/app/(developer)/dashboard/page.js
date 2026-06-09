@@ -1,17 +1,32 @@
 import { createClient } from '../../../lib/supabase/server'
 import { createAdminClient } from '../../../lib/supabase/admin'
+import { redirect } from 'next/navigation'
 import PanelDeveloper from './PanelDeveloper'
 
 export default async function DashboardDeveloper() {
   const supabase = await createClient()
 
-  const { data: pescaderias } = await supabase
+  // Verificar que sea developer
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { data: perfil } = await supabase
+    .from('usuarios')
+    .select('rol')
+    .eq('id', user.id)
+    .single()
+
+  if (perfil?.rol !== 'developer') redirect('/inicio')
+
+  // Usar admin para saltear RLS y ver todas las pescaderías
+  const admin = createAdminClient()
+
+  const { data: pescaderias } = await admin
     .from('pescaderias')
     .select('*')
     .order('created_at', { ascending: false })
 
-  // Traer los dueños (rol cliente) con id, nombre y email
-  const admin = createAdminClient()
+  // Traer todos los usuarios con rol 'cliente' (dueños de pescaderías)
   const { data: duenos } = await admin
     .from('usuarios')
     .select('id, nombre, email, pescaderia_id')
