@@ -195,18 +195,18 @@ export default function GestionProductos({ productos, nombrePescaderia }) {
         {/* Header */}
         <div className="mb-5">
           <a href="/pescaderia" className="inline-flex items-center gap-1.5 bg-[#4db8ff] text-[#03174a] font-bold text-sm px-4 py-2.5 rounded-xl active:scale-95 transition-all mb-4">← Volver a pedidos</a>
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <h1 className="text-lg font-extrabold leading-tight">Mis productos</h1>
-              <p className="text-xs text-white/40 truncate">{nombrePescaderia}</p>
+              <p className="text-xs text-white/40 mt-0.5">{nombrePescaderia}</p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 shrink-0">
               <button onClick={abrirCatalogo}
-                className="shrink-0 bg-[#2ecc71]/15 border border-[#2ecc71]/30 text-[#2ecc71] font-bold text-sm px-3 py-2.5 rounded-xl active:scale-95 transition-all whitespace-nowrap">
-                📦 Catálogo
+                className="bg-[#2ecc71]/15 border border-[#2ecc71]/30 text-[#2ecc71] font-bold text-sm px-3 py-2.5 rounded-xl active:scale-95 transition-all flex items-center gap-1.5">
+                📦 <span>Catálogo</span>
               </button>
               <button onClick={abrirNuevo}
-                className="shrink-0 bg-[#4db8ff] text-[#03174a] font-bold text-sm px-4 py-2.5 rounded-xl active:scale-95 transition-all whitespace-nowrap">
+                className="bg-[#4db8ff] text-[#03174a] font-bold text-sm px-4 py-2.5 rounded-xl active:scale-95 transition-all">
                 + Agregar
               </button>
             </div>
