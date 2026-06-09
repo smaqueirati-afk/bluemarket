@@ -259,12 +259,12 @@ export default function PanelDeveloper({ pescaderias }) {
                   value={emailReactivar}
                   onChange={(e) => setEmailReactivar(e.target.value)}
                   placeholder="usuario@gmail.com"
-                  className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 outline-none focus:border-[#f39c12]"
+                  className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 outline-none focus:border-[#f39c12]"
                 />
                 <button
                   onClick={handleReactivarPorEmail}
                   disabled={cargandoReactivar || !emailReactivar}
-                  className="bg-[#f39c12] text-[#03174a] font-bold text-xs px-4 py-2 rounded-lg active:scale-95 disabled:opacity-50 whitespace-nowrap"
+                  className="shrink-0 bg-[#f39c12] text-[#03174a] font-bold text-xs px-4 py-2 rounded-lg active:scale-95 disabled:opacity-50 whitespace-nowrap"
                 >
                   {cargandoReactivar ? '...' : 'Reactivar'}
                 </button>

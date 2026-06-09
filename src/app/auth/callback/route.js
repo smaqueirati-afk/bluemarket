@@ -37,40 +37,38 @@ export async function GET(request) {
           .single()
 
         if (perfil) {
-          if (perfil.rol === 'cliente' && perfil.pescaderia_id) {
+          if (returnTo && returnTo.startsWith('/t/')) {
+            // Venía comprando en una tienda por link: volver ahí después del login
+            destino = returnTo
+          } else if (perfil.rol === 'cliente' && perfil.pescaderia_id) {
             // Dueño de pescadería: va a su panel
             destino = '/pescaderia'
           } else if (perfil.rol === 'developer') {
             destino = '/dashboard'
-          } else {
-            // Si venía de una tienda (botón "Continuar con Google" en checkout), volver ahí
-            if (returnTo && returnTo.startsWith('/t/')) {
-              destino = returnTo
-            } else if (perfil.pescaderia_id) {
-              // Ya tiene pescadería asignada: buscar el slug
-              const { data: pesc } = await admin
-                .from('pescaderias')
-                .select('slug')
-                .eq('id', perfil.pescaderia_id)
-                .single()
-              if (pesc?.slug) {
-                destino = `/t/${pesc.slug}`
-                pescaderiaSlugCookie = null
-              }
-            } else if (pescaderiaSlugCookie) {
-              // Viene de una invitación con slug: asignar la pescadería al usuario
-              const { data: pesc } = await admin
-                .from('pescaderias')
-                .select('id, slug')
-                .eq('slug', pescaderiaSlugCookie)
-                .single()
-              if (pesc) {
-                await admin
-                  .from('usuarios')
-                  .update({ pescaderia_id: pesc.id })
-                  .eq('id', user.id)
-                destino = `/t/${pesc.slug}`
-              }
+          } else if (perfil.pescaderia_id) {
+            // Ya tiene pescadería asignada: buscar el slug
+            const { data: pesc } = await admin
+              .from('pescaderias')
+              .select('slug')
+              .eq('id', perfil.pescaderia_id)
+              .single()
+            if (pesc?.slug) {
+              destino = `/t/${pesc.slug}`
+              pescaderiaSlugCookie = null
+            }
+          } else if (pescaderiaSlugCookie) {
+            // Viene de una invitación con slug: asignar la pescadería al usuario
+            const { data: pesc } = await admin
+              .from('pescaderias')
+              .select('id, slug')
+              .eq('slug', pescaderiaSlugCookie)
+              .single()
+            if (pesc) {
+              await admin
+                .from('usuarios')
+                .update({ pescaderia_id: pesc.id })
+                .eq('id', user.id)
+              destino = `/t/${pesc.slug}`
             }
           }
         }
