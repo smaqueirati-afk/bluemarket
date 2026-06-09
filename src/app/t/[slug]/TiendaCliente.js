@@ -14,6 +14,7 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
   const [verCheckout, setVerCheckout] = useState(false)
   const [pedidoConfirmado, setPedidoConfirmado] = useState(false)
   const [numeroPedido, setNumeroPedido] = useState(null)
+  const [palabraClave, setPalabraClave] = useState(null)
   const [guardando, setGuardando] = useState(false)
   const [errorPedido, setErrorPedido] = useState(null)
   const [copiadoInvite, setCopiadoInvite] = useState(false)
@@ -384,6 +385,7 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
               }
               setVerCheckout(false)
               setNumeroPedido(resultado.numero)
+              setPalabraClave(resultado.palabraClave)
               setPedidoConfirmado(true)
               setCarrito([])
               // Recargar mis pedidos
@@ -463,6 +465,13 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
             <h1 className="text-2xl font-extrabold text-white mb-2">¡Pedido confirmado!</h1>
             {numeroPedido && (
               <div className="text-[#4db8ff] font-bold text-lg mb-3">Pedido #{numeroPedido}</div>
+            )}
+            {palabraClave && (
+              <div className="bg-white/[0.07] border border-white/15 rounded-2xl px-6 py-4 mb-5 w-full">
+                <div className="text-[11px] text-white/45 uppercase tracking-wide mb-1">Tu palabra clave 🔑</div>
+                <div className="text-2xl font-extrabold text-[#4db8ff] tracking-wider">{palabraClave}</div>
+                <div className="text-[11px] text-white/40 mt-1.5">Guardala — te la van a pedir al entregar el pedido</div>
+              </div>
             )}
             <p className="text-white/55 text-sm leading-relaxed mb-8">
               Tu pedido fue recibido. La pescadería lo va a preparar y te avisará cuando esté listo. 🐟

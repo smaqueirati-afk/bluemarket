@@ -115,6 +115,7 @@ export async function crearPedido(pescaderiaId, datos, items) {
     .insert({
       pescaderia_id: pescaderiaId,
       cliente_id: clienteId,
+      usuario_id: user.id,
       estado: 'nuevo',
       tipo_entrega: datos.entrega === 'envio' ? 'delivery' : 'retiro',
       direccion: datos.direccion || null,
@@ -190,22 +191,12 @@ export async function misPedidos(pescaderiaId) {
 
   const admin = createAdminClient()
 
-  // Buscar la ficha de cliente de este usuario en esta pescadería
-  const { data: cli } = await admin
-    .from('clientes')
-    .select('id')
-    .eq('pescaderia_id', pescaderiaId)
-    .eq('usuario_id', user.id)
-    .maybeSingle()
-
-  if (!cli) return { pedidos: [] }
-
-  // Traer sus pedidos con los items
+  // Traer sus pedidos por usuario_id (no depende de la ficha de cliente)
   const { data: pedidos } = await admin
     .from('pedidos')
     .select('id, numero, estado, tipo_entrega, total, created_at, palabra_clave')
     .eq('pescaderia_id', pescaderiaId)
-    .eq('cliente_id', cli.id)
+    .eq('usuario_id', user.id)
     .order('created_at', { ascending: false })
     .limit(20)
 

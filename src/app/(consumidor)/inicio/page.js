@@ -31,5 +31,12 @@ export default async function InicioPage() {
     .eq('disponible', true)
     .order('destacado', { ascending: false })
 
-  return <TiendaCliente productos={productos || []} usuarioId={user?.id || null} />
+  // Nombre de la pescadería a la que el consumidor le hace el pedido
+  const { data: pescaderia } = await admin
+    .from('pescaderias')
+    .select('nombre')
+    .eq('id', pescaderiaId)
+    .maybeSingle()
+
+  return <TiendaCliente productos={productos || []} usuarioId={user?.id || null} pescaderiaNombre={pescaderia?.nombre || null} />
 }

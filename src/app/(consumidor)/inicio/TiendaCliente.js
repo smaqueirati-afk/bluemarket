@@ -15,7 +15,7 @@ const ESTADOS = {
   cancelado:  { label: 'Cancelado',  emoji: '❌', color: '#e74c3c' },
 }
 
-export default function TiendaCliente({ productos, usuarioId }) {
+export default function TiendaCliente({ productos, usuarioId, pescaderiaNombre }) {
   // carrito = array de { producto, cantidad }
   const [carrito, setCarrito] = useState([])
   const [categoria, setCategoria] = useState('todo')
@@ -163,9 +163,9 @@ export default function TiendaCliente({ productos, usuarioId }) {
         <div className="shrink-0 px-4 pt-5 pb-1">
           <div className="flex items-center justify-between mb-3.5">
             <div className="flex items-center gap-1.5 bg-white/[0.07] border border-white/12 rounded-full px-3 py-1.5 backdrop-blur-sm">
-              <span>📍</span>
-              <span className="text-[11px] text-white/55">Entrega en</span>
-              <strong className="text-[11px] text-white">Escobar, BA</strong>
+              <span>🐟</span>
+              <span className="text-[11px] text-white/55">Pedido a</span>
+              <strong className="text-[11px] text-white truncate max-w-[150px]">{pescaderiaNombre || 'la pescadería'}</strong>
             </div>
             <div className="flex items-center gap-2">
               {usuarioId && (
