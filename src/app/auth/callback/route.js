@@ -18,6 +18,10 @@ export async function GET(request) {
       const returnToRaw = request.cookies.get('bm_return')?.value || null
       const returnTo = returnToRaw ? decodeURIComponent(returnToRaw) : null
 
+      // Fallback: el slug también puede venir como query param (más confiable en mobile)
+      const slugParam = searchParams.get('slug') || null
+      if (slugParam && !returnTo) pescaderiaSlugCookie = slugParam
+
       if (user) {
         const invite = request.cookies.get('bm_invite')?.value
         const admin = createAdminClient()

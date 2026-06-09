@@ -382,15 +382,10 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
               // Guardar carrito para restaurarlo después del login
               try { sessionStorage.setItem('bm_carrito', JSON.stringify(carrito)) } catch {}
               // Guardar la URL actual para volver después del login
-              const isSecure = window.location.protocol === 'https:'
-              const secureFlag = isSecure ? ';secure' : ''
-              // Guardar la ruta actual para volver después del login
-              document.cookie = `bm_return=${encodeURIComponent(window.location.pathname)};path=/;max-age=1800;samesite=lax${secureFlag}`
-              // Guardar el slug de la pescadería como fallback
-              const slugMatch = window.location.pathname.match(/^\/t\/([^/]+)/)
-              if (slugMatch) {
-                document.cookie = `bm_pescaderia_slug=${slugMatch[1]};path=/;max-age=86400;samesite=lax${secureFlag}`
-              }
+              document.cookie = `bm_return=${encodeURIComponent(window.location.pathname)};path=/;max-age=1800;samesite=lax`
+              const slugActual = window.location.pathname.match(/^\/t\/([^/]+)/)?.[1] || ''
+              // Guardamos el slug en localStorage como fallback extra (además de cookie)
+              if (slugActual) localStorage.setItem('bm_slug_pendiente', slugActual)
               await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: { redirectTo: `${window.location.origin}/auth/callback` },
