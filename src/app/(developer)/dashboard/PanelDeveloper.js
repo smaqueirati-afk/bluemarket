@@ -375,18 +375,18 @@ export default function PanelDeveloper({ pescaderias }) {
                             value={emailDueno}
                             onChange={(e) => setEmailDueno(e.target.value)}
                             placeholder="email@deldueño.com"
-                            className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 outline-none focus:border-[#4db8ff]"
+                            className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 outline-none focus:border-[#4db8ff]"
                           />
                           <button
                             onClick={() => handleAsignar(p.id)}
                             disabled={cargandoAsig}
-                            className="bg-[#2ecc71] text-[#03174a] font-bold text-xs px-3 py-2 rounded-lg active:scale-95 disabled:opacity-60"
+                            className="shrink-0 bg-[#2ecc71] text-[#03174a] font-bold text-xs px-3 py-2 rounded-lg active:scale-95 disabled:opacity-60"
                           >
                             {cargandoAsig ? '...' : 'Guardar'}
                           </button>
                           <button
                             onClick={() => { setAsignandoId(null); setEmailDueno('') }}
-                            className="bg-white/8 text-white/50 text-xs px-3 py-2 rounded-lg"
+                            className="shrink-0 bg-white/8 text-white/50 text-xs px-3 py-2 rounded-lg"
                           >
                             ✕
                           </button>

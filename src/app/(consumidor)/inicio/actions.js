@@ -35,13 +35,21 @@ export async function crearPedido(datos, items) {
 
   const admin = createAdminClient()
 
-  // 2. Buscar la ficha de cliente de este usuario (si existe) en la pescadería demo
+  // Pescadería del consumidor (la asignada en su perfil; si no, la demo)
+  const { data: perfilUsuario } = await admin
+    .from('usuarios')
+    .select('pescaderia_id')
+    .eq('id', user.id)
+    .maybeSingle()
+  const pescaderiaId = perfilUsuario?.pescaderia_id || PESCADERIA_DEMO
+
+  // 2. Buscar la ficha de cliente de este usuario (si existe) en su pescadería
   let clienteId = null
   const { data: clienteExistente } = await admin
     .from('clientes')
     .select('id')
     .eq('usuario_id', user.id)
-    .eq('pescaderia_id', PESCADERIA_DEMO)
+    .eq('pescaderia_id', pescaderiaId)
     .maybeSingle()
 
   if (clienteExistente) {
@@ -51,7 +59,7 @@ export async function crearPedido(datos, items) {
     const { data: nuevoCliente } = await admin
       .from('clientes')
       .insert({
-        pescaderia_id: PESCADERIA_DEMO,
+        pescaderia_id: pescaderiaId,
         usuario_id: user.id,
         nombre: user.email.split('@')[0],
         email: user.email,
@@ -65,13 +73,12 @@ export async function crearPedido(datos, items) {
   const subtotal = items.reduce((acc, i) => acc + i.producto.precio * i.cantidad, 0)
   const envio = datos.entrega === 'envio' ? 0 : 0  // por ahora envío gratis
   const total = subtotal + envio
-  const palabraClave = generarPalabraClave()
 
-  // 4. Crear el pedido
+  // 4. Crear el pedido (la palabra clave la genera el trigger de la base)
   const { data: pedido, error: errPedido } = await admin
     .from('pedidos')
     .insert({
-      pescaderia_id: PESCADERIA_DEMO,
+      pescaderia_id: pescaderiaId,
       cliente_id: clienteId,
       usuario_id: user.id,
       estado: 'nuevo',
@@ -84,9 +91,8 @@ export async function crearPedido(datos, items) {
       descuento: 0,
       total,
       nota_cliente: datos.nota || null,
-      palabra_clave: palabraClave,
     })
-    .select('id, numero')
+    .select('id, numero, palabra_clave')
     .single()
 
   if (errPedido) {
@@ -112,7 +118,7 @@ export async function crearPedido(datos, items) {
     return { error: 'El pedido se creó pero falló al guardar los productos: ' + errItems.message }
   }
 
-  return { ok: true, numero: pedido.numero, pedidoId: pedido.id, palabraClave }
+  return { ok: true, numero: pedido.numero, pedidoId: pedido.id, palabraClave: pedido.palabra_clave }
 }
 
 // Marca un pedido como visto por el cliente (borra la notificación de cambio de estado)

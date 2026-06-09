@@ -9,16 +9,27 @@ export default async function InicioPage() {
   // Usamos el cliente admin para leer el catálogo (ver productos es público)
   const admin = createAdminClient()
 
-  const { data: productos } = await admin
-    .from('productos')
-    .select('*')
-    .eq('pescaderia_id', PESCADERIA_DEMO)
-    .eq('disponible', true)
-    .order('destacado', { ascending: false })
-
   // Usuario logueado (puede no estarlo: la tienda es pública). Sirve para el botón de invitar.
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+
+  // La pescadería del consumidor: la asignada en su perfil; si no tiene, la demo
+  let pescaderiaId = PESCADERIA_DEMO
+  if (user) {
+    const { data: perfil } = await admin
+      .from('usuarios')
+      .select('pescaderia_id')
+      .eq('id', user.id)
+      .maybeSingle()
+    if (perfil?.pescaderia_id) pescaderiaId = perfil.pescaderia_id
+  }
+
+  const { data: productos } = await admin
+    .from('productos')
+    .select('*')
+    .eq('pescaderia_id', pescaderiaId)
+    .eq('disponible', true)
+    .order('destacado', { ascending: false })
 
   return <TiendaCliente productos={productos || []} usuarioId={user?.id || null} />
 }
