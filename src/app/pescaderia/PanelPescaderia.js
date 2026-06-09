@@ -149,7 +149,7 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
   }
 
   async function compartirInvitacion() {
-    const texto = `Te invito a BlueMarket 🐟\n${linkInvitacion}`
+    const texto = `Sumá tu pescadería a BlueMarket 🐟\n${linkInvitacion}`
     if (navigator.share) {
       try {
         await navigator.share({ title: 'BlueMarket', text: texto, url: linkInvitacion })
@@ -429,11 +429,20 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
           <div className="bg-white/[0.05] border border-white/10 rounded-2xl p-4 mb-4">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-base">🤝</span>
-              <span className="text-sm font-bold text-white">Invitar gente a BlueMarket</span>
+              <span className="text-sm font-bold text-white">Invitar pescaderías</span>
             </div>
             <p className="text-[12px] text-white/45 mb-3 leading-relaxed">
-              BlueMarket es una red por invitación. Compartí tu link y quien entre por ahí queda recomendado por vos.
+              Compartí tu link o QR. La pescadería que entre por ahí se da de alta sola y queda recomendada por vos.
             </p>
+            <div className="flex justify-center mb-3">
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=10&data=${encodeURIComponent(linkInvitacion)}`}
+                alt="QR de invitación"
+                width={150}
+                height={150}
+                className="rounded-xl bg-white p-2"
+              />
+            </div>
             <div className="flex gap-2">
               <button onClick={compartirInvitacion}
                 className="flex-[3] bg-[#4db8ff] text-[#03174a] font-bold text-sm py-2 rounded-xl active:scale-[0.98] transition-transform flex items-center justify-center gap-1.5">

@@ -2,6 +2,14 @@ import { NextResponse } from 'next/server'
 import { createClient } from '../../../lib/supabase/server'
 import { createAdminClient } from '../../../lib/supabase/admin'
 
+function slugify(nombre) {
+  return nombre
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
 export async function GET(request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
@@ -25,6 +33,60 @@ export async function GET(request) {
       if (user) {
         const invite = request.cookies.get('bm_invite')?.value
         const admin = createAdminClient()
+
+        // ── Alta de pescadería por invitación ──
+        // Si viene del formulario de /invitacion, crear la pescadería y
+        // dejar al usuario logueado como dueño.
+        const altaRaw = request.cookies.get('bm_alta')?.value
+        if (altaRaw) {
+          try {
+            const alta = JSON.parse(decodeURIComponent(altaRaw))
+            if (alta?.nombre) {
+              const base = slugify(alta.nombre) || 'pescaderia'
+              let slug = base
+              for (let i = 2; i < 50; i++) {
+                const { data: existe } = await admin
+                  .from('pescaderias')
+                  .select('id')
+                  .eq('slug', slug)
+                  .maybeSingle()
+                if (!existe) break
+                slug = `${base}-${i}`
+              }
+
+              const { data: nueva, error: errPesc } = await admin
+                .from('pescaderias')
+                .insert({
+                  nombre: alta.nombre,
+                  slug,
+                  telefono: alta.telefono || null,
+                  modalidad: alta.modalidad || 'local_reparto',
+                  plan: 'trial',
+                  activa: true,
+                })
+                .select('id')
+                .single()
+
+              if (!errPesc && nueva) {
+                // Hacer dueño al usuario logueado (upsert por si es su primer login)
+                await admin.from('usuarios').upsert({
+                  id: user.id,
+                  email: user.email,
+                  nombre: user.user_metadata?.full_name || user.email.split('@')[0],
+                  rol: 'cliente',
+                  pescaderia_id: nueva.id,
+                  invitado_por: alta.invitadoPor || null,
+                }, { onConflict: 'id' })
+
+                const response = NextResponse.redirect(`${origin}/pescaderia`)
+                response.cookies.delete('bm_alta')
+                return response
+              }
+            }
+          } catch (e) {
+            // Si algo falla, seguimos con el flujo normal de login
+          }
+        }
 
         if (invite && invite !== user.id) {
           // Registrar quién invitó. Si viene con slug de pescadería, vincular al cliente.
