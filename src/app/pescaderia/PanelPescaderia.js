@@ -579,7 +579,7 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
                           </a>
                           {telWa && (
                             <a
-                              href={`https://wa.me/${telWa}?text=${encodeURIComponent(`¡Hola${pedido.cliente_nombre ? ' ' + pedido.cliente_nombre : ''}! Soy de ${pescaderia?.nombre || 'la pescadería'}, voy en camino con tu pedido #${pedido.numero}${pedido.horario ? ` (horario estimado: ${pedido.horario})` : ''} 🐟`)}`}
+                              href={`https://wa.me/${telWa}?text=${encodeURIComponent(`¡Hola${pedido.cliente_nombre ? ' ' + pedido.cliente_nombre : ''}! Soy de ${pescaderia?.nombre || 'la pescadería'}, voy en camino con tu pedido #${pedido.numero}${pedido.horario ? ` (horario estimado: ${pedido.horario})` : ''} 🐟${pedido.palabra_clave ? `\n\n🔑 Tu palabra clave: ${pedido.palabra_clave}\nDecísela al repartidor cuando te entregue el pedido.` : ''}`)}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="flex-1 bg-[#25D366] text-[#03351b] text-xs font-bold px-3 py-2 rounded-lg active:scale-95 transition-transform text-center">
