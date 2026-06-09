@@ -23,6 +23,18 @@ export async function crearPedido(pescaderiaId, datos, items) {
 
   const admin = createAdminClient()
 
+  // ── Gate: el envío a domicilio es solo para usuarios invitados (acceso_aprobado) ──
+  if (datos.entrega === 'envio') {
+    const { data: perfilUsuario } = await admin
+      .from('usuarios')
+      .select('acceso_aprobado')
+      .eq('id', user.id)
+      .maybeSingle()
+    if (!perfilUsuario?.acceso_aprobado) {
+      return { error: 'El envío a domicilio está disponible solo para usuarios invitados. Podés elegir retiro en el local.' }
+    }
+  }
+
   // ── Validación de stock y disponibilidad al momento de confirmar ──
   const productoIds = items.map((i) => i.producto.id)
   const { data: productosActuales } = await admin
