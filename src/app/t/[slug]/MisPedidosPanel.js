@@ -52,6 +52,16 @@ export default function MisPedidosPanel({ pedidos, onCerrar }) {
                     <div className="text-[12px] text-white/50 mb-2">
                       {p.items.map((it) => `${it.cantidad} ${it.nombre}`).join(' · ')}
                     </div>
+                    <div className="flex items-center gap-3 flex-wrap mb-2">
+                      <span className="text-[11px] text-white/40">
+                        {p.tipo_entrega === 'delivery' ? '🏠 Envío a domicilio' : '🏪 Retiro en local'}
+                      </span>
+                      {p.cliente_telefono && (
+                        <span className="flex items-center gap-1 text-[11px] text-[#25D366]/80">
+                          📱 {p.cliente_telefono}
+                        </span>
+                      )}
+                    </div>
                     <div className="flex items-center justify-between pt-2 border-t border-white/8">
                       <span className="text-[11px] text-white/40">
                         {new Date(p.created_at).toLocaleDateString('es-AR', {

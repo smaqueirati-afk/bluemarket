@@ -3,12 +3,13 @@
 import { useState } from 'react'
 
 // Pantalla de checkout. Recibe el carrito y una función para volver/confirmar.
-export default function Checkout({ carrito, onVolver, onConfirmar, cargando, errorExterno, ccHabilitada, necesitaLogin, onLogin, modalidad }) {
+export default function Checkout({ carrito, onVolver, onConfirmar, cargando, errorExterno, ccHabilitada, necesitaLogin, onLogin, modalidad, soloDelivery }) {
   const puedeEnvio = modalidad !== 'solo_local'
-  const puedeRetiro = modalidad !== 'solo_reparto'
-  const [entrega, setEntrega] = useState(puedeEnvio ? 'envio' : 'retiro')   // 'envio' | 'retiro'
-  const [pago, setPago] = useState('efectivo')       // 'efectivo' | 'transferencia'
+  const puedeRetiro = modalidad !== 'solo_reparto' && !soloDelivery
+  const [entrega, setEntrega] = useState(puedeEnvio ? 'envio' : 'retiro')
+  const [pago, setPago] = useState('efectivo')
   const [direccion, setDireccion] = useState('')
+  const [telefono, setTelefono] = useState('')
   const [nota, setNota] = useState('')
   const [error, setError] = useState(null)
 
@@ -21,14 +22,20 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
 
   function confirmar() {
     setError(null)
-    if (entrega === 'envio' && !direccion.trim()) {
+    const entregaFinal = soloDelivery ? 'envio' : entrega
+    if (entregaFinal === 'envio' && !direccion.trim()) {
       setError('Necesitamos tu dirección para el envío')
       return
     }
+    if (!telefono.trim()) {
+      setError('Necesitamos tu teléfono para coordinar por WhatsApp')
+      return
+    }
     onConfirmar({
-      entrega,
+      entrega: entregaFinal,
       pago,
-      direccion: entrega === 'envio' ? direccion.trim() : null,
+      direccion: entregaFinal === 'envio' ? direccion.trim() : null,
+      telefono: telefono.trim(),
       nota: nota.trim() || null,
       total: totalPrecio,
     })
@@ -51,6 +58,21 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
         {/* ENTREGA */}
         <div>
           <h2 className="text-xs text-white/50 uppercase tracking-wide mb-2.5 font-bold">¿Cómo lo recibís?</h2>
+          {soloDelivery ? (
+            <div>
+              <div className="p-3.5 rounded-2xl border border-[#4db8ff] bg-[#4db8ff]/15 text-left">
+                <div className="text-2xl mb-1">🏠</div>
+                <div className="text-sm font-bold text-white">Envío a domicilio</div>
+                <div className="text-[11px] text-white/45 mt-0.5">Te lo llevamos</div>
+              </div>
+              <div className="flex items-start gap-2 mt-2.5 px-1">
+                <span className="text-[#f39c12] text-sm shrink-0">ℹ️</span>
+                <p className="text-[11px] text-white/45 leading-relaxed">
+                  Solo delivery disponible para tu primera compra. La pescadería te asignará el costo de envío y lo coordinará con vos.
+                </p>
+              </div>
+            </div>
+          ) : (
           <div className={`grid gap-2.5 ${puedeEnvio && puedeRetiro ? 'grid-cols-2' : 'grid-cols-1'}`}>
             {puedeEnvio && (
             <button onClick={() => setEntrega('envio')}
@@ -73,10 +95,11 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
             </button>
             )}
           </div>
+          )}
         </div>
 
-        {/* DIRECCIÓN (solo si es envío) */}
-        {entrega === 'envio' && (
+        {/* DIRECCIÓN (siempre si soloDelivery, o si eligió envío) */}
+        {(soloDelivery || entrega === 'envio') && (
           <div style={{ animation: 'bmFadeUp 0.3s ease both' }}>
             <h2 className="text-xs text-white/50 uppercase tracking-wide mb-2.5 font-bold">Dirección de entrega</h2>
             <input
@@ -87,6 +110,25 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
             />
           </div>
         )}
+
+        {/* TELÉFONO */}
+        <div>
+          <h2 className="text-xs text-white/50 uppercase tracking-wide mb-1.5 font-bold">Tu teléfono</h2>
+          <p className="text-[11px] text-white/40 mb-2.5 leading-relaxed">
+            📲 La pescadería te va a contactar por <span className="text-[#25D366] font-semibold">WhatsApp</span> para coordinar el pedido.
+          </p>
+          <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3.5 py-3 focus-within:border-[#25D366]/60 transition-colors">
+            <span className="text-[#25D366] text-lg shrink-0">📱</span>
+            <input
+              value={telefono}
+              onChange={(e) => setTelefono(e.target.value)}
+              placeholder="Ej: 11 2345-6789"
+              type="tel"
+              inputMode="tel"
+              className="flex-1 bg-transparent text-sm text-white placeholder-white/30 outline-none"
+            />
+          </div>
+        </div>
 
         {/* PAGO */}
         <div>

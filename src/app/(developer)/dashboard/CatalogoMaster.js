@@ -95,7 +95,7 @@ export default function CatalogoMaster({ productos: inicial, pescaderias }) {
         <div className="flex gap-2">
           <button onClick={() => { setImportando(importando ? null : ''); setSeleccionados([]) }}
             className="bg-[#2ecc71]/15 border border-[#2ecc71]/30 text-[#2ecc71] text-xs font-bold px-3 py-2 rounded-xl active:scale-95 transition-all">
-            📥 Importar
+            📤 Exportar
           </button>
           <button onClick={abrirNuevo}
             className="bg-[#4db8ff] text-[#03174a] font-bold text-xs px-3 py-2 rounded-xl active:scale-95 transition-all">
@@ -111,20 +111,20 @@ export default function CatalogoMaster({ productos: inicial, pescaderias }) {
         </div>
       )}
 
-      {/* Panel importar */}
+      {/* Panel exportar */}
       {importando !== null && (
         <div className="bg-white/[0.06] border border-[#2ecc71]/30 rounded-2xl p-4 space-y-3" style={{ animation: 'bmFadeUp 0.3s ease both' }}>
-          <div className="text-sm font-bold text-white">¿A qué pescadería importar?</div>
+          <div className="text-sm font-bold text-white">¿A qué pescadería exportar?</div>
           <select value={importando} onChange={(e) => setImportando(e.target.value)}
             className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-[#4db8ff]">
             <option value="" className="bg-[#051e5c]">Seleccioná una pescadería...</option>
             {pescaderias.map((p) => <option key={p.id} value={p.id} className="bg-[#051e5c]">{p.nombre}</option>)}
           </select>
-          <div className="text-xs text-white/50">Seleccioná los productos a importar ({seleccionados.length} elegidos)</div>
+          <div className="text-xs text-white/50">Seleccioná los productos a exportar ({seleccionados.length} elegidos)</div>
           {importando && (
             <button onClick={importar} disabled={!seleccionados.length || cargando}
               className="w-full bg-[#2ecc71] text-[#03174a] font-bold py-2.5 rounded-xl active:scale-[0.98] disabled:opacity-50">
-              {cargando ? 'Importando...' : `Importar ${seleccionados.length} productos`}
+              {cargando ? 'Exportando...' : `Exportar ${seleccionados.length} producto${seleccionados.length > 1 ? 's' : ''}`}
             </button>
           )}
         </div>

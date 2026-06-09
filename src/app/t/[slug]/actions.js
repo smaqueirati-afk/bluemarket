@@ -75,8 +75,10 @@ export async function crearPedido(pescaderiaId, datos, items) {
 
   if (porUsuario) {
     clienteId = porUsuario.id
+    if (datos.telefono) {
+      await admin.from('clientes').update({ telefono: datos.telefono }).eq('id', porUsuario.id)
+    }
   } else {
-    // 2. Buscar por email (por si la ficha existe pero sin usuario_id)
     const { data: porEmail } = await admin
       .from('clientes')
       .select('id, usuario_id')
@@ -86,12 +88,13 @@ export async function crearPedido(pescaderiaId, datos, items) {
 
     if (porEmail) {
       clienteId = porEmail.id
-      // Si esa ficha no tenía usuario_id, se lo completamos
-      if (!porEmail.usuario_id) {
-        await admin.from('clientes').update({ usuario_id: user.id }).eq('id', porEmail.id)
+      const updates = {}
+      if (!porEmail.usuario_id) updates.usuario_id = user.id
+      if (datos.telefono) updates.telefono = datos.telefono
+      if (Object.keys(updates).length > 0) {
+        await admin.from('clientes').update(updates).eq('id', porEmail.id)
       }
     } else {
-      // 3. No existe: crear ficha nueva
       const { data: nuevoCliente } = await admin
         .from('clientes')
         .insert({
@@ -99,6 +102,7 @@ export async function crearPedido(pescaderiaId, datos, items) {
           usuario_id: user.id,
           nombre: user.user_metadata?.full_name || user.email.split('@')[0],
           email: user.email,
+          telefono: datos.telefono || null,
         })
         .select('id')
         .single()
@@ -126,6 +130,9 @@ export async function crearPedido(pescaderiaId, datos, items) {
       descuento: 0,
       total,
       nota_cliente: datos.nota || null,
+      cliente_telefono: datos.telefono || null,
+      cliente_email: user.email || null,
+      cliente_nombre: user.user_metadata?.full_name || user.email?.split('@')[0] || null,
     })
     .select('id, numero, palabra_clave')
     .single()
@@ -194,7 +201,7 @@ export async function misPedidos(pescaderiaId) {
   // Traer sus pedidos por usuario_id (no depende de la ficha de cliente)
   const { data: pedidos } = await admin
     .from('pedidos')
-    .select('id, numero, estado, tipo_entrega, total, created_at, palabra_clave')
+    .select('id, numero, estado, tipo_entrega, total, created_at, palabra_clave, cliente_telefono, direccion')
     .eq('pescaderia_id', pescaderiaId)
     .eq('usuario_id', user.id)
     .order('created_at', { ascending: false })
