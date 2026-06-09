@@ -43,30 +43,47 @@ export async function crearPedido(datos, items) {
     .maybeSingle()
   const pescaderiaId = perfilUsuario?.pescaderia_id || PESCADERIA_DEMO
 
-  // 2. Buscar la ficha de cliente de este usuario (si existe) en su pescadería
+  // 2. Buscar/crear la ficha de cliente de este usuario EN esta pescadería
+  //    (por usuario_id, o por email para no duplicar)
   let clienteId = null
-  const { data: clienteExistente } = await admin
+  const { data: porUsuario } = await admin
     .from('clientes')
     .select('id')
-    .eq('usuario_id', user.id)
     .eq('pescaderia_id', pescaderiaId)
+    .eq('usuario_id', user.id)
     .maybeSingle()
 
-  if (clienteExistente) {
-    clienteId = clienteExistente.id
+  if (porUsuario) {
+    clienteId = porUsuario.id
   } else {
-    // Crear ficha de cliente automáticamente
-    const { data: nuevoCliente } = await admin
+    const { data: porEmail } = await admin
       .from('clientes')
-      .insert({
-        pescaderia_id: pescaderiaId,
-        usuario_id: user.id,
-        nombre: user.email.split('@')[0],
-        email: user.email,
-      })
-      .select('id')
-      .single()
-    clienteId = nuevoCliente?.id || null
+      .select('id, usuario_id')
+      .eq('pescaderia_id', pescaderiaId)
+      .eq('email', user.email)
+      .maybeSingle()
+
+    if (porEmail) {
+      clienteId = porEmail.id
+      if (!porEmail.usuario_id) {
+        await admin.from('clientes').update({ usuario_id: user.id }).eq('id', porEmail.id)
+      }
+    } else {
+      const { data: nuevoCliente, error: errCliente } = await admin
+        .from('clientes')
+        .insert({
+          pescaderia_id: pescaderiaId,
+          usuario_id: user.id,
+          nombre: user.user_metadata?.full_name || user.email.split('@')[0],
+          email: user.email,
+        })
+        .select('id')
+        .single()
+      if (errCliente) {
+        return { error: 'No se pudo crear la ficha de cliente: ' + errCliente.message }
+      }
+      clienteId = nuevoCliente?.id || null
+    }
   }
 
   // 3. Calcular totales
@@ -119,6 +136,23 @@ export async function crearPedido(datos, items) {
   }
 
   return { ok: true, numero: pedido.numero, pedidoId: pedido.id, palabraClave: pedido.palabra_clave }
+}
+
+// ── Traer los pedidos del consumidor logueado (admin, sin RLS) ──
+export async function misPedidos() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { pedidos: [] }
+
+  const admin = createAdminClient()
+  const { data: pedidos } = await admin
+    .from('pedidos')
+    .select('id, numero, estado, estado_visto, total, created_at, tipo_entrega, palabra_clave')
+    .eq('usuario_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(20)
+
+  return { pedidos: pedidos || [] }
 }
 
 // Marca un pedido como visto por el cliente (borra la notificación de cambio de estado)

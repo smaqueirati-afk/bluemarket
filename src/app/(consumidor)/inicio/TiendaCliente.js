@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Checkout from './Checkout'
-import { crearPedido, marcarEstadoVisto } from './actions'
+import { crearPedido, marcarEstadoVisto, misPedidos } from './actions'
 import BarraUsuario from '../../../components/BarraUsuario'
 import { createClient } from '../../../lib/supabase/client'
 
@@ -39,13 +39,8 @@ export default function TiendaCliente({ productos, usuarioId }) {
 
     async function cargarPedidos() {
       setCargandoPedidos(true)
-      const { data } = await supabase
-        .from('pedidos')
-        .select('id, numero, estado, estado_visto, total, created_at, tipo_entrega, palabra_clave')
-        .eq('usuario_id', usuarioId)
-        .order('created_at', { ascending: false })
-        .limit(20)
-      setMisPedidos(data || [])
+      const { pedidos } = await misPedidos()
+      setMisPedidos(pedidos || [])
       setCargandoPedidos(false)
     }
 
