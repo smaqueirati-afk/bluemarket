@@ -39,6 +39,18 @@ export async function GET(request) {
         // dejar al usuario logueado como dueño.
         const altaRaw = request.cookies.get('bm_alta')?.value
         if (altaRaw) {
+          // Safeguard: un developer NUNCA se convierte en dueño de una pescadería.
+          // Si abre un link de invitación por error, lo mandamos a su panel sin tocar su cuenta.
+          const { data: yo } = await admin
+            .from('usuarios')
+            .select('rol')
+            .eq('id', user.id)
+            .maybeSingle()
+          if (yo?.rol === 'developer') {
+            const response = NextResponse.redirect(`${origin}/dashboard`)
+            response.cookies.delete('bm_alta')
+            return response
+          }
           try {
             const alta = JSON.parse(decodeURIComponent(altaRaw))
             if (alta?.nombre) {
