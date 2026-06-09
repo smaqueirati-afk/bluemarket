@@ -440,7 +440,8 @@ export default function PanelDeveloper({ pescaderias }) {
           )}
         </div>
 
-        )} {/* fin de vista lista */}
+          </>
+        )}
 
       </div>
 
