@@ -9,7 +9,7 @@ export default async function TiendaPorSlug({ params }) {
 
   const { data: pescaderia } = await admin
     .from('pescaderias')
-    .select('id, nombre, slug, activa, modalidad, direccion')
+    .select('id, nombre, slug, activa, modalidad, direccion, telefono, email')
     .eq('slug', slug)
     .maybeSingle()
 
