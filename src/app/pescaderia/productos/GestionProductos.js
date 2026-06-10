@@ -114,7 +114,7 @@ export default function GestionProductos({ productos, nombrePescaderia }) {
     if (catalogo.length > 0) return
     setCargandoCatalogo(true)
     const supabase = createClient()
-    const { data } = await supabase.from('catalogo_master').select('*').eq('activo', true).order('nombre')
+    const { data } = await supabase.from('catalogo_master').select('*').order('nombre')
     setCatalogo(data || [])
     setCargandoCatalogo(false)
   }
