@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { crearProducto, editarProducto, toggleDisponible, borrarProducto, importarDesdeCatalogo } from './actions'
+import { crearProducto, editarProducto, toggleDisponible, borrarProducto, importarDesdeCatalogo, getCatalogoMaster } from './actions'
 import BarraUsuario from '../../../components/BarraUsuario'
 import { createClient } from '../../../lib/supabase/client'
 
@@ -113,9 +113,8 @@ export default function GestionProductos({ productos, nombrePescaderia }) {
     setSeleccionados([])
     if (catalogo.length > 0) return
     setCargandoCatalogo(true)
-    const supabase = createClient()
-    const { data } = await supabase.from('catalogo_master').select('*').order('nombre')
-    setCatalogo(data || [])
+    const res = await getCatalogoMaster()
+    setCatalogo(res.productos || [])
     setCargandoCatalogo(false)
   }
 

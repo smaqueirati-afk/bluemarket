@@ -135,7 +135,18 @@ export async function borrarProducto(productoId) {
   return { ok: true }
 }
 
-// ── Importar productos desde el catálogo master ──
+// ── Traer catálogo master (lectura pública via admin) ──
+export async function getCatalogoMaster() {
+  const admin = createAdminClient()
+  const { data, error } = await admin
+    .from('catalogo_master')
+    .select('*')
+    .order('nombre')
+  if (error) return { error: error.message }
+  return { productos: data || [] }
+}
+
+
 export async function importarDesdeCatalogo(productoIds) {
   const check = await verificarDueno()
   if (check.error) return { error: check.error }
