@@ -138,10 +138,6 @@ export default function LoginPage() {
                     <span className="font-extrabold text-lg text-[#4285F4]">G</span>
                     {cargando ? 'Conectando...' : 'Continuar con Google'}
                   </button>
-                  <button onClick={() => { setModo('otp'); setError(null) }}
-                    className="w-full flex items-center justify-center gap-3 py-3.5 bg-white/[0.08] border border-white/15 rounded-xl text-[15px] font-semibold text-white transition-all active:scale-[0.98]">
-                    ✉️ Continuar con email
-                  </button>
                 </div>
               </>
             )}
