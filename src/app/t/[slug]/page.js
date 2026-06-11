@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation'
 import TiendaCliente from './TiendaCliente'
 
 export default async function TiendaPorSlug({ params }) {
-  const { slug } = await params
+  const slug = params?.slug ?? params?.nxtPslug ?? Object.values(params)[0]
   const admin = createAdminClient()
 
   const { data: pescaderia } = await admin
