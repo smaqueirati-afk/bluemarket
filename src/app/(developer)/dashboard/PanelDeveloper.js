@@ -114,7 +114,16 @@ export default function PanelDeveloper({ pescaderias, catalogo }) {
     setCargandoBorrar(false)
   }
 
-  const activas = pescaderias.filter((p) => p.activa).length
+  const [copiadoSlug, setCopiadoSlug] = useState(null)
+
+  async function copiarLinkTienda(slug) {
+    const link = `${window.location.origin}/t/${slug}`
+    try {
+      await navigator.clipboard.writeText(link)
+      setCopiadoSlug(slug)
+      setTimeout(() => setCopiadoSlug(null), 2000)
+    } catch {}
+  }
   const trials = pescaderias.filter((p) => p.plan === 'trial').length
   const pescBorrar = borrandoId ? pescaderias.find((x) => x.id === borrandoId) : null
 
@@ -382,6 +391,16 @@ export default function PanelDeveloper({ pescaderias, catalogo }) {
                         </span>
                       )
                     })()}
+                  </div>
+
+                  {/* Link tienda */}
+                  <div className="mt-3 pt-3 border-t border-white/8 flex items-center justify-between gap-3">
+                    <code className="text-[11px] text-[#7dd3fc] truncate">/t/{p.slug}</code>
+                    <button
+                      onClick={() => copiarLinkTienda(p.slug)}
+                      className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#4db8ff]/10 border border-[#4db8ff]/30 text-[#4db8ff] active:scale-95 transition-all">
+                      {copiadoSlug === p.slug ? '✓ Copiado' : '🔗 Copiar link'}
+                    </button>
                   </div>
 
                   {/* Sección del dueño */}
