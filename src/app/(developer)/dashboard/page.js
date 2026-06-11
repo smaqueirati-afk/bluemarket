@@ -49,5 +49,5 @@ export default async function DashboardDeveloper() {
     .eq('activo', true)
     .order('nombre', { ascending: true })
 
-  return <PanelDeveloper pescaderias={pescaderiasConDueno} catalogo={catalogo || []} />
+  return <PanelDeveloper pescaderias={pescaderiasConDueno} catalogo={catalogo || []} usuarioId={user.id} />
 }
