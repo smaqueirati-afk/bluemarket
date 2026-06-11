@@ -147,6 +147,7 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
       setTimeout(() => setCopiadoSlug(null), 2000)
     } catch {}
   }
+  const activas = pescaderias.filter((p) => p.activa).length
   const trials = pescaderias.filter((p) => p.plan === 'trial').length
   const pescBorrar = borrandoId ? pescaderias.find((x) => x.id === borrandoId) : null
 
