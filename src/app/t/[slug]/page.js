@@ -3,9 +3,9 @@ import { createClient } from '../../../lib/supabase/server'
 import { notFound } from 'next/navigation'
 import TiendaCliente from './TiendaCliente'
 
-export default async function TiendaPorSlug({ params }) {
-  const { slug } = await params
-  console.log('KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY?.slice(0, 20))
+export default async function TiendaPorSlug(props) {
+  const params = await props.params
+  const slug = params.slug
   const admin = createAdminClient()
 
   const { data: pescaderia } = await admin
@@ -26,10 +26,6 @@ export default async function TiendaPorSlug({ params }) {
     .order('destacado', { ascending: false })
 
   let ccHabilitada = false
-  // Las opciones de entrega dependen SOLO de la modalidad de la pescadería:
-  //   solo_reparto  → únicamente delivery
-  //   solo_local    → únicamente retiro
-  //   local_reparto → retiro o delivery (las dos)
   const soloDelivery = pescaderia.modalidad === 'solo_reparto'
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
