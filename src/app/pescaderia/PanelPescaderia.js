@@ -338,24 +338,24 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
               </div>
             </div>
           </div>
-          <div className="flex gap-2 sm:shrink-0">
+          <div className="grid grid-cols-2 gap-2 w-full sm:w-auto">
             <a href="/pescaderia/productos"
-              className="flex-1 sm:flex-none bg-white/[0.08] border border-white/12 text-white text-sm font-medium px-4 py-2.5 rounded-xl active:scale-95 transition-all text-center whitespace-nowrap">
+              className="bg-white/[0.08] border border-white/12 text-white text-sm font-medium px-4 py-2.5 rounded-xl active:scale-95 transition-all text-center whitespace-nowrap">
               🐟 Productos
             </a>
             <a href="/pescaderia/clientes"
-              className="flex-1 sm:flex-none bg-white/[0.08] border border-white/12 text-white text-sm font-medium px-4 py-2.5 rounded-xl active:scale-95 transition-all text-center whitespace-nowrap">
+              className="bg-white/[0.08] border border-white/12 text-white text-sm font-medium px-4 py-2.5 rounded-xl active:scale-95 transition-all text-center whitespace-nowrap">
               👥 Clientes
             </a>
             {pescaderia?.modalidad === 'solo_local' && (
               <a href="/pescaderia/proveedores"
-                className="flex-1 sm:flex-none bg-white/[0.08] border border-white/12 text-white text-sm font-medium px-4 py-2.5 rounded-xl active:scale-95 transition-all text-center whitespace-nowrap">
+                className="col-span-2 bg-white/[0.08] border border-white/12 text-white text-sm font-medium px-4 py-2.5 rounded-xl active:scale-95 transition-all text-center whitespace-nowrap">
                 🚚 Proveedores
               </a>
             )}
             {haceReparto && (
               <a href="/pescaderia/fidelizacion"
-                className="flex-1 sm:flex-none bg-white/[0.08] border border-white/12 text-white text-sm font-medium px-4 py-2.5 rounded-xl active:scale-95 transition-all text-center whitespace-nowrap">
+                className="col-span-2 bg-white/[0.08] border border-white/12 text-white text-sm font-medium px-4 py-2.5 rounded-xl active:scale-95 transition-all text-center whitespace-nowrap">
                 🎁 Fidelización
               </a>
             )}
