@@ -56,6 +56,14 @@ export async function crearPedido(pescaderiaId, datos, items) {
     return { error: problemasStock.join(', '), stockInvalido: true }
   }
 
+  // ── Asegurar que exista el perfil en `usuarios` (la FK clientes.usuario_id lo exige) ──
+  // El comprador puede estar en auth pero sin fila en `usuarios` si nunca pasó por el alta.
+  await admin.from('usuarios').upsert({
+    id: user.id,
+    email: user.email,
+    nombre: user.user_metadata?.full_name || user.email.split('@')[0],
+  }, { onConflict: 'id' })
+
   // ── Buscar/crear la ficha de cliente de este usuario EN ESA pescadería ──
   // Dedup por usuario_id (clave confiable).
   let clienteId = null
