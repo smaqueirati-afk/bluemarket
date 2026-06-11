@@ -14,7 +14,7 @@ export default async function TiendaPorSlug(props) {
 
   const { data: pescaderia, error } = await admin
     .from('pescaderias')
-    .select('id, nombre, slug, activa, modalidad, direccion, telefono, email')
+    .select('id, nombre, slug, activa, modalidad, direccion, telefono')
     .eq('slug', slug)
     .maybeSingle()
     
