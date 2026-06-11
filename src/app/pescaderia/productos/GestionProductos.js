@@ -247,19 +247,11 @@ export default function GestionProductos({ productos, nombrePescaderia }) {
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-[#4db8ff]" />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">Precio *</label>
-                <input type="number" inputMode="numeric" value={form.precio} onChange={(e) => setForm({ ...form, precio: e.target.value })}
-                  placeholder="1800"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-[#4db8ff]" />
-              </div>
-              <div>
-                <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">Stock (opcional)</label>
-                <input type="number" inputMode="numeric" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })}
-                  placeholder="10"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-[#4db8ff]" />
-              </div>
+            <div>
+              <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">Precio *</label>
+              <input type="number" inputMode="numeric" value={form.precio} onChange={(e) => setForm({ ...form, precio: e.target.value })}
+                placeholder="1800"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-[#4db8ff]" />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -376,10 +368,10 @@ export default function GestionProductos({ productos, nombrePescaderia }) {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-white truncate">{p.nombre}</span>
-                      {!p.disponible && <span className="text-[9px] bg-white/10 text-white/50 px-1.5 py-0.5 rounded uppercase shrink-0">Pausado</span>}
+                      {!p.disponible && <span className="text-[9px] bg-[#e74c3c]/15 text-[#e74c3c] px-1.5 py-0.5 rounded uppercase shrink-0">Sin stock</span>}
                     </div>
                     <div className="text-xs text-white/45 mt-0.5">
-                      {fmt(p.precio)} · {p.unidad}{p.stock != null ? ` · Stock: ${p.stock}` : ''}
+                      {fmt(p.precio)} · {p.unidad}
                     </div>
                   </div>
                 </div>
@@ -391,7 +383,7 @@ export default function GestionProductos({ productos, nombrePescaderia }) {
                   </button>
                   <button onClick={() => cambiarDisponible(p)} disabled={accionando === p.id}
                     className="flex-1 bg-white/[0.07] border border-white/10 text-white text-xs font-medium py-2 rounded-lg active:scale-95 transition-all disabled:opacity-50">
-                    {p.disponible ? '⏸ Pausar' : '▶️ Activar'}
+                    {p.disponible ? '🚫 Sin stock' : '✅ Hay stock'}
                   </button>
                   <button onClick={() => eliminar(p)} disabled={accionando === p.id}
                     className="bg-[#e74c3c]/15 border border-[#e74c3c]/25 text-[#e74c3c] text-xs font-medium py-2 px-3 rounded-lg active:scale-95 transition-all disabled:opacity-50">

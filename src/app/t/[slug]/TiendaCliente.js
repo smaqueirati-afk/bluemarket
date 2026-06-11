@@ -238,15 +238,21 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
                     style={{ animation: `bmFadeUp 0.4s ease both`, animationDelay: `${idx * 0.04}s` }}>
                     {/* Imagen */}
                     <div className="w-[78px] h-[78px] shrink-0 bg-[linear-gradient(135deg,#0a3a7a,#051e5c)] flex items-center justify-center text-3xl relative overflow-hidden">
-                      <div className="absolute inset-0 opacity-30"
-                           style={{ background: 'radial-gradient(circle at 70% 20%, rgba(125,211,252,0.4), transparent 60%)' }} />
-                      <span className="relative">{p.emoji}</span>
+                      {p.foto_url ? (
+                        <img src={p.foto_url} alt={p.nombre} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+                      ) : (
+                        <>
+                          <div className="absolute inset-0 opacity-30"
+                               style={{ background: 'radial-gradient(circle at 70% 20%, rgba(125,211,252,0.4), transparent 60%)' }} />
+                          <span className="relative">{p.emoji}</span>
+                        </>
+                      )}
                     </div>
                     {/* Info */}
                     <div className="flex-1 min-w-0 py-3">
                       <div className="text-[13px] font-semibold text-white leading-tight truncate">{p.nombre}</div>
                       <div className="text-[10px] text-white/35 mt-0.5">
-                        Por {p.unidad} · Stock: {p.stock}
+                        Por {p.unidad}
                       </div>
                       <div className="text-[15px] font-extrabold text-[#4db8ff] mt-1">{fmt(p.precio)}</div>
                     </div>
@@ -395,19 +401,24 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
             onConfirmar={async (datos) => {
               setGuardando(true)
               setErrorPedido(null)
-              const resultado = await crearPedido(pescaderiaId, datos, carrito)
-              setGuardando(false)
-              if (resultado.error) {
-                setErrorPedido(resultado.error)
-                return
+              try {
+                const resultado = await crearPedido(pescaderiaId, datos, carrito)
+                if (resultado?.error) {
+                  setErrorPedido(resultado.error)
+                  return
+                }
+                setVerCheckout(false)
+                setNumeroPedido(resultado.numero)
+                setPalabraClave(resultado.palabraClave)
+                setPedidoConfirmado(true)
+                setCarrito([])
+                // Recargar mis pedidos
+                misPedidos(pescaderiaId).then(r => r.pedidos && setMisPedidosList(r.pedidos))
+              } catch (e) {
+                setErrorPedido('No se pudo confirmar el pedido. Probá de nuevo en un momento.')
+              } finally {
+                setGuardando(false)
               }
-              setVerCheckout(false)
-              setNumeroPedido(resultado.numero)
-              setPalabraClave(resultado.palabraClave)
-              setPedidoConfirmado(true)
-              setCarrito([])
-              // Recargar mis pedidos
-              misPedidos(pescaderiaId).then(r => r.pedidos && setMisPedidosList(r.pedidos))
             }}
           />
         )}
