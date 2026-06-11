@@ -13,6 +13,9 @@ export default async function TiendaPorSlug(props) {
     .select('id, nombre, slug, activa, modalidad, direccion, telefono, email')
     .eq('slug', slug)
     .maybeSingle()
+    
+  console.log('SLUG:', slug)
+  console.log('PESCADERIA:', JSON.stringify(pescaderia))
 
   if (!pescaderia || !pescaderia.activa) {
     notFound()
