@@ -5,7 +5,7 @@ import TiendaCliente from './TiendaCliente'
 
 export default async function TiendaPorSlug(props) {
   const params = await props.params
-  const slug = params.slug
+  const slug = params.slug || params.nxtPslug
   const admin = createAdminClient()
 
   const { data: pescaderia } = await admin
