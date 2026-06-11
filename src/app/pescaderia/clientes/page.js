@@ -31,7 +31,6 @@ export default async function ClientesPage() {
     .from('clientes')
     .select('*')
     .eq('pescaderia_id', perfil.pescaderia_id)
-    .neq('usuario_id', user.id)
     .order('cc_saldo', { ascending: false })
 
   return (

@@ -179,7 +179,8 @@ export default function PanelFidelizacion({ config, activos = [], cerrados = [],
         {/* Historial */}
         {cerrados.length > 0 && (
           <div className="mt-8">
-            <h2 className="text-lg font-extrabold mb-3">Historial de ciclos cerrados</h2>
+            <h2 className="text-lg font-extrabold mb-1">Historial de retornos pagados</h2>
+            <p className="text-white/40 text-[12px] mb-3">Lo que devolviste a cada comprador al cerrar cada mes.</p>
             <div className="flex flex-col gap-2">
               {cerrados.map((c) => (
                 <div key={c.id} className="bg-white/[0.04] border border-white/8 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
@@ -190,8 +191,8 @@ export default function PanelFidelizacion({ config, activos = [], cerrados = [],
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    <div className="text-[12px] text-white/55">{fmt(c.facturacion_acumulada)}</div>
-                    <div className="text-[12px] font-bold text-[#2ecc71]">+{fmt(c.beneficio_otorgado)}</div>
+                    <div className="text-[11px] text-white/40">Consumo {fmt(c.facturacion_acumulada)}</div>
+                    <div className="text-[12px] font-bold text-white">Pagaste {fmt(c.beneficio_otorgado)}</div>
                   </div>
                 </div>
               ))}
