@@ -3,7 +3,8 @@ import { createClient } from '../../../lib/supabase/server'
 import { notFound } from 'next/navigation'
 import TiendaCliente from './TiendaCliente'
 
-export default async function TiendaPorSlug({ params }) {
+export default async function TiendaPorSlug(props) {
+  const params = await props.params
   const slug = params?.slug ?? params?.nxtPslug ?? Object.values(params)[0]
   const admin = createAdminClient()
 
@@ -12,6 +13,9 @@ export default async function TiendaPorSlug({ params }) {
     .select('id, nombre, slug, activa, modalidad, direccion, telefono, email')
     .eq('slug', slug)
     .maybeSingle()
+    
+  console.log('SLUG:', slug)
+  console.log('PESCADERIA:', JSON.stringify(pescaderia))
 
   if (!pescaderia || !pescaderia.activa) {
     notFound()
@@ -25,10 +29,6 @@ export default async function TiendaPorSlug({ params }) {
     .order('destacado', { ascending: false })
 
   let ccHabilitada = false
-  // Las opciones de entrega dependen SOLO de la modalidad de la pescadería:
-  //   solo_reparto  → únicamente delivery
-  //   solo_local    → únicamente retiro
-  //   local_reparto → retiro o delivery (las dos)
   const soloDelivery = pescaderia.modalidad === 'solo_reparto'
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
