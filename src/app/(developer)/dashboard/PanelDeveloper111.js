@@ -4,8 +4,10 @@ import { useState } from 'react'
 import { crearPescaderia, asignarDueno, borrarPescaderia, reactivarUsuario, reactivarUsuarioPorEmail, toggleTrial } from './actions'
 import BarraUsuario from '../../../components/BarraUsuario'
 import PescaderiaDetalle from './PescaderiaDetalle'
+import CatalogoMaster from './CatalogoMaster'
 
-export default function PanelDeveloper({ pescaderias }) {
+export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
+  const [pestana, setPestana] = useState('pescaderias')
   const [mostrarForm, setMostrarForm] = useState(false)
   const [cargando, setCargando] = useState(false)
   const [mensaje, setMensaje] = useState(null)
@@ -21,6 +23,29 @@ export default function PanelDeveloper({ pescaderias }) {
   const [reactivandoId, setReactivandoId] = useState(null)
 
   const [toggling, setToggling] = useState(null)
+
+  const [copiadoInvite, setCopiadoInvite] = useState(false)
+
+  const linkInvitacion = typeof window !== 'undefined' && usuarioId
+    ? `${window.location.origin}/invitacion/${usuarioId}`
+    : ''
+
+  async function copiarInvitacion() {
+    try {
+      await navigator.clipboard.writeText(linkInvitacion)
+      setCopiadoInvite(true)
+      setTimeout(() => setCopiadoInvite(false), 2000)
+    } catch (e) { setCopiadoInvite(false) }
+  }
+
+  async function compartirInvitacion() {
+    const texto = `Sumá tu pescadería a BlueMarket 🐟\n${linkInvitacion}`
+    if (navigator.share) {
+      try { await navigator.share({ title: 'BlueMarket', text: texto, url: linkInvitacion }) } catch (e) { }
+    } else {
+      window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank')
+    }
+  }
 
   async function handleToggleTrial(pescaderiaId, activar) {
     setToggling(pescaderiaId)
@@ -112,6 +137,17 @@ export default function PanelDeveloper({ pescaderias }) {
     setCargandoBorrar(false)
   }
 
+  const [copiadoSlug, setCopiadoSlug] = useState(null)
+
+  async function copiarLinkTienda(slug) {
+    const link = `${window.location.origin}/t/${slug}`
+    try {
+      await navigator.clipboard.writeText(link)
+      setCopiadoSlug(slug)
+      setTimeout(() => setCopiadoSlug(null), 2000)
+    } catch {}
+  }
+
   const activas = pescaderias.filter((p) => p.activa).length
   const trials = pescaderias.filter((p) => p.plan === 'trial').length
   const pescBorrar = borrandoId ? pescaderias.find((x) => x.id === borrandoId) : null
@@ -125,7 +161,28 @@ export default function PanelDeveloper({ pescaderias }) {
 
       <div className="relative max-w-4xl mx-auto p-6">
 
+        {/* Tabs */}
+        {!pescaderiaSeleccionada && (
+          <div className="flex gap-2 mb-6">
+            <button onClick={() => setPestana('pescaderias')}
+              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${pestana === 'pescaderias' ? 'bg-[#4db8ff] text-[#03174a]' : 'bg-white/[0.07] text-white/60 border border-white/10'}`}>
+              🏪 Pescaderías
+            </button>
+            <button onClick={() => setPestana('catalogo')}
+              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${pestana === 'catalogo' ? 'bg-[#4db8ff] text-[#03174a]' : 'bg-white/[0.07] text-white/60 border border-white/10'}`}>
+              📦 Catálogo master
+            </button>
+          </div>
+        )}
+
+        {/* ── CATÁLOGO MASTER ── */}
+        {pestana === 'catalogo' && !pescaderiaSeleccionada && (
+          <CatalogoMaster productos={catalogo || []} pescaderias={pescaderias} />
+        )}
+
         {/* ── VISTA DETALLE ── */}
+        {pestana === 'pescaderias' && (
+        <>
         {pescaderiaSeleccionada ? (
           <PescaderiaDetalle
             pescaderia={pescaderiaSeleccionada}
@@ -151,6 +208,38 @@ export default function PanelDeveloper({ pescaderias }) {
         </div>
 
         {/* Métricas */}
+        {/* Invitar pescaderías */}
+        {linkInvitacion && (
+          <div className="bg-white/[0.05] border border-white/10 rounded-2xl p-4 mb-5">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-base">🤝</span>
+              <span className="text-sm font-bold text-white">Invitar pescaderías</span>
+            </div>
+            <p className="text-[12px] text-white/45 mb-3 leading-relaxed">
+              Compartí tu link o QR. La pescadería que entre por ahí se da de alta sola y queda recomendada por vos.
+            </p>
+            <div className="flex justify-center mb-3">
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=10&data=${encodeURIComponent(linkInvitacion)}`}
+                alt="QR de invitación"
+                width={150}
+                height={150}
+                className="rounded-xl bg-white p-2"
+              />
+            </div>
+            <div className="flex gap-2">
+              <button onClick={compartirInvitacion}
+                className="flex-[3] bg-[#4db8ff] text-[#03174a] font-bold text-sm py-2 rounded-xl active:scale-[0.98] transition-transform flex items-center justify-center gap-1.5">
+                <span>📤</span> Invitar
+              </button>
+              <button onClick={copiarInvitacion}
+                className="flex-[1] bg-white/[0.08] border border-white/12 text-white font-medium text-xs py-2 rounded-xl active:scale-[0.98] transition-all flex items-center justify-center gap-1">
+                {copiadoInvite ? <><span>✓</span> Copiado</> : <><span>📋</span> Copiar</>}
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-3 gap-3 mb-7">
           <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-4 backdrop-blur-sm flex flex-col items-center justify-center text-center">
             <div className="text-[11px] text-white/40 uppercase tracking-wide">Total</div>
@@ -190,11 +279,7 @@ export default function PanelDeveloper({ pescaderias }) {
               <input name="nombre" required placeholder="Pescadería Tigre"
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-[#4db8ff]" />
             </div>
-            <div>
-              <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">Slug (dejalo vacío y se genera solo)</label>
-              <input name="slug" placeholder="se genera del nombre"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-[#4db8ff]" />
-            </div>
+            <input name="slug" type="hidden" value="" />
             <div>
               <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">Teléfono / WhatsApp (opcional)</label>
               <input name="telefono" placeholder="+54 11 1234 5678"
@@ -441,6 +526,8 @@ export default function PanelDeveloper({ pescaderias }) {
         </div>
 
           </>
+        )}
+        </>
         )}
 
       </div>
