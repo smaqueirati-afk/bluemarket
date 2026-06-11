@@ -2,6 +2,7 @@
 
 import { createClient } from '../../../lib/supabase/server'
 import { createAdminClient } from '../../../lib/supabase/admin'
+import { acumularPedido } from '../../../lib/fidelizacion'
 
 // Guarda un pedido en la pescadería indicada por pescaderiaId.
 // datos = { entrega, pago, direccion, nota, total }
@@ -184,6 +185,10 @@ export async function crearPedido(pescaderiaId, datos, items) {
       await admin.from('clientes').update({ cc_saldo: nuevoSaldo }).eq('id', clienteId)
     }
   }
+
+  // Fidelización: contar este pedido en el ciclo del mes (por fecha de creación,
+  // aunque todavía no esté pago ni entregado). No rompe la creación si falla.
+  try { await acumularPedido(admin, pedido.id) } catch (e) { /* ignorar */ }
 
   return { ok: true, numero: pedido.numero, pedidoId: pedido.id, palabraClave: pedido.palabra_clave }
 }
