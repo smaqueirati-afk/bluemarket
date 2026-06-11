@@ -222,11 +222,7 @@ export default function PanelDeveloper({ pescaderias, catalogo }) {
               <input name="nombre" required placeholder="Pescadería Tigre"
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-[#4db8ff]" />
             </div>
-            <div>
-              <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">Slug (dejalo vacío y se genera solo)</label>
-              <input name="slug" placeholder="se genera del nombre"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-[#4db8ff]" />
-            </div>
+            <input name="slug" type="hidden" value="" />
             <div>
               <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">Teléfono / WhatsApp (opcional)</label>
               <input name="telefono" placeholder="+54 11 1234 5678"
