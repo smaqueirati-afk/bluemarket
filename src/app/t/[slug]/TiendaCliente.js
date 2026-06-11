@@ -11,8 +11,8 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
   const [carrito, setCarrito] = useState(() => {
     if (typeof window === 'undefined') return []
     try {
-      const saved = sessionStorage.getItem('bm_carrito')
-      if (saved) { sessionStorage.removeItem('bm_carrito'); return JSON.parse(saved) }
+      const saved = localStorage.getItem('bm_carrito')
+      if (saved) return JSON.parse(saved)
     } catch {}
     return []
   })
@@ -115,6 +115,15 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
       setVerCheckout(true)
     }
   }, [usuarioId])
+
+  // Persistir el carrito en localStorage para que sobreviva el login con Google
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      if (carrito.length > 0) localStorage.setItem('bm_carrito', JSON.stringify(carrito))
+      else localStorage.removeItem('bm_carrito')
+    } catch {}
+  }, [carrito])
 
   async function invitar() {
     const texto = `Te invito a BlueMarket 🐟\n${linkInvitacion}`
@@ -385,8 +394,8 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
             necesitaLogin={!usuarioId}
             onLogin={async () => {
               const supabase = createClient()
-              // Guardar carrito para restaurarlo después del login
-              try { sessionStorage.setItem('bm_carrito', JSON.stringify(carrito)) } catch {}
+              // Guardar carrito para restaurarlo después del login (localStorage sobrevive el redirect de OAuth)
+              try { localStorage.setItem('bm_carrito', JSON.stringify(carrito)) } catch {}
               // Guardar la URL actual para volver después del login
               document.cookie = `bm_return=${encodeURIComponent(window.location.pathname)};path=/;max-age=1800;samesite=lax`
               const slugActual = window.location.pathname.match(/^\/t\/([^/]+)/)?.[1] || ''
