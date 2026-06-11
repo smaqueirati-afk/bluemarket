@@ -349,8 +349,14 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
             </a>
             {pescaderia?.modalidad === 'solo_local' && (
               <a href="/pescaderia/proveedores"
-                className="col-span-2 bg-white/[0.08] border border-white/12 text-white text-sm font-medium px-4 py-2.5 rounded-xl active:scale-95 transition-all text-center whitespace-nowrap">
+                className="bg-white/[0.08] border border-white/12 text-white text-sm font-medium px-4 py-2.5 rounded-xl active:scale-95 transition-all text-center whitespace-nowrap">
                 🚚 Proveedores
+              </a>
+            )}
+            {pescaderia?.modalidad === 'solo_local' && (
+              <a href="/pescaderia/fidelizacion"
+                className="bg-white/[0.08] border border-white/12 text-white text-sm font-medium px-4 py-2.5 rounded-xl active:scale-95 transition-all text-center whitespace-nowrap">
+                🎁 Fidelización
               </a>
             )}
             {haceReparto && (
