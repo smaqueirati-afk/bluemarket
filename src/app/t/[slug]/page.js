@@ -5,6 +5,7 @@ import TiendaCliente from './TiendaCliente'
 
 export default async function TiendaPorSlug({ params }) {
   const { slug } = await params
+  console.log('KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY?.slice(0, 20))
   const admin = createAdminClient()
 
   const { data: pescaderia } = await admin
