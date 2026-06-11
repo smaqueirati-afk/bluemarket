@@ -57,10 +57,9 @@ export async function crearPedido(pescaderiaId, datos, items) {
   }
 
   // ── Buscar/crear la ficha de cliente de este usuario EN ESA pescadería ──
-  // Busca por usuario_id O por email para evitar duplicados.
+  // Dedup por usuario_id (clave confiable).
   let clienteId = null
 
-  // 1. Buscar por usuario_id
   const { data: porUsuario } = await admin
     .from('clientes')
     .select('id')
@@ -74,38 +73,21 @@ export async function crearPedido(pescaderiaId, datos, items) {
       await admin.from('clientes').update({ telefono: datos.telefono }).eq('id', porUsuario.id)
     }
   } else {
-    const { data: porEmail } = await admin
+    const { data: nuevoCliente, error: errCliente } = await admin
       .from('clientes')
-      .select('id, usuario_id')
-      .eq('pescaderia_id', pescaderiaId)
-      .eq('email', user.email)
-      .maybeSingle()
-
-    if (porEmail) {
-      clienteId = porEmail.id
-      const updates = {}
-      if (!porEmail.usuario_id) updates.usuario_id = user.id
-      if (datos.telefono) updates.telefono = datos.telefono
-      if (Object.keys(updates).length > 0) {
-        await admin.from('clientes').update(updates).eq('id', porEmail.id)
-      }
-    } else {
-      const { data: nuevoCliente, error: errCliente } = await admin
-        .from('clientes')
-        .insert({
-          pescaderia_id: pescaderiaId,
-          usuario_id: user.id,
-          nombre: user.user_metadata?.full_name || user.email.split('@')[0],
-          email: user.email,
-          telefono: datos.telefono || null,
-        })
-        .select('id')
-        .single()
-      if (errCliente || !nuevoCliente) {
-        return { error: 'No se pudo registrar el cliente: ' + (errCliente?.message || 'sin detalle') }
-      }
-      clienteId = nuevoCliente.id
+      .insert({
+        pescaderia_id: pescaderiaId,
+        usuario_id: user.id,
+        nombre: user.user_metadata?.full_name || user.email.split('@')[0],
+        email: user.email,
+        telefono: datos.telefono || null,
+      })
+      .select('id')
+      .single()
+    if (errCliente || !nuevoCliente) {
+      return { error: 'No se pudo registrar el cliente: ' + (errCliente?.message || 'sin detalle') }
     }
+    clienteId = nuevoCliente.id
   }
 
   const subtotal = items.reduce((acc, i) => acc + i.producto.precio * i.cantidad, 0)
