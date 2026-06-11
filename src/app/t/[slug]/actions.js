@@ -38,11 +38,11 @@ export async function crearPedido(pescaderiaId, datos, items) {
     return { error: 'Esta pescadería es solo reparto, no tiene retiro en el local.' }
   }
 
-  // ── Validación de stock y disponibilidad al momento de confirmar ──
+  // ── Validación de disponibilidad al confirmar (stock infinito: solo importa "sin stock") ──
   const productoIds = items.map((i) => i.producto.id)
   const { data: productosActuales } = await admin
     .from('productos')
-    .select('id, nombre, disponible, stock')
+    .select('id, nombre, disponible')
     .in('id', productoIds)
 
   const problemasStock = []
@@ -50,12 +50,6 @@ export async function crearPedido(pescaderiaId, datos, items) {
     const actual = productosActuales?.find((p) => p.id === item.producto.id)
     if (!actual || !actual.disponible) {
       problemasStock.push(`"${item.producto.nombre}" ya no está disponible`)
-    } else if (actual.stock !== null && actual.stock < item.cantidad) {
-      if (actual.stock === 0) {
-        problemasStock.push(`"${item.producto.nombre}" está sin stock`)
-      } else {
-        problemasStock.push(`"${item.producto.nombre}" solo tiene ${actual.stock} en stock`)
-      }
     }
   }
   if (problemasStock.length > 0) {
