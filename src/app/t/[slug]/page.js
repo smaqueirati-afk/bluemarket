@@ -8,18 +8,11 @@ export default async function TiendaPorSlug(props) {
   const slug = params?.slug ?? params?.nxtPslug ?? Object.values(params)[0]
   const admin = createAdminClient()
 
-  console.log('SLUG:', slug)
-  console.log('URL:', process.env.NEXT_PUBLIC_SUPABASE_URL?.slice(0, 30))
-  console.log('SERVICE:', process.env.SUPABASE_SERVICE_ROLE_KEY?.slice(0, 15))
-
-  const { data: pescaderia, error } = await admin
+  const { data: pescaderia } = await admin
     .from('pescaderias')
     .select('id, nombre, slug, activa, modalidad, direccion, telefono')
     .eq('slug', slug)
     .maybeSingle()
-    
-  console.log('PESCADERIA:', JSON.stringify(pescaderia))
-  console.log('ERROR:', JSON.stringify(error))
 
   if (!pescaderia || !pescaderia.activa) {
     notFound()
