@@ -131,9 +131,6 @@ export async function crearPedido(pescaderiaId, datos, items) {
       descuento: 0,
       total,
       nota_cliente: datos.nota || null,
-      cliente_telefono: datos.telefono || null,
-      cliente_email: user.email || null,
-      cliente_nombre: user.user_metadata?.full_name || user.email?.split('@')[0] || null,
     })
     .select('id, numero, palabra_clave')
     .single()
@@ -206,7 +203,7 @@ export async function misPedidos(pescaderiaId) {
   // Traer sus pedidos por usuario_id (no depende de la ficha de cliente)
   const { data: pedidos } = await admin
     .from('pedidos')
-    .select('id, numero, estado, tipo_entrega, total, created_at, palabra_clave, cliente_telefono, direccion')
+    .select('id, numero, estado, tipo_entrega, total, created_at, palabra_clave, direccion')
     .eq('pescaderia_id', pescaderiaId)
     .eq('usuario_id', user.id)
     .order('created_at', { ascending: false })

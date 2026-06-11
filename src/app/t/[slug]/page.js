@@ -25,7 +25,11 @@ export default async function TiendaPorSlug({ params }) {
     .order('destacado', { ascending: false })
 
   let ccHabilitada = false
-  let soloDelivery = true
+  // Las opciones de entrega dependen SOLO de la modalidad de la pescadería:
+  //   solo_reparto  → únicamente delivery
+  //   solo_local    → únicamente retiro
+  //   local_reparto → retiro o delivery (las dos)
+  const soloDelivery = pescaderia.modalidad === 'solo_reparto'
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -38,7 +42,6 @@ export default async function TiendaPorSlug({ params }) {
       .maybeSingle()
 
     ccHabilitada = !!cli?.cc_habilitada
-    if (cli) soloDelivery = false
   }
 
   return (
