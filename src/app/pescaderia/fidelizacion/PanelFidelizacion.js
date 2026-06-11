@@ -11,7 +11,31 @@ const NIVELES = [
   { key: 'diamante', label: 'Diamante', emoji: '💎', color: '#4db8ff' },
 ]
 
-export default function PanelFidelizacion({ config }) {
+const NIVEL_INFO = {
+  bronce: { emoji: '🥉', color: '#cd7f32' },
+  plata: { emoji: '🥈', color: '#c0c0c0' },
+  oro: { emoji: '🥇', color: '#ffd700' },
+  diamante: { emoji: '💎', color: '#4db8ff' },
+}
+
+const fmt = (n) => '$' + Number(n || 0).toLocaleString('es-AR')
+
+function diasRestantes(fechaCierre) {
+  const ms = new Date(fechaCierre) - new Date()
+  return Math.max(0, Math.ceil(ms / (1000 * 60 * 60 * 24)))
+}
+
+function NivelBadge({ nivel }) {
+  if (!nivel) return <span className="text-[11px] text-white/35">Sin nivel</span>
+  const info = NIVEL_INFO[nivel] || {}
+  return (
+    <span className="text-[12px] font-bold" style={{ color: info.color }}>
+      {info.emoji} {nivel.charAt(0).toUpperCase() + nivel.slice(1)}
+    </span>
+  )
+}
+
+export default function PanelFidelizacion({ config, activos = [], cerrados = [] }) {
   const [activo, setActivo] = useState(!!config?.activo)
   const [valores, setValores] = useState(() => {
     const v = {}
@@ -120,6 +144,58 @@ export default function PanelFidelizacion({ config }) {
         <p className="text-[11px] text-white/30 mt-4 text-center">
           Los niveles se evalúan de mayor a menor: se aplica el más alto que el cliente alcance. Dejá un nivel en $0 para desactivarlo.
         </p>
+
+        {/* Ranking del mes */}
+        <div className="mt-9">
+          <h2 className="text-lg font-extrabold mb-1">Ranking del mes</h2>
+          <p className="text-white/40 text-[12px] mb-3">Clientes con ciclo activo, ordenados por facturación.</p>
+          {activos.length === 0 ? (
+            <div className="text-white/35 text-sm bg-white/[0.03] border border-white/8 rounded-xl px-4 py-6 text-center">
+              Todavía no hay clientes acumulando este mes.
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {activos.map((c, i) => (
+                <div key={c.id} className="bg-white/[0.05] border border-white/10 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+                  <div className="min-w-0 flex items-center gap-3">
+                    <span className="text-white/30 text-sm font-bold w-5 shrink-0">{i + 1}</span>
+                    <div className="min-w-0">
+                      <div className="font-semibold text-white truncate">{c.nombre}</div>
+                      <div className="mt-0.5"><NivelBadge nivel={c.nivel} /></div>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="font-bold text-[#4db8ff]">{fmt(c.facturacion_acumulada)}</div>
+                    <div className="text-[11px] text-white/40">{diasRestantes(c.fecha_cierre)} días rest.</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Historial */}
+        {cerrados.length > 0 && (
+          <div className="mt-8">
+            <h2 className="text-lg font-extrabold mb-3">Historial de ciclos cerrados</h2>
+            <div className="flex flex-col gap-2">
+              {cerrados.map((c) => (
+                <div key={c.id} className="bg-white/[0.04] border border-white/8 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="font-medium text-white/90 truncate">{c.nombre}</div>
+                    <div className="text-[11px] text-white/40">
+                      {c.cerrado_at ? new Date(c.cerrado_at).toLocaleDateString('es-AR', { month: 'long', year: 'numeric' }) : ''} · <NivelBadge nivel={c.nivel_alcanzado} />
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-[12px] text-white/55">{fmt(c.facturacion_acumulada)}</div>
+                    <div className="text-[12px] font-bold text-[#2ecc71]">+{fmt(c.beneficio_otorgado)}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
