@@ -60,6 +60,16 @@ export async function crearPescaderia(formData) {
 
   if (error) return { error: error.message }
 
+  // Crear config de fidelización por defecto
+  const { data: nuevaPesc } = await admin
+    .from('pescaderias')
+    .select('id')
+    .eq('slug', slug)
+    .maybeSingle()
+  if (nuevaPesc?.id) {
+    await crearConfigFidelizacionPorDefecto(admin, nuevaPesc.id)
+  }
+
   revalidatePath('/dashboard')
   return { ok: true }
 }
@@ -312,4 +322,21 @@ export async function getPescaderiaDetalle(pescaderiaId) {
       pedidosMes,
     },
   }
+}
+
+
+// ── Crear config de fidelización por defecto para una pescadería ──
+async function crearConfigFidelizacionPorDefecto(admin, pescaderiaId) {
+  await admin.from('fidelizacion_config').upsert({
+    pescaderia_id: pescaderiaId,
+    activo: true,
+    bronce_min: 10000,
+    bronce_pct: 2,
+    plata_min: 30000,
+    plata_pct: 4,
+    oro_min: 60000,
+    oro_pct: 6,
+    diamante_min: 100000,
+    diamante_pct: 10,
+  }, { onConflict: 'pescaderia_id' })
 }
