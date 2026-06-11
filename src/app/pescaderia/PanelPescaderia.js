@@ -353,6 +353,12 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
                 🚚 Proveedores
               </a>
             )}
+            {haceReparto && (
+              <a href="/pescaderia/fidelizacion"
+                className="flex-1 sm:flex-none bg-white/[0.08] border border-white/12 text-white text-sm font-medium px-4 py-2.5 rounded-xl active:scale-95 transition-all text-center whitespace-nowrap">
+                🎁 Fidelización
+              </a>
+            )}
           </div>
         </div>
 
