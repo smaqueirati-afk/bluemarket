@@ -90,7 +90,7 @@ export async function crearPedido(pescaderiaId, datos, items) {
         await admin.from('clientes').update(updates).eq('id', porEmail.id)
       }
     } else {
-      const { data: nuevoCliente } = await admin
+      const { data: nuevoCliente, error: errCliente } = await admin
         .from('clientes')
         .insert({
           pescaderia_id: pescaderiaId,
@@ -101,7 +101,10 @@ export async function crearPedido(pescaderiaId, datos, items) {
         })
         .select('id')
         .single()
-      clienteId = nuevoCliente?.id || null
+      if (errCliente || !nuevoCliente) {
+        return { error: 'No se pudo registrar el cliente: ' + (errCliente?.message || 'sin detalle') }
+      }
+      clienteId = nuevoCliente.id
     }
   }
 
