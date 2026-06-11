@@ -14,11 +14,22 @@ export default function ProductoCard({ producto: p, enCarrito, onAgregar, onQuit
     >
       {/* Imagen / emoji */}
       <div className="h-[78px] bg-[linear-gradient(135deg,#0a3a7a,#051e5c)] flex items-center justify-center text-3xl relative overflow-hidden">
-        <div
-          className="absolute inset-0 opacity-30"
-          style={{ background: 'radial-gradient(circle at 70% 20%, rgba(125,211,252,0.4), transparent 60%)' }}
-        />
-        <span className="relative">{p.emoji}</span>
+        {p.foto_url ? (
+          <img
+            src={p.foto_url}
+            alt={p.nombre}
+            loading="lazy"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        ) : (
+          <>
+            <div
+              className="absolute inset-0 opacity-30"
+              style={{ background: 'radial-gradient(circle at 70% 20%, rgba(125,211,252,0.4), transparent 60%)' }}
+            />
+            <span className="relative">{p.emoji}</span>
+          </>
+        )}
       </div>
 
       {/* Info */}
