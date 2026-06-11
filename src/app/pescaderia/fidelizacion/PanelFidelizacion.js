@@ -35,7 +35,7 @@ function NivelBadge({ nivel }) {
   )
 }
 
-export default function PanelFidelizacion({ config, activos = [], cerrados = [] }) {
+export default function PanelFidelizacion({ config, activos = [], cerrados = [], mesLabel }) {
   const [activo, setActivo] = useState(!!config?.activo)
   const [valores, setValores] = useState(() => {
     const v = {}
@@ -147,8 +147,8 @@ export default function PanelFidelizacion({ config, activos = [], cerrados = [] 
 
         {/* Ranking del mes */}
         <div className="mt-9">
-          <h2 className="text-lg font-extrabold mb-1">Ranking del mes</h2>
-          <p className="text-white/40 text-[12px] mb-3">Clientes con ciclo activo, ordenados por facturación.</p>
+          <h2 className="text-lg font-extrabold mb-1">Ranking del mes{mesLabel ? ` · ${mesLabel}` : ''}</h2>
+          <p className="text-white/40 text-[12px] mb-3">Compradores con compras{mesLabel ? ` en ${mesLabel}` : ' este mes'}, ordenados por facturación. Se reinicia cada mes.</p>
           {activos.length === 0 ? (
             <div className="text-white/35 text-sm bg-white/[0.03] border border-white/8 rounded-xl px-4 py-6 text-center">
               Todavía no hay clientes acumulando este mes.
@@ -161,12 +161,14 @@ export default function PanelFidelizacion({ config, activos = [], cerrados = [] 
                     <span className="text-white/30 text-sm font-bold w-5 shrink-0">{i + 1}</span>
                     <div className="min-w-0">
                       <div className="font-semibold text-white truncate">{c.nombre}</div>
-                      <div className="mt-0.5"><NivelBadge nivel={c.nivel} /></div>
+                      <div className="text-[11px] text-white/40 mt-0.5">
+                        Compra desde {c.fecha_inicio ? new Date(c.fecha_inicio).toLocaleDateString('es-AR') : '—'}
+                      </div>
                     </div>
                   </div>
                   <div className="text-right shrink-0">
                     <div className="font-bold text-[#4db8ff]">{fmt(c.facturacion_acumulada)}</div>
-                    <div className="text-[11px] text-white/40">{diasRestantes(c.fecha_cierre)} días rest.</div>
+                    <div className="mt-0.5"><NivelBadge nivel={c.nivel} /></div>
                   </div>
                 </div>
               ))}

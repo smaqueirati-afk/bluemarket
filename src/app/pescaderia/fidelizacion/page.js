@@ -55,8 +55,9 @@ export default async function FidelizacionPage() {
     for (const c of clis || []) nombres[c.id] = c.nombre
   }
 
+  const ahora = new Date()
   const activos = (ciclos || [])
-    .filter((c) => c.estado === 'activo')
+    .filter((c) => c.estado === 'activo' && c.fecha_cierre && new Date(c.fecha_cierre) > ahora)
     .map((c) => ({
       ...c,
       nombre: nombres[c.cliente_id] || 'Cliente',
@@ -69,5 +70,7 @@ export default async function FidelizacionPage() {
     .slice(0, 30)
     .map((c) => ({ ...c, nombre: nombres[c.cliente_id] || 'Cliente' }))
 
-  return <PanelFidelizacion config={config} activos={activos} cerrados={cerrados} />
+  const mesLabel = ahora.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' })
+
+  return <PanelFidelizacion config={config} activos={activos} cerrados={cerrados} mesLabel={mesLabel} />
 }
