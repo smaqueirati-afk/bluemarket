@@ -26,6 +26,61 @@ function calcularNivel(config, facturacion) {
   return { nivel: null, pct: 0 }
 }
 
+// El nivel más alto configurado (el de mayor mínimo > 0).
+function tierMaximo(config) {
+  if (!config) return null
+  const escalas = [
+    ['bronce', Number(config.bronce_min)],
+    ['plata', Number(config.plata_min)],
+    ['oro', Number(config.oro_min)],
+    ['diamante', Number(config.diamante_min)],
+  ].filter(([, min]) => min > 0).sort((a, b) => a[1] - b[1])
+  return escalas.length ? escalas[escalas.length - 1][0] : null
+}
+
+// Retorno disponible para descontar AHORA, para un cliente en una pescadería.
+// disponible = facturación del ciclo en curso × % del nivel actual.
+// maxTier = true si ya está en el nivel más alto (se aplica automático en la próxima compra).
+export async function retornoDisponible(admin, pescaderiaId, clienteId) {
+  const vacio = { disponible: 0, nivel: null, pct: 0, maxTier: false, cicloId: null, facturacion: 0 }
+  if (!pescaderiaId || !clienteId) return vacio
+
+  const { data: config } = await admin
+    .from('fidelizacion_config')
+    .select('*')
+    .eq('pescaderia_id', pescaderiaId)
+    .maybeSingle()
+  if (!config?.activo) return vacio
+
+  const { data: ciclo } = await admin
+    .from('fidelizacion_ciclos')
+    .select('id, facturacion_acumulada, fecha_cierre, estado')
+    .eq('pescaderia_id', pescaderiaId)
+    .eq('cliente_id', clienteId)
+    .eq('estado', 'activo')
+    .maybeSingle()
+  if (!ciclo || (ciclo.fecha_cierre && new Date(ciclo.fecha_cierre) <= new Date())) return vacio
+
+  const facturacion = Number(ciclo.facturacion_acumulada) || 0
+  const { nivel, pct } = calcularNivel(config, facturacion)
+  const disponible = Math.round(facturacion * pct) / 100
+  const maxTier = !!nivel && nivel === tierMaximo(config)
+
+  return { disponible, nivel, pct, maxTier, cicloId: ciclo.id, facturacion }
+}
+
+// Redime (usa) el retorno: cierra el ciclo SIN acreditar cuenta corriente,
+// porque ya se aplicó como descuento en el pedido. El ciclo queda reiniciado.
+export async function redimirCiclo(admin, cicloId, montoUsado, nivel) {
+  if (!cicloId) return
+  await admin.from('fidelizacion_ciclos').update({
+    estado: 'cerrado',
+    nivel_alcanzado: nivel || null,
+    beneficio_otorgado: Number(montoUsado) || 0,
+    cerrado_at: new Date().toISOString(),
+  }).eq('id', cicloId)
+}
+
 async function crearCiclo(admin, pedido, inicio, cierre) {
   await admin.from('fidelizacion_ciclos').insert({
     pescaderia_id: pedido.pescaderia_id,

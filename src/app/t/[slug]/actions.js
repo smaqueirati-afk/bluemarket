@@ -2,7 +2,7 @@
 
 import { createClient } from '../../../lib/supabase/server'
 import { createAdminClient } from '../../../lib/supabase/admin'
-import { acumularPedido } from '../../../lib/fidelizacion'
+import { acumularPedido, retornoDisponible, redimirCiclo } from '../../../lib/fidelizacion'
 
 // Guarda un pedido en la pescadería indicada por pescaderiaId.
 // datos = { entrega, pago, direccion, nota, total }
@@ -100,7 +100,23 @@ export async function crearPedido(pescaderiaId, datos, items) {
 
   const subtotal = items.reduce((acc, i) => acc + i.producto.precio * i.cantidad, 0)
   const envio = 0
-  const total = subtotal + envio
+
+  // ── Retorno de fidelización disponible para usar como descuento ──
+  let descuentoRetorno = 0
+  let retornoUsado = null
+  if (clienteId) {
+    try {
+      const ret = await retornoDisponible(admin, pescaderiaId, clienteId)
+      // Se aplica si el comprador lo pidió, o automáticamente si está en el nivel máximo.
+      const aplicar = datos.usarRetorno === true || ret.maxTier
+      if (ret.disponible > 0 && aplicar) {
+        descuentoRetorno = Math.min(ret.disponible, subtotal)
+        retornoUsado = { cicloId: ret.cicloId, nivel: ret.nivel }
+      }
+    } catch (e) { /* si algo falla, no se aplica descuento */ }
+  }
+
+  const total = subtotal + envio - descuentoRetorno
 
   const { data: pedido, error: errPedido } = await admin
     .from('pedidos')
@@ -115,7 +131,7 @@ export async function crearPedido(pescaderiaId, datos, items) {
       pagado: false,
       subtotal,
       envio,
-      descuento: 0,
+      descuento: descuentoRetorno,
       total,
       nota_cliente: datos.nota || null,
     })
@@ -172,9 +188,14 @@ export async function crearPedido(pescaderiaId, datos, items) {
 
   // Fidelización: contar este pedido en el ciclo del mes (por fecha de creación,
   // aunque todavía no esté pago ni entregado). No rompe la creación si falla.
+  // Recién ahora (el pedido ya existe) redimimos el retorno usado: cierra y reinicia el ciclo.
+  if (descuentoRetorno > 0 && retornoUsado) {
+    try { await redimirCiclo(admin, retornoUsado.cicloId, descuentoRetorno, retornoUsado.nivel) } catch (e) { /* ignorar */ }
+  }
+
   try { await acumularPedido(admin, pedido.id) } catch (e) { /* ignorar */ }
 
-  return { ok: true, numero: pedido.numero, pedidoId: pedido.id, palabraClave: pedido.palabra_clave }
+  return { ok: true, numero: pedido.numero, pedidoId: pedido.id, palabraClave: pedido.palabra_clave, descuentoRetorno }
 }
 
 
