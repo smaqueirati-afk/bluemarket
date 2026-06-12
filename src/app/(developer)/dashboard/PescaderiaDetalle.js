@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { getPescaderiaDetalle } from './actions'
+import { getPescaderiaDetalle, resetPedidosPescaderia } from './actions'
 
 const ESTADOS = {
   nuevo:      { label: 'Recibido',   color: '#4db8ff',  bg: '#4db8ff22' },
@@ -28,6 +28,32 @@ export default function PescaderiaDetalle({ pescaderia, onVolver }) {
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(null)
   const [busqueda, setBusqueda] = useState('')
+  const [reseteando, setReseteando] = useState(false)
+  const [avisoReset, setAvisoReset] = useState(null)
+
+  async function handleReset() {
+    const total = datos?.pedidos?.length || 0
+    const ok = window.confirm(
+      `¿Borrar los ${total} pedido(s) de "${pescaderia.nombre}" y reiniciar la numeración?\n\n` +
+      `Esto borra los pedidos (y sus movimientos de cuenta corriente) de esta pescadería. No se puede deshacer.`
+    )
+    if (!ok) return
+    setReseteando(true)
+    setAvisoReset(null)
+    const res = await resetPedidosPescaderia(pescaderia.id)
+    setReseteando(false)
+    if (res?.error) {
+      setAvisoReset({ tipo: 'error', texto: res.error })
+      return
+    }
+    setAvisoReset({ tipo: 'ok', texto: `Listo: ${res.borrados} pedido(s) borrados. El próximo pedido será #${res.proximo}.` })
+    // Recargar el detalle
+    setCargando(true)
+    getPescaderiaDetalle(pescaderia.id).then((r) => {
+      if (!r.error) setDatos(r)
+      setCargando(false)
+    })
+  }
 
   useEffect(() => {
     setCargando(true)
@@ -194,10 +220,31 @@ export default function PescaderiaDetalle({ pescaderia, onVolver }) {
                   )
                 })
               )}
+
+              {/* Resetear numeración */}
+              <div className="mt-6 pt-5 border-t border-white/8">
+                {avisoReset && (
+                  <div className={`mb-3 px-4 py-3 rounded-xl text-sm ${
+                    avisoReset.tipo === 'ok'
+                      ? 'bg-[#2ecc71]/12 border border-[#2ecc71]/30 text-[#2ecc71]'
+                      : 'bg-[#e74c3c]/12 border border-[#e74c3c]/30 text-[#e74c3c]'
+                  }`}>
+                    {avisoReset.texto}
+                  </div>
+                )}
+                <button
+                  onClick={handleReset}
+                  disabled={reseteando}
+                  className="w-full py-3 rounded-xl text-sm font-bold bg-[#e74c3c]/12 border border-[#e74c3c]/30 text-[#e74c3c] active:scale-[0.99] transition-transform hover:bg-[#e74c3c]/20 disabled:opacity-60"
+                >
+                  {reseteando ? 'Reseteando...' : '🔄 Resetear numeración (borra los pedidos)'}
+                </button>
+                <p className="text-[11px] text-white/35 mt-2 text-center">
+                  Borra los pedidos de esta pescadería y reinicia el contador. El número de pedido es global; vuelve a #1 si no quedan pedidos en ninguna pescadería.
+                </p>
+              </div>
             </div>
           )}
-
-          {/* TAB CLIENTES */}
           {tab === 'clientes' && (
             <div className="space-y-2">
               {clientesFiltrados.length === 0 ? (

@@ -340,3 +340,49 @@ async function crearConfigFidelizacionPorDefecto(admin, pescaderiaId) {
     diamante_pct: 10,
   }, { onConflict: 'pescaderia_id' })
 }
+
+// ── Resetear numeración: borra los pedidos de UNA pescadería y reinicia el contador ──
+// El número de pedido lo da una secuencia GLOBAL de la base. Acá borramos los pedidos
+// de la pescadería elegida (y sus items + movimientos de cuenta corriente, para no chocar
+// con las FK) y reiniciamos la secuencia al próximo número libre: queda en #1 si no quedan
+// pedidos en ninguna pescadería, o sigue en max+1 si otras pescaderías todavía tienen pedidos.
+export async function resetPedidosPescaderia(pescaderiaId) {
+  const check = await verificarDeveloper()
+  if (check.error) return { error: check.error }
+
+  if (!pescaderiaId) return { error: 'Falta el id de la pescadería' }
+
+  const admin = createAdminClient()
+
+  // 1) Ids de los pedidos de esta pescadería
+  const { data: peds, error: errPeds } = await admin
+    .from('pedidos')
+    .select('id')
+    .eq('pescaderia_id', pescaderiaId)
+  if (errPeds) return { error: errPeds.message }
+
+  const ids = (peds || []).map((p) => p.id)
+
+  // 2) Borrar dependencias y luego los pedidos (en orden, para respetar las FK)
+  if (ids.length > 0) {
+    await admin.from('items_pedido').delete().in('pedido_id', ids)
+    await admin.from('cc_movimientos').delete().in('pedido_id', ids)
+    const { error: errDel } = await admin.from('pedidos').delete().in('id', ids)
+    if (errDel) return { error: 'No se pudieron borrar los pedidos: ' + errDel.message }
+  }
+
+  // 3) Próximo número libre = max(numero de los que quedan) + 1  (=> 1 si no queda ninguno)
+  const { data: rest } = await admin
+    .from('pedidos')
+    .select('numero')
+    .order('numero', { ascending: false })
+    .limit(1)
+  const proximo = (rest && rest[0] ? Number(rest[0].numero) : 0) + 1
+
+  // 4) Reiniciar la secuencia (el cliente no puede tocar la secuencia: lo hace la RPC)
+  const { error: errSeq } = await admin.rpc('reset_pedidos_seq', { proximo })
+  if (errSeq) return { error: 'Pedidos borrados, pero falló el reinicio del contador: ' + errSeq.message }
+
+  revalidatePath('/dashboard')
+  return { ok: true, borrados: ids.length, proximo }
+}

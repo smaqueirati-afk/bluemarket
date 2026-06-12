@@ -6,7 +6,7 @@ import { crearPedido, misPedidos } from './actions'
 import BarraUsuario from '../../../components/BarraUsuario'
 import { createClient } from '../../../lib/supabase/client'
 
-export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHabilitada, soloDelivery, pescaderia }) {
+export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHabilitada, soloDelivery, pescaderia, retorno }) {
   // carrito = array de { producto, cantidad }
   const [carrito, setCarrito] = useState(() => {
     if (typeof window === 'undefined') return []
@@ -391,6 +391,7 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
             soloDelivery={soloDelivery}
             ccHabilitada={ccHabilitada}
             modalidad={pescaderia?.modalidad}
+            retorno={retorno}
             necesitaLogin={!usuarioId}
             onLogin={async () => {
               const supabase = createClient()

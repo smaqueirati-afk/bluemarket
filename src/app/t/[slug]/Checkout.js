@@ -3,7 +3,7 @@
 import { useState } from 'react'
 
 // Pantalla de checkout. Recibe el carrito y una función para volver/confirmar.
-export default function Checkout({ carrito, onVolver, onConfirmar, cargando, errorExterno, ccHabilitada, necesitaLogin, onLogin, modalidad, soloDelivery }) {
+export default function Checkout({ carrito, onVolver, onConfirmar, cargando, errorExterno, ccHabilitada, necesitaLogin, onLogin, modalidad, soloDelivery, retorno }) {
   const puedeEnvio = modalidad !== 'solo_local'
   const puedeRetiro = modalidad !== 'solo_reparto' && !soloDelivery
   const [entrega, setEntrega] = useState(puedeEnvio ? 'envio' : 'retiro')
@@ -12,6 +12,7 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
   const [telefono, setTelefono] = useState('')
   const [nota, setNota] = useState('')
   const [error, setError] = useState(null)
+  const [usarRetorno, setUsarRetorno] = useState(false)
 
   function fmt(n) {
     return '$' + Number(n).toLocaleString('es-AR')
@@ -19,6 +20,13 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
 
   const totalPrecio = carrito.reduce((acc, i) => acc + i.producto.precio * i.cantidad, 0)
   const totalItems = carrito.reduce((acc, i) => acc + i.cantidad, 0)
+
+  // ── Retorno de fidelización ──
+  const ret = retorno || { disponible: 0, maxTier: false, nivel: null }
+  const hayRetorno = Number(ret.disponible) > 0 && !necesitaLogin
+  const aplicaRetorno = hayRetorno && (ret.maxTier || usarRetorno)
+  const descuentoRetorno = aplicaRetorno ? Math.min(Number(ret.disponible), totalPrecio) : 0
+  const totalFinal = totalPrecio - descuentoRetorno
 
   function confirmar() {
     setError(null)
@@ -37,7 +45,8 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
       direccion: entregaFinal === 'envio' ? direccion.trim() : null,
       telefono: telefono.trim(),
       nota: nota.trim() || null,
-      total: totalPrecio,
+      total: totalFinal,
+      usarRetorno: aplicaRetorno,
     })
   }
 
@@ -182,6 +191,35 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
           />
         </div>
 
+        {/* RETORNO DE FIDELIZACIÓN */}
+        {hayRetorno && (
+          ret.maxTier ? (
+            <div className="px-4 py-3 rounded-2xl bg-[#2ecc71]/12 border border-[#2ecc71]/30">
+              <div className="flex items-center gap-2 text-[#2ecc71] font-bold text-sm mb-0.5">
+                <span>🎁</span> Nivel máximo
+              </div>
+              <p className="text-[12px] text-white/70">
+                Se descuenta tu retorno de <span className="font-bold text-white">{fmt(ret.disponible)}</span> en esta compra automáticamente.
+              </p>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setUsarRetorno((v) => !v)}
+              className={`w-full px-4 py-3 rounded-2xl border text-left transition-colors ${usarRetorno ? 'bg-[#2ecc71]/12 border-[#2ecc71]/40' : 'bg-white/[0.05] border-white/10'}`}>
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold text-white">🎁 Usar mi retorno</div>
+                  <div className="text-[12px] text-white/55">Tenés {fmt(ret.disponible)} acumulado. Si lo usás, tu mes vuelve a empezar.</div>
+                </div>
+                <div className={`w-6 h-6 rounded-md shrink-0 border flex items-center justify-center ${usarRetorno ? 'bg-[#2ecc71] border-[#2ecc71]' : 'border-white/30'}`}>
+                  {usarRetorno && <span className="text-[#03174a] text-sm font-bold">✓</span>}
+                </div>
+              </div>
+            </button>
+          )
+        )}
+
         {/* RESUMEN */}
         <div>
           <h2 className="text-xs text-white/50 uppercase tracking-wide mb-2.5 font-bold">Tu pedido ({totalItems})</h2>
@@ -194,9 +232,15 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
                 <span className="text-white font-semibold">{fmt(item.producto.precio * item.cantidad)}</span>
               </div>
             ))}
+            {descuentoRetorno > 0 && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-[#2ecc71]">🎁 Retorno aplicado</span>
+                <span className="text-[#2ecc71] font-semibold">−{fmt(descuentoRetorno)}</span>
+              </div>
+            )}
             <div className="border-t border-white/8 pt-2.5 flex items-center justify-between">
               <span className="text-white/55 text-sm">Total</span>
-              <span className="text-xl font-extrabold text-[#4db8ff]">{fmt(totalPrecio)}</span>
+              <span className="text-xl font-extrabold text-[#4db8ff]">{fmt(totalFinal)}</span>
             </div>
           </div>
         </div>
@@ -228,7 +272,7 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
             onClick={confirmar}
             disabled={cargando}
             className="w-full bg-[#4db8ff] text-[#03174a] font-bold py-3.5 rounded-xl active:scale-[0.98] transition-transform disabled:opacity-60">
-            {cargando ? 'Confirmando...' : `Confirmar pedido · ${fmt(totalPrecio)}`}
+            {cargando ? 'Confirmando...' : `Confirmar pedido · ${fmt(totalFinal)}`}
           </button>
         </div>
       )}

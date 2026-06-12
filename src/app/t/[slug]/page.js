@@ -2,6 +2,7 @@ import { createAdminClient } from '../../../lib/supabase/admin'
 import { createClient } from '../../../lib/supabase/server'
 import { notFound } from 'next/navigation'
 import TiendaCliente from './TiendaCliente'
+import { retornoDisponible } from '../../../lib/fidelizacion'
 
 export default async function TiendaPorSlug(props) {
   const params = await props.params
@@ -26,6 +27,7 @@ export default async function TiendaPorSlug(props) {
     .order('destacado', { ascending: false })
 
   let ccHabilitada = false
+  let retorno = { disponible: 0, maxTier: false, nivel: null }
   const soloDelivery = pescaderia.modalidad === 'solo_reparto'
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -39,6 +41,13 @@ export default async function TiendaPorSlug(props) {
       .maybeSingle()
 
     ccHabilitada = !!cli?.cc_habilitada
+
+    if (cli?.id) {
+      try {
+        const r = await retornoDisponible(admin, pescaderia.id, cli.id)
+        retorno = { disponible: r.disponible, maxTier: r.maxTier, nivel: r.nivel }
+      } catch (e) { /* sin retorno */ }
+    }
   }
 
   return (
@@ -49,6 +58,7 @@ export default async function TiendaPorSlug(props) {
       usuarioId={user?.id || null}
       ccHabilitada={ccHabilitada}
       soloDelivery={soloDelivery}
+      retorno={retorno}
     />
   )
 }
