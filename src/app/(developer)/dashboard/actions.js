@@ -386,3 +386,22 @@ export async function resetPedidosPescaderia(pescaderiaId) {
   revalidatePath('/dashboard')
   return { ok: true, borrados: ids.length, proximo }
 }
+
+// ── RESET TOTAL: deja la base limpia salvo los usuarios developer y el catálogo master ──
+// Llama a la RPC reset_total() (definida en Supabase) que borra todo en el orden correcto.
+export async function resetTotal(confirmacion) {
+  const check = await verificarDeveloper()
+  if (check.error) return { error: check.error }
+
+  // Doble seguro: hay que mandar exactamente "BORRAR TODO"
+  if (confirmacion !== 'BORRAR TODO') {
+    return { error: 'Confirmación incorrecta. Escribí BORRAR TODO para continuar.' }
+  }
+
+  const admin = createAdminClient()
+  const { error } = await admin.rpc('reset_total')
+  if (error) return { error: 'No se pudo resetear: ' + error.message }
+
+  revalidatePath('/dashboard')
+  return { ok: true }
+}

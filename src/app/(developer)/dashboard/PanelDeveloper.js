@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { crearPescaderia, asignarDueno, borrarPescaderia, reactivarUsuario, reactivarUsuarioPorEmail, toggleTrial } from './actions'
+import { crearPescaderia, asignarDueno, borrarPescaderia, reactivarUsuario, reactivarUsuarioPorEmail, toggleTrial, resetTotal } from './actions'
 import BarraUsuario from '../../../components/BarraUsuario'
 import PescaderiaDetalle from './PescaderiaDetalle'
 import CatalogoMaster from './CatalogoMaster'
@@ -139,6 +139,25 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
 
   const [copiadoSlug, setCopiadoSlug] = useState(null)
 
+  // ── Reset total ──
+  const [confirmReset, setConfirmReset] = useState('')
+  const [reseteandoTotal, setReseteandoTotal] = useState(false)
+  const [msgReset, setMsgReset] = useState(null)
+
+  async function handleResetTotal() {
+    if (confirmReset !== 'BORRAR TODO') return
+    setReseteandoTotal(true)
+    setMsgReset(null)
+    const res = await resetTotal(confirmReset)
+    setReseteandoTotal(false)
+    if (res?.error) {
+      setMsgReset({ tipo: 'error', texto: res.error })
+      return
+    }
+    setMsgReset({ tipo: 'ok', texto: 'Base reseteada. Quedaron solo tu usuario developer y el catálogo master. Recargá para verlo.' })
+    setConfirmReset('')
+  }
+
   async function copiarLinkTienda(slug) {
     const link = `${window.location.origin}/t/${slug}`
     try {
@@ -172,12 +191,64 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
               className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${pestana === 'catalogo' ? 'bg-[#4db8ff] text-[#03174a]' : 'bg-white/[0.07] text-white/60 border border-white/10'}`}>
               📦 Catálogo master
             </button>
+            <button onClick={() => setPestana('limpieza')}
+              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${pestana === 'limpieza' ? 'bg-[#e74c3c] text-white' : 'bg-white/[0.07] text-white/60 border border-white/10'}`}>
+              🧹 Limpieza
+            </button>
           </div>
         )}
 
         {/* ── CATÁLOGO MASTER ── */}
         {pestana === 'catalogo' && !pescaderiaSeleccionada && (
           <CatalogoMaster productos={catalogo || []} pescaderias={pescaderias} />
+        )}
+
+        {/* ── LIMPIEZA / ZONA PELIGROSA ── */}
+        {pestana === 'limpieza' && !pescaderiaSeleccionada && (
+          <div style={{ animation: 'bmFadeUp 0.35s ease both' }}>
+            <div className="mb-6">
+              <h1 className="text-2xl font-extrabold tracking-tight text-[#e74c3c]">Zona peligrosa</h1>
+              <p className="text-xs text-white/40 mt-1 uppercase tracking-[1.5px]">Limpieza de la base</p>
+            </div>
+
+            <div className="bg-[#e74c3c]/[0.07] border border-[#e74c3c]/30 rounded-2xl p-5">
+              <h2 className="text-base font-extrabold text-white mb-2">🧹 Reset total</h2>
+              <p className="text-sm text-white/70 leading-relaxed mb-3">
+                Deja la base como recién instalada. Borra <span className="text-white font-semibold">todas las pescaderías,
+                productos, pedidos, clientes, cuentas corrientes y fidelización</span>, y reinicia la numeración de pedidos a #1.
+              </p>
+              <div className="bg-white/[0.04] border border-white/10 rounded-xl p-3 mb-4 text-[12px] text-white/55 leading-relaxed">
+                <span className="text-[#2ecc71] font-semibold">Se conserva:</span> tu usuario developer y el catálogo master.<br />
+                <span className="text-white/40">Las cuentas de Google de prueba siguen existiendo (se vuelven a registrar solas al entrar de nuevo).</span>
+              </div>
+
+              <p className="text-[12px] text-white/50 mb-2">Para confirmar, escribí <span className="font-bold text-white">BORRAR TODO</span>:</p>
+              <input
+                value={confirmReset}
+                onChange={(e) => setConfirmReset(e.target.value)}
+                placeholder="BORRAR TODO"
+                className="w-full bg-white/[0.05] border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-white/25 outline-none focus:border-[#e74c3c]/50 mb-3"
+              />
+
+              {msgReset && (
+                <div className={`mb-3 px-4 py-3 rounded-xl text-sm ${
+                  msgReset.tipo === 'ok'
+                    ? 'bg-[#2ecc71]/12 border border-[#2ecc71]/30 text-[#2ecc71]'
+                    : 'bg-[#e74c3c]/12 border border-[#e74c3c]/30 text-[#e74c3c]'
+                }`}>
+                  {msgReset.texto}
+                </div>
+              )}
+
+              <button
+                onClick={handleResetTotal}
+                disabled={reseteandoTotal || confirmReset !== 'BORRAR TODO'}
+                className="w-full py-3 rounded-xl text-sm font-bold bg-[#e74c3c] text-white active:scale-[0.99] transition-transform hover:bg-[#c0392b] disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {reseteandoTotal ? 'Borrando todo...' : '🗑️ Resetear toda la base'}
+              </button>
+            </div>
+          </div>
         )}
 
         {/* ── VISTA DETALLE ── */}
