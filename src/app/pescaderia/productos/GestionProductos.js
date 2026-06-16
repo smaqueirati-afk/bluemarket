@@ -69,6 +69,7 @@ export default function GestionProductos({ productos, nombrePescaderia }) {
   const [accionando, setAccionando] = useState(null)
   const [subiendoFoto, setSubiendoFoto] = useState(false)
   const fotoRef = useRef(null)
+  const formRef = useRef(null)
   const [verCatalogo, setVerCatalogo] = useState(false)
   const [catalogo, setCatalogo] = useState([])
   const [cargandoCatalogo, setCargandoCatalogo] = useState(false)
@@ -100,6 +101,7 @@ export default function GestionProductos({ productos, nombrePescaderia }) {
     setEditandoId(p.id)
     setMostrarForm(true)
     setMensaje(null)
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
   }
 
   function cerrarForm() {
@@ -225,7 +227,7 @@ export default function GestionProductos({ productos, nombrePescaderia }) {
 
         {/* Formulario */}
         {mostrarForm && (
-          <div className="bg-white/[0.06] border border-white/12 rounded-2xl p-5 mb-5 space-y-3.5 backdrop-blur-md"
+          <div ref={formRef} className="bg-white/[0.06] border border-white/12 rounded-2xl p-5 mb-5 space-y-3.5 backdrop-blur-md"
                style={{ animation: 'bmFadeUp 0.3s ease both' }}>
             <div className="font-bold text-white">{editandoId ? 'Editar producto' : 'Nuevo producto'}</div>
 
