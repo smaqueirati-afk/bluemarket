@@ -550,7 +550,7 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
 
         {/* Mapa del recorrido (solo en modo reparto) */}
         {filtro === 'reparto' && repartoHoy.length > 0 && (
-          <MapaReparto pedidos={repartoHoy} ciudad={pescaderia?.localidad || pescaderia?.ciudad || ''} />
+          <MapaReparto pedidos={repartoHoy} ciudad={pescaderia?.localidad || pescaderia?.ciudad || ''} origen={pescaderia?.direccion || ''} />
         )}
 
         {/* Lista de pedidos */}
@@ -610,11 +610,11 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
                         <div className="text-sm text-white font-medium break-words mb-2">📍 {pedido.direccion}</div>
                         <div className="flex gap-2">
                           <a
-                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pedido.direccion)}`}
+                            href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(pedido.direccion)}&travelmode=driving`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex-1 bg-[#9b59b6] text-white text-xs font-bold px-3 py-2 rounded-lg active:scale-95 transition-transform text-center">
-                            🗺️ Cómo llego
+                            className="flex-1 bg-[#4285F4] text-white text-xs font-bold px-3 py-2 rounded-lg active:scale-95 transition-transform text-center">
+                            📍 Navegar
                           </a>
                           {telWa && (
                             <a
