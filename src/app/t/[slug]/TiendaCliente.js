@@ -24,6 +24,7 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
   const [palabraClave, setPalabraClave] = useState(null)
   const [guardando, setGuardando] = useState(false)
   const [errorPedido, setErrorPedido] = useState(null)
+  const [logroNivel, setLogroNivel] = useState(null) // animación de logro post-compra
   const [copiadoInvite, setCopiadoInvite] = useState(false)
   const [misPedidosList, setMisPedidosList] = useState([])
   const [verMisPedidos, setVerMisPedidos] = useState(false)
@@ -422,6 +423,7 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
                 setPalabraClave(resultado.palabraClave)
                 setPedidoConfirmado(true)
                 setCarrito([])
+                if (resultado.logroNivel) setLogroNivel(resultado.logroNivel)
                 // Recargar mis pedidos
                 misPedidos(pescaderiaId).then(r => r.pedidos && setMisPedidosList(r.pedidos))
               } catch (e) {
@@ -539,7 +541,58 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
         )}
 
         {/* CONFIRMACIÓN */}
-        {pedidoConfirmado && (
+        {/* ══ ANIMACIÓN DE LOGRO ══ */}
+        {pedidoConfirmado && logroNivel && (
+          <div
+            className="absolute inset-0 z-[60] flex flex-col items-center justify-center px-6 text-center"
+            style={{ background: 'radial-gradient(ellipse at 50% 30%, #1a3a6e 0%, #03174a 100%)' }}
+            onClick={() => setLogroNivel(null)}
+          >
+            {/* Confetti CSS */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
+              {[...Array(18)].map((_, i) => (
+                <span key={i} className="absolute text-xl"
+                  style={{
+                    left: `${(i * 5.5 + 3) % 100}%`,
+                    top: '-10%',
+                    animation: `bmConfetti ${1.8 + (i % 4) * 0.4}s ${(i * 0.18) % 1.6}s ease-in forwards`,
+                    opacity: 0,
+                  }}>
+                  {['⭐','✨','🌟','💫','🎊','🎉'][i % 6]}
+                </span>
+              ))}
+            </div>
+
+            {/* Medalla del nivel */}
+            <div style={{ animation: 'bmLogroPop 0.55s cubic-bezier(0.34,1.56,0.64,1) both' }}>
+              <div className="text-7xl mb-1">
+                {{ bronce: '🥉', plata: '🥈', oro: '🥇', diamante: '💎' }[logroNivel.nivel] || '🏆'}
+              </div>
+            </div>
+
+            <div className="mt-4 mb-2" style={{ animation: 'bmFadeUp 0.5s 0.3s ease both', opacity: 0 }}>
+              <div className="text-[11px] font-bold uppercase tracking-[2px] text-[#4db8ff] mb-1">
+                ¡Nivel alcanzado!
+              </div>
+              <h2 className="text-3xl font-extrabold text-white capitalize">{logroNivel.nivel}</h2>
+            </div>
+
+            <div className="mt-4 bg-white/[0.08] border border-white/15 rounded-2xl px-6 py-4 w-full max-w-xs"
+                 style={{ animation: 'bmFadeUp 0.5s 0.5s ease both', opacity: 0 }}>
+              <div className="text-[11px] text-white/45 uppercase tracking-wide mb-1">Tu descuento en la próxima compra</div>
+              <div className="text-3xl font-extrabold text-[#2ecc71]">
+                −${Math.round(logroNivel.disponible).toLocaleString('es-AR')}
+              </div>
+              <div className="text-[12px] text-white/55 mt-1">
+                {logroNivel.pct}% de retorno · nivel {logroNivel.nivel}
+              </div>
+            </div>
+
+            <p className="text-white/35 text-[12px] mt-6" style={{ animation: 'bmFadeUp 0.5s 0.8s ease both', opacity: 0 }}>
+              Tocá para continuar
+            </p>
+          </div>
+        )}
           <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[linear-gradient(180deg,#051e5c_0%,#03174a_100%)] px-8 text-center"
                style={{ animation: 'bmFadeUp 0.4s ease both' }}>
             <div className="w-24 h-24 rounded-full bg-[#2ecc71]/15 border-2 border-[#2ecc71] flex items-center justify-center text-5xl mb-6"
@@ -574,6 +627,14 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
         @keyframes bmFadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes bmSlideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes bmFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        @keyframes bmLogroPop {
+          from { opacity:0; transform: scale(0.4) rotate(-15deg); }
+          to   { opacity:1; transform: scale(1)   rotate(0deg);   }
+        }
+        @keyframes bmConfetti {
+          0%   { opacity:1; transform: translateY(0)     rotate(0deg);   }
+          100% { opacity:0; transform: translateY(110vh) rotate(720deg); }
+        }
       `}</style>
     </div>
   )

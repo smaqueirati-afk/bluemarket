@@ -195,7 +195,18 @@ export async function crearPedido(pescaderiaId, datos, items) {
 
   try { await acumularPedido(admin, pedido.id) } catch (e) { /* ignorar */ }
 
-  return { ok: true, numero: pedido.numero, pedidoId: pedido.id, palabraClave: pedido.palabra_clave, descuentoRetorno }
+  // Nivel alcanzado POST-compra (para mostrar la animación de logro al comprador)
+  let logroNivel = null
+  try {
+    if (clienteId) {
+      const postRet = await retornoDisponible(admin, pescaderiaId, clienteId)
+      if (postRet.nivel && postRet.disponible > 0) {
+        logroNivel = { nivel: postRet.nivel, pct: postRet.pct, disponible: postRet.disponible }
+      }
+    }
+  } catch (e) { /* ignorar */ }
+
+  return { ok: true, numero: pedido.numero, pedidoId: pedido.id, palabraClave: pedido.palabra_clave, descuentoRetorno, logroNivel }
 }
 
 
