@@ -593,6 +593,8 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
             </p>
           </div>
         )}
+
+        {pedidoConfirmado && (
           <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[linear-gradient(180deg,#051e5c_0%,#03174a_100%)] px-8 text-center"
                style={{ animation: 'bmFadeUp 0.4s ease both' }}>
             <div className="w-24 h-24 rounded-full bg-[#2ecc71]/15 border-2 border-[#2ecc71] flex items-center justify-center text-5xl mb-6"
@@ -623,19 +625,13 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
 
       </div>
 
-      <style jsx>{`
+<style dangerouslySetInnerHTML={{ __html: `
         @keyframes bmFadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes bmSlideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes bmFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-        @keyframes bmLogroPop {
-          from { opacity:0; transform: scale(0.4) rotate(-15deg); }
-          to   { opacity:1; transform: scale(1)   rotate(0deg);   }
-        }
-        @keyframes bmConfetti {
-          0%   { opacity:1; transform: translateY(0)     rotate(0deg);   }
-          100% { opacity:0; transform: translateY(110vh) rotate(720deg); }
-        }
-      `}</style>
+        @keyframes bmLogroPop { from { opacity:0; transform: scale(0.4) rotate(-15deg); } to { opacity:1; transform: scale(1) rotate(0deg); } }
+        @keyframes bmConfetti { 0% { opacity:1; transform: translateY(0) rotate(0deg); } 100% { opacity:0; transform: translateY(110vh) rotate(720deg); } }
+      `}} />
     </div>
   )
 }
