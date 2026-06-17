@@ -11,11 +11,11 @@ const nextConfig = {
   turbopack: {},
   async redirects() {
     return [
-      // /panel y /tienda → /pescaderia (URL genérica visible al dueño)
-      { source: '/panel', destination: '/pescaderia', permanent: false },
-      { source: '/panel/:path*', destination: '/pescaderia/:path*', permanent: false },
-      { source: '/tienda', destination: '/pescaderia', permanent: false },
-      { source: '/tienda/:path*', destination: '/pescaderia/:path*', permanent: false },
+      // /pescaderia y /tienda → /panel (la carpeta real ahora es /panel)
+      { source: '/pescaderia', destination: '/panel', permanent: true },
+      { source: '/pescaderia/:path*', destination: '/panel/:path*', permanent: true },
+      { source: '/tienda', destination: '/panel', permanent: true },
+      { source: '/tienda/:path*', destination: '/panel/:path*', permanent: true },
     ]
   },
 }
