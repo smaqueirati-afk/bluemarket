@@ -122,7 +122,7 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
   }
 
   async function compartirLink() {
-    const texto = `¡Hacé tu pedido en ${pescaderia?.nombre}! 🐟\n${linkTienda}`
+    const texto = `¡Hacé tu pedido en ${pescaderia?.nombre}! ${pescaderia?.emoji_rubro || ''}\n${linkTienda}`
     if (navigator.share) {
       try {
         await navigator.share({ title: pescaderia?.nombre, text: texto, url: linkTienda })
@@ -149,7 +149,7 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
   }
 
   async function compartirInvitacion() {
-    const texto = `Sumá tu pescadería a BlueMarket 🐟\n${linkInvitacion}`
+    const texto = `Sumá tu negocio a BlueMarket\n${linkInvitacion}`
     if (navigator.share) {
       try {
         await navigator.share({ title: 'BlueMarket', text: texto, url: linkInvitacion })
@@ -286,7 +286,7 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] blur-3xl pointer-events-none"
            style={{ background: 'radial-gradient(circle, rgba(77,184,255,0.12), transparent 70%)' }} />
 
-      <BarraUsuario perfil="pescaderia" />
+      <BarraUsuario perfil="pescaderia" emojiRubro={pescaderia?.emoji_rubro} />
 
       {/* Alerta vencimiento trial */}
       {mostrarAlertaTrial && (
@@ -319,10 +319,10 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-7">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-12 h-12 rounded-2xl bg-[#4db8ff]/12 border border-[#4db8ff]/30 flex items-center justify-center text-2xl shrink-0">
-              🐟
+              {pescaderia?.emoji_rubro || '🛒'}
             </div>
             <div className="min-w-0">
-              <h1 className="text-2xl font-extrabold tracking-tight leading-tight">{pescaderia?.nombre || 'Mi pescadería'}</h1>
+              <h1 className="text-2xl font-extrabold tracking-tight leading-tight">{pescaderia?.nombre || 'Mi tienda'}</h1>
               <div className="flex items-center gap-2 mt-1 flex-wrap">
                 <p className="text-xs text-white/40">Hola, {nombreUsuario} 👋</p>
                 {pescaderia?.modalidad && (
@@ -341,7 +341,7 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
           <div className="grid grid-cols-2 gap-2 w-full sm:w-auto">
             <a href="/pescaderia/productos"
               className="bg-white/[0.08] border border-white/12 text-white text-sm font-medium px-4 py-2.5 rounded-xl active:scale-95 transition-all text-center whitespace-nowrap">
-              🐟 Productos
+              {pescaderia?.emoji_rubro || '📦'} Productos
             </a>
             <a href="/pescaderia/clientes"
               className="bg-white/[0.08] border border-white/12 text-white text-sm font-medium px-4 py-2.5 rounded-xl active:scale-95 transition-all text-center whitespace-nowrap">
@@ -618,7 +618,7 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
                           </a>
                           {telWa && (
                             <a
-                              href={`https://wa.me/${telWa}?text=${encodeURIComponent(`¡Hola${pedido.cliente_nombre ? ' ' + pedido.cliente_nombre : ''}! Soy de ${pescaderia?.nombre || 'la pescadería'}, voy en camino con tu pedido #${pedido.numero}${pedido.horario ? ` (horario estimado: ${pedido.horario})` : ''} 🐟${pedido.palabra_clave ? `\n\n🔑 Tu palabra clave: ${pedido.palabra_clave}\nDecísela al repartidor cuando te entregue el pedido.` : ''}`)}`}
+                              href={`https://wa.me/${telWa}?text=${encodeURIComponent(`¡Hola${pedido.cliente_nombre ? ' ' + pedido.cliente_nombre : ''}! Soy de ${pescaderia?.nombre || 'la tienda'}, voy en camino con tu pedido #${pedido.numero}${pedido.horario ? ` (horario estimado: ${pedido.horario})` : ''}${pedido.palabra_clave ? `\n\n🔑 Tu palabra clave: ${pedido.palabra_clave}\nDecísela al repartidor cuando te entregue el pedido.` : ''}`)}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="flex-1 bg-[#25D366] text-[#03351b] text-xs font-bold px-3 py-2 rounded-lg active:scale-95 transition-transform text-center">
@@ -684,7 +684,7 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
                         {pedido.cliente_telefono && (() => {
                           const tel = waNumero(pedido.cliente_telefono)
                           return tel ? (
-                            <a href={`https://wa.me/${tel}?text=${encodeURIComponent(`¡Hola${pedido.cliente_nombre ? ' ' + pedido.cliente_nombre : ''}! Soy de ${pescaderia?.nombre || 'la pescadería'}, te escribo por tu pedido #${pedido.numero} 🐟`)}`}
+                            <a href={`https://wa.me/${tel}?text=${encodeURIComponent(`¡Hola${pedido.cliente_nombre ? ' ' + pedido.cliente_nombre : ''}! Soy de ${pescaderia?.nombre || 'la tienda'}, te escribo por tu pedido #${pedido.numero}`)}`}
                               target="_blank" rel="noopener noreferrer"
                               className="flex items-center gap-1.5 bg-[#25D366]/15 border border-[#25D366]/30 text-[#25D366] text-xs font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform">
                               💬 {pedido.cliente_telefono}

@@ -6,7 +6,7 @@ import { createClient } from '../lib/supabase/client'
 // Barra superior con identificación del perfil y botón de salir.
 // Uso: <BarraUsuario perfil="pescaderia" />
 // perfil puede ser: 'developer' | 'pescaderia' | 'consumidor'
-export default function BarraUsuario({ perfil = 'consumidor' }) {
+export default function BarraUsuario({ perfil = 'consumidor', emojiRubro }) {
   const [nombre, setNombre] = useState('')
   const [cerrando, setCerrando] = useState(false)
 
@@ -15,7 +15,7 @@ export default function BarraUsuario({ perfil = 'consumidor' }) {
     pescaderia: { texto: 'Mi tienda', color: '#2ecc71', emoji: '🏪' },
     consumidor: { texto: 'Perfil Consumidor', color: '#f39c12', emoji: '🛒' },
   }
-  const etq = etiquetas[perfil] || etiquetas.consumidor
+  const etq = { ...(etiquetas[perfil] || etiquetas.consumidor), ...(emojiRubro ? { emoji: emojiRubro } : {}) }
 
   useEffect(() => {
     const supabase = createClient()
