@@ -23,7 +23,7 @@ export default async function ProductosPage() {
 
   const { data: pescaderia } = await admin
     .from('pescaderias')
-    .select('nombre')
+    .select('nombre, rubro, emoji_rubro')
     .eq('id', perfil.pescaderia_id)
     .single()
 
@@ -36,7 +36,8 @@ export default async function ProductosPage() {
   return (
     <GestionProductos
       productos={productos || []}
-      nombrePescaderia={pescaderia?.nombre || 'Mi pescadería'}
+      nombrePescaderia={pescaderia?.nombre || 'Mi tienda'}
+      rubroInicial={pescaderia?.rubro || null}
     />
   )
 }

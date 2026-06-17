@@ -74,7 +74,7 @@ function defaultsRubro(rubro) {
   return DEFAULTS_RUBRO[rubro] || { placeholder: 'Nombre del producto', categoria: 'otros', emoji: '📦' }
 }
 
-export default function GestionProductos({ productos, nombrePescaderia }) {
+export default function GestionProductos({ productos, nombrePescaderia, rubroInicial }) {
   const [form, setForm] = useState(FORM_VACIO)
   const [editandoId, setEditandoId] = useState(null)
   const [mostrarForm, setMostrarForm] = useState(false)
@@ -89,7 +89,7 @@ export default function GestionProductos({ productos, nombrePescaderia }) {
   const [cargandoCatalogo, setCargandoCatalogo] = useState(false)
   const [seleccionados, setSeleccionados] = useState([])
   const [importando, setImportando] = useState(false)
-  const [rubroTienda, setRubroTienda] = useState(null)
+  const [rubroTienda, setRubroTienda] = useState(rubroInicial || null)
   const [proponiendo, setProponiendo] = useState(null) // productoId que se está proponiendo
   const [msgPropuesta, setMsgPropuesta] = useState(null)
 
