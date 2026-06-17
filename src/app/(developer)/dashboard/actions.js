@@ -37,8 +37,11 @@ export async function crearPescaderia(formData) {
 
   const nombre = formData.get('nombre')?.trim()
   let slug = formData.get('slug')?.trim().toLowerCase()
-  const telefono = formData.get('telefono')?.trim()
+  const telefono = formData.get('modalidad') ? formData.get('telefono')?.trim() : null
   const modalidad = formData.get('modalidad') || 'local_reparto'
+  const rubro = formData.get('rubro') || 'pescadería'
+  // El emoji lo mandamos como campo oculto emoji_{rubro}
+  const emojiRubro = formData.get(`emoji_${rubro}`) || '🛒'
 
   if (!nombre) {
     return { error: 'El nombre es obligatorio' }
@@ -54,6 +57,8 @@ export async function crearPescaderia(formData) {
     slug,
     telefono: telefono || null,
     modalidad,
+    rubro,
+    emoji_rubro: emojiRubro,
     plan: 'trial',
     activa: true,
   })

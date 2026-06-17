@@ -346,11 +346,32 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
             className="bg-white/[0.06] border border-white/12 rounded-2xl p-5 mb-6 space-y-4 backdrop-blur-md"
             style={{ animation: 'bmFadeUp 0.4s ease both' }}>
             <div>
-              <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">Nombre de la pescadería</label>
-              <input name="nombre" required placeholder="Pescadería Tigre"
+              <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">Nombre del negocio</label>
+              <input name="nombre" required placeholder="Quesería La Comarca"
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-[#4db8ff]" />
             </div>
             <input name="slug" type="hidden" value="" />
+            <div>
+              <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">Rubro</label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { rubro: 'pescadería', emoji: '🐟' },
+                  { rubro: 'quesería',   emoji: '🧀' },
+                  { rubro: 'carnicería', emoji: '🥩' },
+                  { rubro: 'verdulería', emoji: '🥦' },
+                  { rubro: 'panadería',  emoji: '🥖' },
+                  { rubro: 'almacén',    emoji: '🛒' },
+                  { rubro: 'rotisería',  emoji: '🍗' },
+                  { rubro: 'otro',       emoji: '📦' },
+                ].map((r) => (
+                  <label key={r.rubro} className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 cursor-pointer has-[:checked]:border-[#4db8ff] has-[:checked]:bg-[#4db8ff]/10 transition-all">
+                    <input type="radio" name="rubro" value={r.rubro} defaultChecked={r.rubro === 'pescadería'} className="accent-[#4db8ff]" />
+                    <span className="text-sm">{r.emoji} {r.rubro.charAt(0).toUpperCase() + r.rubro.slice(1)}</span>
+                    <input type="hidden" name={`emoji_${r.rubro}`} value={r.emoji} />
+                  </label>
+                ))}
+              </div>
+            </div>
             <div>
               <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">Teléfono / WhatsApp (opcional)</label>
               <input name="telefono" placeholder="+54 11 1234 5678"
@@ -384,7 +405,7 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
             </div>
             <button type="submit" disabled={cargando}
               className="w-full bg-[#4db8ff] text-[#03174a] font-bold py-3 rounded-xl transition-all hover:shadow-[0_0_16px_rgba(77,184,255,0.4)] active:scale-[0.98] disabled:opacity-60">
-              {cargando ? 'Creando...' : 'Crear pescadería'}
+              {cargando ? 'Creando...' : 'Crear tienda'}
             </button>
           </form>
         )}

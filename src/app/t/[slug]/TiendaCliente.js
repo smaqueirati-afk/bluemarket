@@ -29,12 +29,19 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
   const [misPedidosList, setMisPedidosList] = useState([])
   const [verMisPedidos, setVerMisPedidos] = useState(false)
 
+  const emojiTienda = pescaderia?.emoji_rubro || '🛒'
   const categorias = [
-    { id: 'todo', emoji: '🐟', label: 'Todo' },
-    { id: 'mariscos', emoji: '🦐', label: 'Mariscos' },
+    { id: 'todo', emoji: emojiTienda, label: 'Todo' },
+    { id: 'lacteos', emoji: '🧀', label: 'Lácteos' },
     { id: 'pescado', emoji: '🐡', label: 'Pescado' },
-    { id: 'moluscos', emoji: '🦑', label: 'Moluscos' },
+    { id: 'mariscos', emoji: '🦐', label: 'Mariscos' },
+    { id: 'carnes', emoji: '🥩', label: 'Carnes' },
+    { id: 'fiambres', emoji: '🍖', label: 'Fiambres' },
+    { id: 'verduras', emoji: '🥦', label: 'Verduras' },
+    { id: 'panaderia', emoji: '🥖', label: 'Panadería' },
     { id: 'congelados', emoji: '❄️', label: 'Congelados' },
+    { id: 'bebidas', emoji: '🧃', label: 'Bebidas' },
+    { id: 'otros', emoji: '📦', label: 'Otros' },
   ]
 
   const productosFiltrados =
@@ -127,7 +134,7 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
   }, [carrito])
 
   async function invitar() {
-    const texto = `Te invito a BlueMarket 🐟\n${linkInvitacion}`
+    const texto = `Te invito a comprar en ${pescaderia?.nombre || 'BlueMarket'} ${pescaderia?.emoji_rubro || ''}\n${linkInvitacion}`
     if (navigator.share) {
       try {
         await navigator.share({ title: 'BlueMarket', text: texto, url: linkInvitacion })
@@ -155,7 +162,7 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
         <div className="shrink-0 px-4 pt-5 pb-1">
           <div className="flex items-center justify-between mb-3.5">
             <div className="flex items-center gap-1.5 bg-white/[0.07] border border-white/12 rounded-full px-3 py-1.5 backdrop-blur-sm">
-              <span>🐟</span>
+              <span>{pescaderia?.emoji_rubro || '🛒'}</span>
               <strong className="text-[11px] text-white">{pescaderia?.nombre || 'Pescadería'}</strong>
             </div>
             <div className="flex items-center gap-2">
@@ -235,7 +242,7 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
 
           {productosFiltrados.length === 0 ? (
             <div className="text-center py-12">
-              <div className="text-4xl mb-3 opacity-40">🐟</div>
+              <div className="text-4xl mb-3 opacity-40">{pescaderia?.emoji_rubro || '🛒'}</div>
               <p className="text-white/40 text-sm">No hay productos en esta categoría.</p>
             </div>
           ) : (
@@ -470,7 +477,7 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
                       }
                       return (
                         <a
-                          href={`https://wa.me/${n}?text=${encodeURIComponent(`Hola ${pescaderia?.nombre || ''}, te escribo por mi pedido 🐟`)}`}
+                          href={`https://wa.me/${n}?text=${encodeURIComponent(`Hola ${pescaderia?.nombre || ''}, te escribo por mi pedido ${pescaderia?.emoji_rubro || ''}`)}`}
                           target="_blank" rel="noopener noreferrer"
                           className="flex items-center gap-1.5 bg-[#25D366]/15 border border-[#25D366]/30 text-[#25D366] text-xs font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform">
                           💬 {pescaderia.telefono}
@@ -613,7 +620,7 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
               </div>
             )}
             <p className="text-white/55 text-sm leading-relaxed mb-8">
-              Tu pedido fue recibido. La pescadería lo va a preparar y te avisará cuando esté listo. 🐟
+              Tu pedido fue recibido. {pescaderia?.nombre || 'La tienda'} lo va a preparar y te avisará cuando esté listo. {pescaderia?.emoji_rubro || ''}
             </p>
             <button
               onClick={() => setPedidoConfirmado(false)}

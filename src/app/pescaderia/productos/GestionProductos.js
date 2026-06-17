@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { crearProducto, editarProducto, toggleDisponible, borrarProducto, importarDesdeCatalogo, getCatalogoMaster } from './actions'
+import { crearProducto, editarProducto, toggleDisponible, borrarProducto, importarDesdeCatalogo, getCatalogoMaster, proponerAlCatalogo } from './actions'
 import BarraUsuario from '../../../components/BarraUsuario'
 import { createClient } from '../../../lib/supabase/client'
 
@@ -75,6 +75,9 @@ export default function GestionProductos({ productos, nombrePescaderia }) {
   const [cargandoCatalogo, setCargandoCatalogo] = useState(false)
   const [seleccionados, setSeleccionados] = useState([])
   const [importando, setImportando] = useState(false)
+  const [rubroTienda, setRubroTienda] = useState(null)
+  const [proponiendo, setProponiendo] = useState(null) // productoId que se está proponiendo
+  const [msgPropuesta, setMsgPropuesta] = useState(null)
 
   function fmt(n) {
     return '$' + Number(n).toLocaleString('es-AR')
