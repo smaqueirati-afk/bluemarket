@@ -58,7 +58,21 @@ function adivinarEmoji(nombre) {
   return null // no encontró coincidencia
 }
 
-const FORM_VACIO = { nombre: '', precio: '', categoria: 'pescado', unidad: 'kg', emoji: '🐟', stock: '', descripcion: '', foto_url: '' }
+const FORM_VACIO = { nombre: '', precio: '', categoria: 'otros', unidad: 'kg', emoji: '📦', stock: '', descripcion: '', foto_url: '' }
+
+// Defaults visuales por rubro — placeholder del nombre, categoría y emoji sugerido
+const DEFAULTS_RUBRO = {
+  'pescadería': { placeholder: 'Merluza fresca',     categoria: 'pescado',   emoji: '🐟' },
+  'quesería':   { placeholder: 'Brie 250g',          categoria: 'lacteos',   emoji: '🧀' },
+  'carnicería': { placeholder: 'Asado de tira x kg', categoria: 'carnes',    emoji: '🥩' },
+  'verdulería': { placeholder: 'Tomate redondo x kg',categoria: 'verduras',  emoji: '🥦' },
+  'panadería':  { placeholder: 'Medialunas x docena',categoria: 'panaderia', emoji: '🥖' },
+  'rotisería':  { placeholder: 'Pollo entero',       categoria: 'carnes',    emoji: '🍗' },
+  'almacén':    { placeholder: 'Arroz largo fino x kg', categoria: 'otros',  emoji: '🛒' },
+}
+function defaultsRubro(rubro) {
+  return DEFAULTS_RUBRO[rubro] || { placeholder: 'Nombre del producto', categoria: 'otros', emoji: '📦' }
+}
 
 export default function GestionProductos({ productos, nombrePescaderia }) {
   const [form, setForm] = useState(FORM_VACIO)
@@ -94,7 +108,7 @@ export default function GestionProductos({ productos, nombrePescaderia }) {
     setForm({
       nombre: p.nombre || '',
       precio: p.precio || '',
-      categoria: p.categoria || 'pescado',
+      categoria: p.categoria || defaultsRubro(rubroTienda).categoria,
       unidad: p.unidad || 'kg',
       emoji: p.emoji || '',
       stock: p.stock ?? '',
@@ -111,6 +125,15 @@ export default function GestionProductos({ productos, nombrePescaderia }) {
     setMostrarForm(false)
     setEditandoId(null)
     setForm(FORM_VACIO)
+  }
+
+  function abrirNuevo() {
+    const d = defaultsRubro(rubroTienda)
+    setForm({ ...FORM_VACIO, categoria: d.categoria, emoji: d.emoji })
+    setEditandoId(null)
+    setMostrarForm(true)
+    setMensaje(null)
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
   }
 
   async function abrirCatalogo() {
@@ -249,7 +272,7 @@ export default function GestionProductos({ productos, nombrePescaderia }) {
                     setForm({ ...form, nombre: nuevoNombre })
                   }
                 }}
-                placeholder="Merluza fresca"
+                placeholder={defaultsRubro(rubroTienda).placeholder}
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-[#4db8ff]" />
             </div>
 
@@ -454,7 +477,7 @@ export default function GestionProductos({ productos, nombrePescaderia }) {
                 <div className="text-center py-10 text-white/40 text-sm">Cargando catálogo...</div>
               ) : catalogo.length === 0 ? (
                 <div className="text-center py-10">
-                  <div className="text-4xl mb-3 opacity-40">📦</div>
+                  <div className="text-4xl mb-3 opacity-40">{defaultsRubro(rubroTienda).emoji}</div>
                   <p className="text-white/40 text-sm">El catálogo master está vacío.</p>
                 </div>
               ) : (

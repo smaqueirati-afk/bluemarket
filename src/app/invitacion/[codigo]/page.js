@@ -42,15 +42,15 @@ export default async function InvitacionPage({ params }) {
     <div className="min-h-screen flex items-center justify-center px-6 py-10 text-white bg-[linear-gradient(180deg,#051e5c_0%,#03174a_60%,#020f30_100%)]">
       <div className="w-full max-w-sm bg-white/[0.06] border border-white/10 rounded-3xl p-7 backdrop-blur-sm">
         <div className="text-center">
-          <div className="text-5xl mb-3">🐟</div>
-          <h1 className="text-2xl font-extrabold tracking-tight">Sumá tu pescadería</h1>
+          <div className="text-5xl mb-3">🏪</div>
+          <h1 className="text-2xl font-extrabold tracking-tight">Sumá tu negocio</h1>
           {invitador ? (
             <p className="text-white/55 text-sm mt-2">
-              Te invitó <span className="text-[#4db8ff] font-semibold">{invitador}</span> a BlueMarket. Completá los datos y entrá con Google.
+              Te invitó <span className="text-[#4db8ff] font-semibold">{invitador}</span> a BlueMarket. Completá los datos y entrá con Google para dar de alta tu tienda online.
             </p>
           ) : (
             <p className="text-white/55 text-sm mt-2">
-              Completá los datos de tu pescadería y entrá con Google.
+              Completá los datos de tu negocio y entrá con Google para dar de alta tu tienda online.
             </p>
           )}
         </div>
@@ -58,12 +58,12 @@ export default async function InvitacionPage({ params }) {
         <form action={continuar} className="mt-6 flex flex-col gap-4">
           <div>
             <label className="block text-[11px] uppercase tracking-wide text-white/45 font-bold mb-1.5">
-              Nombre de la pescadería
+              Nombre del negocio
             </label>
             <input
               name="nombre"
               required
-              placeholder="Pescadería del Puerto"
+              placeholder="Quesería La Comarca"
               className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-[#4db8ff]"
             />
           </div>
@@ -118,7 +118,7 @@ export default async function InvitacionPage({ params }) {
           </button>
         </form>
 
-        <p className="text-[11px] text-white/30 mt-4 text-center">El link de tu tienda se genera solo.</p>
+        <p className="text-[11px] text-white/30 mt-4 text-center">El link de tu tienda online se genera automáticamente.</p>
       </div>
     </div>
   )
