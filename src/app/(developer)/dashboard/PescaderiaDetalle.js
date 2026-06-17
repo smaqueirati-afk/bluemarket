@@ -30,6 +30,7 @@ export default function PescaderiaDetalle({ pescaderia, onVolver }) {
   const [rolNuevo, setRolNuevo] = useState('colaborador')
   const [msgMiembros, setMsgMiembros] = useState(null)
   const [agregando, setAgregando] = useState(false)
+  const [noExiste, setNoExiste] = useState(false)
   const [datos, setDatos] = useState(null)
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(null)
@@ -334,7 +335,26 @@ export default function PescaderiaDetalle({ pescaderia, onVolver }) {
                     </button>
                   ))}
                 </div>
-                {msgMiembros && (
+                {/* Usuario no existe → ofrecer invitación por WhatsApp */}
+                {noExiste && (
+                  <div className="bg-[#f39c12]/10 border border-[#f39c12]/30 rounded-xl p-3 space-y-2">
+                    <p className="text-xs text-white/70">
+                      <span className="text-[#f39c12] font-bold">"{emailNuevo}"</span> todavía no se registró en BlueMarket.
+                      Podés invitarlo por WhatsApp para que entre y se registre.
+                    </p>
+                    <a
+                      href={`https://wa.me/?text=${encodeURIComponent(`${pescaderia.emoji_rubro || '🛒'} *${pescaderia.nombre}* te invita a sumarte a BlueMarket!\n\nEntrá con tu cuenta de Google y empezá a gestionar la tienda:\nhttps://bluemarket-two.vercel.app/t/${pescaderia.slug}\n\n_Es gratis y rápido_ ✅`)}`}
+                      target="_blank" rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 w-full bg-[#25D366] text-white text-xs font-bold py-2.5 rounded-xl active:scale-95 transition-transform">
+                      💬 Invitar por WhatsApp
+                    </a>
+                    <p className="text-[10px] text-white/35 text-center">
+                      Después de que se registre, volvé a agregarlo acá.
+                    </p>
+                  </div>
+                )}
+
+                {msgMiembros && !noExiste && (
                   <div className={`text-xs px-3 py-2 rounded-lg ${msgMiembros.ok ? 'bg-[#2ecc71]/12 text-[#2ecc71]' : 'bg-[#e74c3c]/12 text-[#e74c3c]'}`}>
                     {msgMiembros.texto}
                   </div>
@@ -342,12 +362,16 @@ export default function PescaderiaDetalle({ pescaderia, onVolver }) {
                 <button
                   disabled={agregando || !emailNuevo.trim()}
                   onClick={async () => {
-                    setAgregando(true); setMsgMiembros(null)
+                    setAgregando(true); setMsgMiembros(null); setNoExiste(false)
                     const res = await agregarMiembro(pescaderia.id, emailNuevo.trim(), rolNuevo)
                     setAgregando(false)
+                    if (res.error && res.error.includes('No existe')) {
+                      setNoExiste(true)
+                      return
+                    }
                     if (res.error) { setMsgMiembros({ ok: false, texto: res.error }); return }
                     setMsgMiembros({ ok: true, texto: `✓ ${res.nombre} agregado como ${rolNuevo}` })
-                    setEmailNuevo('')
+                    setEmailNuevo(''); setNoExiste(false)
                     cargarMiembros()
                   }}
                   className="w-full bg-[#4db8ff] text-[#03174a] font-bold py-2.5 rounded-xl text-sm active:scale-[0.98] transition-transform disabled:opacity-50">
