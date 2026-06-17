@@ -89,12 +89,7 @@ export default function GestionProductos({ productos, nombrePescaderia, rubroIni
   const [cargandoCatalogo, setCargandoCatalogo] = useState(false)
   const [seleccionados, setSeleccionados] = useState([])
   const [importando, setImportando] = useState(false)
-  const [rubroTienda, setRubroTienda] = useState(rubroInicial || null)
-
-  // Sincronizar rubroInicial (viene del server) con el estado del cliente
-  useEffect(() => {
-    if (rubroInicial && !rubroTienda) setRubroTienda(rubroInicial)
-  }, [rubroInicial])
+  const [rubroTienda, setRubroTienda] = useState(() => rubroInicial || null)
   const [proponiendo, setProponiendo] = useState(null) // productoId que se está proponiendo
   const [msgPropuesta, setMsgPropuesta] = useState(null)
 
