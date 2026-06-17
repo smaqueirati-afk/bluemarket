@@ -410,3 +410,144 @@ export async function resetTotal(confirmacion) {
   revalidatePath('/dashboard')
   return { ok: true }
 }
+
+// ── Gestión de miembros por tienda ──────────────────────────────────────────
+
+// Listar los miembros de una tienda
+export async function getMiembrosTienda(pescaderiaId) {
+  const check = await verificarDeveloper()
+  if (check.error) return { error: check.error }
+
+  const admin = createAdminClient()
+  const { data, error } = await admin
+    .from('tienda_usuarios')
+    .select('id, rol_tienda, created_at, usuario_id')
+    .eq('pescaderia_id', pescaderiaId)
+    .order('created_at')
+
+  if (error) return { error: error.message }
+
+  // Enriquecer con datos del usuario
+  const ids = (data || []).map((m) => m.usuario_id)
+  if (ids.length === 0) return { miembros: [] }
+
+  const { data: users } = await admin
+    .from('usuarios')
+    .select('id, nombre, email')
+    .in('id', ids)
+
+  const mapaUsers = {}
+  for (const u of users || []) mapaUsers[u.id] = u
+
+  const miembros = (data || []).map((m) => ({
+    ...m,
+    nombre: mapaUsers[m.usuario_id]?.nombre || null,
+    email:  mapaUsers[m.usuario_id]?.email  || null,
+  }))
+
+  return { miembros }
+}
+
+// Agregar un colaborador por email
+export async function agregarMiembro(pescaderiaId, email, rolTienda = 'colaborador') {
+  const check = await verificarDeveloper()
+  if (check.error) return { error: check.error }
+
+  if (!['admin', 'full', 'colaborador'].includes(rolTienda)) {
+    return { error: 'Rol inválido' }
+  }
+
+  const admin = createAdminClient()
+
+  // Buscar el usuario por email
+  const { data: usuario } = await admin
+    .from('usuarios')
+    .select('id, nombre')
+    .eq('email', email.trim().toLowerCase())
+    .maybeSingle()
+
+  if (!usuario) {
+    return { error: `No existe un usuario con el email ${email}. Primero tiene que registrarse en BlueMarket.` }
+  }
+
+  // Upsert: si ya existe, actualiza el rol
+  const { error } = await admin
+    .from('tienda_usuarios')
+    .upsert({
+      pescaderia_id: pescaderiaId,
+      usuario_id: usuario.id,
+      rol_tienda: rolTienda,
+    }, { onConflict: 'pescaderia_id,usuario_id' })
+
+  if (error) return { error: error.message }
+
+  // Actualizar también usuarios.pescaderia_id para compatibilidad con el panel actual
+  await admin
+    .from('usuarios')
+    .update({ pescaderia_id: pescaderiaId })
+    .eq('id', usuario.id)
+
+  revalidatePath('/dashboard')
+  return { ok: true, nombre: usuario.nombre || email }
+}
+
+// Cambiar el rol de un miembro
+export async function cambiarRolMiembro(miembroId, nuevoRol) {
+  const check = await verificarDeveloper()
+  if (check.error) return { error: check.error }
+
+  if (!['admin', 'full', 'colaborador'].includes(nuevoRol)) {
+    return { error: 'Rol inválido' }
+  }
+
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('tienda_usuarios')
+    .update({ rol_tienda: nuevoRol })
+    .eq('id', miembroId)
+
+  if (error) return { error: error.message }
+  revalidatePath('/dashboard')
+  return { ok: true }
+}
+
+// Quitar un miembro de la tienda
+export async function quitarMiembro(miembroId) {
+  const check = await verificarDeveloper()
+  if (check.error) return { error: check.error }
+
+  const admin = createAdminClient()
+
+  // Obtener el miembro antes de borrar para limpiar usuarios.pescaderia_id
+  const { data: m } = await admin
+    .from('tienda_usuarios')
+    .select('usuario_id, pescaderia_id, rol_tienda')
+    .eq('id', miembroId)
+    .maybeSingle()
+
+  if (m?.rol_tienda === 'admin') {
+    return { error: 'No se puede quitar al administrador principal. Primero asigná otro admin.' }
+  }
+
+  const { error } = await admin
+    .from('tienda_usuarios')
+    .delete()
+    .eq('id', miembroId)
+
+  if (error) return { error: error.message }
+
+  // Limpiar pescaderia_id del usuario si ya no tiene otra tienda
+  if (m?.usuario_id) {
+    const { data: otras } = await admin
+      .from('tienda_usuarios')
+      .select('id')
+      .eq('usuario_id', m.usuario_id)
+      .limit(1)
+    if (!otras || otras.length === 0) {
+      await admin.from('usuarios').update({ pescaderia_id: null }).eq('id', m.usuario_id)
+    }
+  }
+
+  revalidatePath('/dashboard')
+  return { ok: true }
+}

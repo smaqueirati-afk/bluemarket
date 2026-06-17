@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { getPescaderiaDetalle, resetPedidosPescaderia } from './actions'
+import { getPescaderiaDetalle, resetPedidosPescaderia, getMiembrosTienda, agregarMiembro, cambiarRolMiembro, quitarMiembro } from './actions'
 
 const ESTADOS = {
   nuevo:      { label: 'Recibido',   color: '#4db8ff',  bg: '#4db8ff22' },
@@ -23,7 +23,13 @@ function fmtFecha(iso) {
 }
 
 export default function PescaderiaDetalle({ pescaderia, onVolver }) {
-  const [tab, setTab] = useState('pedidos') // 'pedidos' | 'clientes'
+  const [tab, setTab] = useState('pedidos') // 'pedidos' | 'clientes' | 'miembros'
+  const [miembros, setMiembros] = useState([])
+  const [cargandoMiembros, setCargandoMiembros] = useState(false)
+  const [emailNuevo, setEmailNuevo] = useState('')
+  const [rolNuevo, setRolNuevo] = useState('colaborador')
+  const [msgMiembros, setMsgMiembros] = useState(null)
+  const [agregando, setAgregando] = useState(false)
   const [datos, setDatos] = useState(null)
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(null)
@@ -55,6 +61,13 @@ export default function PescaderiaDetalle({ pescaderia, onVolver }) {
     })
   }
 
+  async function cargarMiembros() {
+    setCargandoMiembros(true)
+    const res = await getMiembrosTienda(pescaderia.id)
+    setCargandoMiembros(false)
+    if (!res.error) setMiembros(res.miembros || [])
+  }
+
   useEffect(() => {
     setCargando(true)
     setError(null)
@@ -64,6 +77,10 @@ export default function PescaderiaDetalle({ pescaderia, onVolver }) {
       setCargando(false)
     })
   }, [pescaderia.id])
+
+  useEffect(() => {
+    if (tab === 'miembros') cargarMiembros()
+  }, [tab])
 
   const pedidosFiltrados = (datos?.pedidos || []).filter((p) => {
     if (!busqueda.trim()) return true
@@ -144,6 +161,7 @@ export default function PescaderiaDetalle({ pescaderia, onVolver }) {
             {[
               { id: 'pedidos', label: `Pedidos (${datos.pedidos.length})` },
               { id: 'clientes', label: `Clientes (${datos.clientes.length})` },
+              { id: 'miembros', label: `👥 Miembros` },
             ].map((t) => (
               <button
                 key={t.id}
@@ -288,6 +306,112 @@ export default function PescaderiaDetalle({ pescaderia, onVolver }) {
                   </div>
                 ))
               )}
+            </div>
+          )}
+
+          {/* ── TAB MIEMBROS ── */}
+          {tab === 'miembros' && (
+            <div className="space-y-4">
+
+              {/* Agregar miembro */}
+              <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-4 space-y-3">
+                <div className="text-sm font-bold text-white">➕ Agregar miembro</div>
+                <input
+                  value={emailNuevo}
+                  onChange={(e) => setEmailNuevo(e.target.value)}
+                  placeholder="email@gmail.com"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-[#4db8ff]"
+                />
+                <div className="flex gap-2">
+                  {[
+                    { val: 'colaborador', label: '👤 Colaborador', desc: 'Pedidos y productos' },
+                    { val: 'full',        label: '⚡ Full',        desc: 'Acceso total' },
+                  ].map((r) => (
+                    <button key={r.val} onClick={() => setRolNuevo(r.val)}
+                      className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all text-left ${rolNuevo === r.val ? 'bg-[#4db8ff] text-[#03174a]' : 'bg-white/[0.06] text-white/60 border border-white/10'}`}>
+                      <div>{r.label}</div>
+                      <div className={`text-[10px] mt-0.5 ${rolNuevo === r.val ? 'text-[#03174a]/70' : 'text-white/35'}`}>{r.desc}</div>
+                    </button>
+                  ))}
+                </div>
+                {msgMiembros && (
+                  <div className={`text-xs px-3 py-2 rounded-lg ${msgMiembros.ok ? 'bg-[#2ecc71]/12 text-[#2ecc71]' : 'bg-[#e74c3c]/12 text-[#e74c3c]'}`}>
+                    {msgMiembros.texto}
+                  </div>
+                )}
+                <button
+                  disabled={agregando || !emailNuevo.trim()}
+                  onClick={async () => {
+                    setAgregando(true); setMsgMiembros(null)
+                    const res = await agregarMiembro(pescaderia.id, emailNuevo.trim(), rolNuevo)
+                    setAgregando(false)
+                    if (res.error) { setMsgMiembros({ ok: false, texto: res.error }); return }
+                    setMsgMiembros({ ok: true, texto: `✓ ${res.nombre} agregado como ${rolNuevo}` })
+                    setEmailNuevo('')
+                    cargarMiembros()
+                  }}
+                  className="w-full bg-[#4db8ff] text-[#03174a] font-bold py-2.5 rounded-xl text-sm active:scale-[0.98] transition-transform disabled:opacity-50">
+                  {agregando ? 'Agregando...' : 'Agregar'}
+                </button>
+              </div>
+
+              {/* Lista de miembros */}
+              {cargandoMiembros ? (
+                <div className="text-center py-6 text-white/40 text-sm">Cargando...</div>
+              ) : miembros.length === 0 ? (
+                <div className="text-center py-6 text-white/40 text-sm">Sin miembros todavía.</div>
+              ) : (
+                <div className="space-y-2">
+                  {miembros.map((m) => (
+                    <div key={m.id} className="bg-white/[0.05] border border-white/10 rounded-2xl p-3.5 flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-[#4db8ff]/12 border border-[#4db8ff]/25 flex items-center justify-center text-base shrink-0">
+                        {m.rol_tienda === 'admin' ? '👑' : m.rol_tienda === 'full' ? '⚡' : '👤'}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm text-white font-semibold truncate">{m.nombre || m.email}</div>
+                        <div className="text-[11px] text-white/40 truncate">{m.email}</div>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {/* Cambiar rol (no al admin) */}
+                        {m.rol_tienda !== 'admin' && (
+                          <select
+                            value={m.rol_tienda}
+                            onChange={async (e) => {
+                              await cambiarRolMiembro(m.id, e.target.value)
+                              cargarMiembros()
+                            }}
+                            className="bg-white/[0.06] border border-white/10 text-white text-xs rounded-lg px-2 py-1.5 outline-none">
+                            <option value="colaborador">Colaborador</option>
+                            <option value="full">Full</option>
+                          </select>
+                        )}
+                        {m.rol_tienda === 'admin' && (
+                          <span className="text-[11px] text-[#f39c12] font-bold px-2 py-1 bg-[#f39c12]/10 rounded-lg">Admin</span>
+                        )}
+                        {/* Quitar (no al admin) */}
+                        {m.rol_tienda !== 'admin' && (
+                          <button
+                            onClick={async () => {
+                              if (!confirm(`¿Quitar a ${m.nombre || m.email} de esta tienda?`)) return
+                              const res = await quitarMiembro(m.id)
+                              if (res.error) { setMsgMiembros({ ok: false, texto: res.error }); return }
+                              cargarMiembros()
+                            }}
+                            className="text-[#e74c3c] text-sm px-2 py-1.5 bg-[#e74c3c]/10 rounded-lg active:scale-95 transition-transform">
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <p className="text-[11px] text-white/30 text-center">
+                👑 Admin · acceso total + gestión de miembros<br/>
+                ⚡ Full · acceso total sin gestión<br/>
+                👤 Colaborador · solo pedidos y productos
+              </p>
             </div>
           )}
         </>
