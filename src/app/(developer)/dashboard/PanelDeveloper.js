@@ -192,7 +192,7 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
           <div className="grid grid-cols-3 gap-2 mb-6">
             <button onClick={() => setPestana('pescaderias')}
               className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${pestana === 'pescaderias' ? 'bg-[#4db8ff] text-[#03174a]' : 'bg-white/[0.07] text-white/60 border border-white/10'}`}>
-              🏪 Pescaderías
+              🏪 Comercios Online
             </button>
             <button onClick={() => setPestana('catalogo')}
               className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${pestana === 'catalogo' ? 'bg-[#4db8ff] text-[#03174a]' : 'bg-white/[0.07] text-white/60 border border-white/10'}`}>
@@ -460,7 +460,7 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
         {/* Lista de tiendas */}
         <div>
           <h2 className="text-sm font-bold text-white/60 uppercase tracking-wide mb-3">
-            Tiendas ({pescaderias.length})
+            Comercios Online ({pescaderias.length})
           </h2>
 
           {pescaderias.length === 0 ? (
