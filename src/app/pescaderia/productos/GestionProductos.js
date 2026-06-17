@@ -102,13 +102,6 @@ export default function GestionProductos({ productos, nombrePescaderia, rubroIni
     return '$' + Number(n).toLocaleString('es-AR')
   }
 
-  function abrirNuevo() {
-    setForm(FORM_VACIO)
-    setEditandoId(null)
-    setMostrarForm(true)
-    setMensaje(null)
-  }
-
   function abrirEditar(p) {
     setForm({
       nombre: p.nombre || '',
