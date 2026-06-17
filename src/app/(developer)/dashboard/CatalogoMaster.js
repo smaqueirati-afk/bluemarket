@@ -5,13 +5,29 @@ import { crearProductoMaster, editarProductoMaster, borrarProductoMaster, import
 import { createClient } from '../../../lib/supabase/client'
 
 const CATEGORIAS = [
-  { id: 'pescado',   label: 'Pescado',   emoji: '🐟' },
-  { id: 'mariscos',  label: 'Mariscos',  emoji: '🦐' },
-  { id: 'moluscos',  label: 'Moluscos',  emoji: '🦪' },
+  { id: 'pescado',   label: 'Pescado',    emoji: '🐟' },
+  { id: 'mariscos',  label: 'Mariscos',   emoji: '🦐' },
+  { id: 'lacteos',   label: 'Lácteos',    emoji: '🧀' },
+  { id: 'carnes',    label: 'Carnes',     emoji: '🥩' },
+  { id: 'fiambres',  label: 'Fiambres',   emoji: '🍖' },
+  { id: 'verduras',  label: 'Verduras',   emoji: '🥦' },
+  { id: 'panaderia', label: 'Panadería',  emoji: '🥖' },
+  { id: 'bebidas',   label: 'Bebidas',    emoji: '🧃' },
+  { id: 'otros',     label: 'Otros',      emoji: '📦' },
+]
+const RUBROS = [
+  { id: 'pescadería', emoji: '🐟' },
+  { id: 'quesería',   emoji: '🧀' },
+  { id: 'carnicería', emoji: '🥩' },
+  { id: 'verdulería', emoji: '🥦' },
+  { id: 'panadería',  emoji: '🥖' },
+  { id: 'almacén',    emoji: '🛒' },
+  { id: 'rotisería',  emoji: '🍗' },
+  { id: 'otro',       emoji: '📦' },
 ]
 const UNIDADES = ['kg', 'unidad', 'docena', 'gramo', 'porcion']
-const EMOJIS = ['🐟','🐠','🐡','🦈','🐙','🦑','🦐','🦞','🦀','🦪','🐚','🍤','🍣','🍥','🐳','🐬','🧊','🍋']
-const FORM_VACIO = { nombre: '', descripcion: '', categoria: 'pescado', emoji: '🐟', unidad: 'kg', precio_sugerido: '', foto_url: '' }
+const EMOJIS = ['🐟','🐠','🐡','🦐','🦞','🦀','🦪','🧀','🥛','🥚','🥩','🍖','🥓','🍗','🥦','🥕','🍅','🥖','🍞','🧃','🥤','📦']
+const FORM_VACIO = { nombre: '', descripcion: '', categoria: 'otros', emoji: '📦', unidad: 'kg', precio_sugerido: '', foto_url: '', rubro: 'pescadería' }
 
 export default function CatalogoMaster({ productos: inicial, pescaderias }) {
   const [productos, setProductos] = useState(inicial)
@@ -27,7 +43,7 @@ export default function CatalogoMaster({ productos: inicial, pescaderias }) {
 
   function abrirNuevo() { setForm(FORM_VACIO); setEditandoId(null); setMostrarForm(true); setMensaje(null) }
   function abrirEditar(p) {
-    setForm({ nombre: p.nombre, descripcion: p.descripcion || '', categoria: p.categoria || 'pescado', emoji: p.emoji || '🐟', unidad: p.unidad || 'kg', precio_sugerido: p.precio_sugerido || '', foto_url: p.foto_url || '' })
+    setForm({ nombre: p.nombre, descripcion: p.descripcion || '', categoria: p.categoria || 'otros', emoji: p.emoji || '📦', unidad: p.unidad || 'kg', precio_sugerido: p.precio_sugerido || '', foto_url: p.foto_url || '', rubro: p.rubro || 'pescadería' })
     setEditandoId(p.id); setMostrarForm(true); setMensaje(null)
   }
   function cerrar() { setMostrarForm(false); setEditandoId(null); setForm(FORM_VACIO) }
@@ -52,7 +68,7 @@ export default function CatalogoMaster({ productos: inicial, pescaderias }) {
       fotoUrl = await subirFoto(fotoRef.current.files[0])
       if (!fotoUrl) { setCargando(false); return }
     }
-    const datos = { ...form, foto_url: fotoUrl }
+    const datos = { ...form, foto_url: fotoUrl, pendiente_foto: !fotoUrl }
     const res = editandoId ? await editarProductoMaster(editandoId, datos) : await crearProductoMaster(datos)
     if (res.error) { setMensaje({ tipo: 'error', texto: res.error }) }
     else {
@@ -135,6 +151,20 @@ export default function CatalogoMaster({ productos: inicial, pescaderias }) {
         <div className="bg-white/[0.06] border border-white/12 rounded-2xl p-5 space-y-3.5" style={{ animation: 'bmFadeUp 0.3s ease both' }}>
           <div className="font-bold text-white">{editandoId ? 'Editar producto' : 'Nuevo producto master'}</div>
 
+          {/* Selector de rubro */}
+          <div>
+            <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">Rubro</label>
+            <div className="grid grid-cols-4 gap-1.5">
+              {RUBROS.map((r) => (
+                <button key={r.id} type="button"
+                  onClick={() => setForm({ ...form, rubro: r.id })}
+                  className={`py-2 rounded-xl text-xs font-semibold transition-all ${form.rubro === r.id ? 'bg-[#4db8ff] text-[#03174a]' : 'bg-white/[0.06] text-white/60 border border-white/10'}`}>
+                  {r.emoji} {r.id}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div>
             <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">Nombre *</label>
             <input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })}
@@ -204,6 +234,36 @@ export default function CatalogoMaster({ productos: inicial, pescaderias }) {
         </div>
       )}
 
+      {/* ── Pendientes de foto (propuestos por tiendas) ── */}
+      {productos.filter(p => p.pendiente_foto).length > 0 && (
+        <div className="bg-[#f39c12]/[0.08] border border-[#f39c12]/30 rounded-2xl p-4 mb-2">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-lg">📸</span>
+            <span className="text-sm font-bold text-white">Pendientes de foto</span>
+            <span className="text-[11px] bg-[#f39c12]/20 text-[#f39c12] font-bold px-2 py-0.5 rounded-full">
+              {productos.filter(p => p.pendiente_foto).length}
+            </span>
+          </div>
+          <div className="space-y-2">
+            {productos.filter(p => p.pendiente_foto).map((p) => (
+              <div key={p.id} className="flex items-center gap-3 bg-white/[0.04] border border-white/8 rounded-xl px-3 py-2.5">
+                <div className="w-9 h-9 rounded-lg bg-white/[0.06] flex items-center justify-center text-lg shrink-0">
+                  {p.emoji || '📦'}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm text-white font-medium truncate">{p.nombre}</div>
+                  <div className="text-[11px] text-white/40">{p.rubro} · {p.categoria}</div>
+                </div>
+                <button onClick={() => abrirEditar(p)}
+                  className="shrink-0 bg-[#f39c12]/20 border border-[#f39c12]/40 text-[#f39c12] text-[11px] font-bold px-3 py-1.5 rounded-lg active:scale-95 transition-transform">
+                  Subir foto
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Lista */}
       {productos.length === 0 ? (
         <div className="text-center py-12 bg-white/[0.03] border border-white/8 rounded-2xl">
@@ -216,7 +276,7 @@ export default function CatalogoMaster({ productos: inicial, pescaderias }) {
             <div key={p.id} className={`bg-white/[0.06] border border-white/10 rounded-2xl p-3.5 flex items-center gap-3 ${importando !== null ? 'cursor-pointer' : ''} ${seleccionados.includes(p.id) ? 'border-[#2ecc71]/50 bg-[#2ecc71]/5' : ''}`}
               onClick={importando !== null ? () => toggleSeleccion(p.id) : undefined}>
               <div className="w-11 h-11 rounded-xl bg-[#4db8ff]/12 border border-[#4db8ff]/25 flex items-center justify-center text-xl shrink-0 overflow-hidden">
-                {p.foto_url ? <img src={p.foto_url} alt={p.nombre} className="w-full h-full object-cover" /> : (p.emoji || '🐟')}
+                {p.foto_url ? <img src={p.foto_url} alt={p.nombre} className="w-full h-full object-cover" /> : (p.emoji || '📦')}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-semibold text-white text-sm truncate">{p.nombre}</div>

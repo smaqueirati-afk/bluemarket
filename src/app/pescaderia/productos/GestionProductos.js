@@ -120,6 +120,7 @@ export default function GestionProductos({ productos, nombrePescaderia }) {
     setCargandoCatalogo(true)
     const res = await getCatalogoMaster()
     setCatalogo(res.productos || [])
+    if (res.rubro) setRubroTienda(res.rubro)
     setCargandoCatalogo(false)
   }
 
@@ -395,6 +396,36 @@ export default function GestionProductos({ productos, nombrePescaderia }) {
                     🗑
                   </button>
                 </div>
+
+                {/* Proponer al catálogo compartido */}
+                {msgPropuesta?.id === p.id ? (
+                  <div className={`mt-2 text-[11px] px-3 py-2 rounded-lg ${msgPropuesta.ok ? 'bg-[#2ecc71]/12 text-[#2ecc71]' : 'bg-[#e74c3c]/12 text-[#e74c3c]'}`}>
+                    {msgPropuesta.texto}
+                  </div>
+                ) : (
+                  <button
+                    onClick={async () => {
+                      setProponiendo(p.id)
+                      setMsgPropuesta(null)
+                      const res = await proponerAlCatalogo({
+                        nombre: p.nombre, descripcion: p.descripcion,
+                        categoria: p.categoria, emoji: p.emoji,
+                        precio: p.precio, unidad: p.unidad,
+                      })
+                      setProponiendo(null)
+                      if (res?.error) {
+                        setMsgPropuesta({ id: p.id, ok: false, texto: res.error })
+                      } else if (res?.yaExiste) {
+                        setMsgPropuesta({ id: p.id, ok: true, texto: res.mensaje })
+                      } else {
+                        setMsgPropuesta({ id: p.id, ok: true, texto: '✓ Propuesto al catálogo. El developer le va a subir la foto.' })
+                      }
+                    }}
+                    disabled={proponiendo === p.id}
+                    className="w-full mt-2 text-[11px] text-white/40 hover:text-[#4db8ff] py-1.5 transition-colors disabled:opacity-50 text-center">
+                    {proponiendo === p.id ? 'Enviando...' : '📤 Proponer al catálogo compartido'}
+                  </button>
+                )}
               </div>
             ))}
           </div>

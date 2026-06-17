@@ -26,6 +26,8 @@ export async function crearProductoMaster(datos) {
     foto_url: datos.foto_url || null,
     precio_sugerido: datos.precio_sugerido ? Number(datos.precio_sugerido) : null,
     unidad: datos.unidad || 'kg',
+    rubro: datos.rubro || 'pescadería',
+    pendiente_foto: !datos.foto_url,
     activo: true,
   })
   if (error) return { error: error.message }
@@ -46,6 +48,8 @@ export async function editarProductoMaster(id, datos) {
     foto_url: datos.foto_url || null,
     precio_sugerido: datos.precio_sugerido ? Number(datos.precio_sugerido) : null,
     unidad: datos.unidad || 'kg',
+    rubro: datos.rubro || 'pescadería',
+    pendiente_foto: !datos.foto_url,
     activo: datos.activo ?? true,
   }).eq('id', id)
   if (error) return { error: error.message }

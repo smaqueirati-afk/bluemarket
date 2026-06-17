@@ -135,15 +135,34 @@ export async function borrarProducto(productoId) {
   return { ok: true }
 }
 
-// ── Traer catálogo master (lectura pública via admin) ──
+// ── Traer catálogo master filtrado por rubro de la tienda ──
 export async function getCatalogoMaster() {
+  const check = await verificarDueno()
+  if (check.error) return { error: check.error }
+
   const admin = createAdminClient()
-  const { data, error } = await admin
+
+  // Traer el rubro de la tienda
+  const { data: pesc } = await admin
+    .from('pescaderias')
+    .select('rubro')
+    .eq('id', check.pescaderiaId)
+    .maybeSingle()
+
+  const rubro = pesc?.rubro || null
+
+  let query = admin
     .from('catalogo_master')
     .select('*')
+    .eq('activo', true)
     .order('nombre')
+
+  // Filtrar por rubro si la tienda tiene uno definido
+  if (rubro) query = query.eq('rubro', rubro)
+
+  const { data, error } = await query
   if (error) return { error: error.message }
-  return { productos: data || [] }
+  return { productos: data || [], rubro }
 }
 
 
@@ -179,4 +198,54 @@ export async function importarDesdeCatalogo(productoIds) {
 
   revalidatePath('/pescaderia/productos')
   return { ok: true, cantidad: insertar.length }
+}
+
+// ── Proponer un producto al catálogo master (para que el developer le suba foto) ──
+// Agrega el producto a catalogo_master con pendiente_foto=true.
+// Si ya existe un producto con el mismo nombre y rubro, no duplica.
+export async function proponerAlCatalogo(datos) {
+  const check = await verificarDueno()
+  if (check.error) return { error: check.error }
+
+  const admin = createAdminClient()
+
+  // Traer el rubro de la tienda
+  const { data: pesc } = await admin
+    .from('pescaderias')
+    .select('rubro, id')
+    .eq('id', check.pescaderiaId)
+    .maybeSingle()
+
+  const rubro = pesc?.rubro || 'pescadería'
+
+  // Evitar duplicados: buscar si ya existe por nombre+rubro
+  const { data: existente } = await admin
+    .from('catalogo_master')
+    .select('id, nombre')
+    .eq('rubro', rubro)
+    .ilike('nombre', datos.nombre?.trim())
+    .maybeSingle()
+
+  if (existente) {
+    return { ok: true, yaExiste: true, mensaje: `"${existente.nombre}" ya está en el catálogo del rubro ${rubro}.` }
+  }
+
+  const { error } = await admin.from('catalogo_master').insert({
+    nombre: datos.nombre?.trim(),
+    descripcion: datos.descripcion?.trim() || null,
+    categoria: datos.categoria || null,
+    emoji: datos.emoji || null,
+    foto_url: null,           // el developer sube la foto después
+    precio_sugerido: datos.precio ? Number(datos.precio) : null,
+    unidad: datos.unidad || 'kg',
+    rubro,
+    pendiente_foto: true,
+    propuesto_por: pesc?.id || null,
+    activo: true,
+  })
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/pescaderia/productos')
+  return { ok: true, yaExiste: false }
 }
