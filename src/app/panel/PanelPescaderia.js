@@ -447,10 +447,10 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
           <div className="bg-white/[0.05] border border-white/10 rounded-2xl p-4 mb-4">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-base">🤝</span>
-              <span className="text-sm font-bold text-white">Invitar pescaderías</span>
+              <span className="text-sm font-bold text-white">Invitar comercios</span>
             </div>
             <p className="text-[12px] text-white/45 mb-3 leading-relaxed">
-              Compartí tu link o QR. La pescadería que entre por ahí se da de alta sola y queda recomendada por vos.
+              Compartí tu link o QR. El comercio que entre por ahí se da de alta solo y queda recomendado por vos.
             </p>
             <div className="flex justify-center mb-3">
               <img
