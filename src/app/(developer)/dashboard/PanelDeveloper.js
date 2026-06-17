@@ -218,7 +218,7 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
                 productos, pedidos, clientes, cuentas corrientes y fidelización</span>, y reinicia la numeración de pedidos a #1.
               </p>
               <div className="bg-white/[0.04] border border-white/10 rounded-xl p-3 mb-4 text-[12px] text-white/55 leading-relaxed">
-                <span className="text-[#2ecc71] font-semibold">Se conserva:</span> tu usuario developer y el catálogo master.<br />
+                <span className="text-[#2ecc71] font-semibold">Se conserva:</span> tu usuario developer, el catálogo master y todos los productos cargados.<br />
                 <span className="text-white/40">Las cuentas de Google de prueba siguen existiendo (se vuelven a registrar solas al entrar de nuevo).</span>
               </div>
 
