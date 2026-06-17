@@ -15,6 +15,7 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
 
   const [asignandoId, setAsignandoId] = useState(null)
   const [emailDueno, setEmailDueno] = useState('')
+  const [noExisteDueno, setNoExisteDueno] = useState(false)
   const [cargandoAsig, setCargandoAsig] = useState(false)
 
   const [borrandoId, setBorrandoId] = useState(null)
@@ -113,13 +114,19 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
   async function handleAsignar(pescaderiaId) {
     setCargandoAsig(true)
     setMensaje(null)
+    setNoExisteDueno(false)
     const resultado = await asignarDueno(pescaderiaId, emailDueno)
     if (resultado.error) {
-      setMensaje({ tipo: 'error', texto: resultado.error })
+      if (resultado.error.toLowerCase().includes('no se encontró') || resultado.error.toLowerCase().includes('no existe')) {
+        setNoExisteDueno(true)
+      } else {
+        setMensaje({ tipo: 'error', texto: resultado.error })
+      }
     } else {
       setMensaje({ tipo: 'ok', texto: `${resultado.email} ahora es dueño ✓` })
       setAsignandoId(null)
       setEmailDueno('')
+      setNoExisteDueno(false)
     }
     setCargandoAsig(false)
   }
@@ -562,12 +569,31 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
                             {cargandoAsig ? '...' : 'Guardar'}
                           </button>
                           <button
-                            onClick={() => { setAsignandoId(null); setEmailDueno('') }}
+                            onClick={() => { setAsignandoId(null); setEmailDueno(''); setNoExisteDueno(false) }}
                             className="shrink-0 bg-white/8 text-white/50 text-xs px-3 py-2 rounded-lg"
                           >
                             ✕
                           </button>
                         </div>
+
+                        {/* Usuario no existe → invitar por WhatsApp */}
+                        {noExisteDueno && (
+                          <div className="mt-3 bg-[#f39c12]/10 border border-[#f39c12]/30 rounded-xl p-3 space-y-2">
+                            <p className="text-xs text-white/70">
+                              <span className="text-[#f39c12] font-bold">"{emailDueno}"</span> todavía no se registró.
+                              Invitalo por WhatsApp para que entre con Google.
+                            </p>
+                            <a
+                              href={`https://wa.me/?text=${encodeURIComponent(`${p.emoji_rubro || '🛒'} *${p.nombre}* te invita a sumarte a BlueMarket!\n\nEntrá con tu cuenta de Google y empezá a gestionar la tienda:\nhttps://bluemarket-two.vercel.app/t/${p.slug}\n\n_Es gratis y rápido_ ✅`)}`}
+                              target="_blank" rel="noopener noreferrer"
+                              className="flex items-center justify-center gap-2 w-full bg-[#25D366] text-white text-xs font-bold py-2.5 rounded-xl active:scale-95 transition-transform">
+                              💬 Invitar por WhatsApp
+                            </a>
+                            <p className="text-[10px] text-white/35 text-center">
+                              Después de que se registre, volvé a asignarlo acá.
+                            </p>
+                          </div>
+                        )}
                       </div>
                     ) : p.dueno_email ? (
                       // Tiene dueño: mostrar bloqueado + opción de cambiar
