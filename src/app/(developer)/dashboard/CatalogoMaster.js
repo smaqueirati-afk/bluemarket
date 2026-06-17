@@ -39,6 +39,7 @@ export default function CatalogoMaster({ productos: inicial, pescaderias }) {
   const [subiendoFoto, setSubiendoFoto] = useState(false)
   const [importando, setImportando] = useState(null) // pescaderiaId seleccionada
   const [seleccionados, setSeleccionados] = useState([])
+  const [filtroRubro, setFiltroRubro] = useState('todos')
   const fotoRef = useRef(null)
 
   function abrirNuevo() { setForm(FORM_VACIO); setEditandoId(null); setMostrarForm(true); setMensaje(null) }
@@ -96,6 +97,12 @@ export default function CatalogoMaster({ productos: inicial, pescaderias }) {
     setCargando(false)
   }
 
+  // Rubros presentes en el catálogo (para los tabs)
+  const rubrosPresentes = ['todos', ...new Set(productos.map(p => p.rubro).filter(Boolean))]
+  const productosFiltrados = filtroRubro === 'todos'
+    ? productos
+    : productos.filter(p => p.rubro === filtroRubro)
+
   function toggleSeleccion(id) {
     setSeleccionados((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])
   }
@@ -106,7 +113,7 @@ export default function CatalogoMaster({ productos: inicial, pescaderias }) {
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-extrabold text-white">Catálogo master 📦</h2>
-          <p className="text-xs text-white/40">{productos.length} productos disponibles</p>
+          <p className="text-xs text-white/40">{productosFiltrados.length} de {productos.length} productos</p>
         </div>
         <div className="flex gap-2">
           <button onClick={() => { setImportando(importando ? null : ''); setSeleccionados([]) }}
@@ -234,18 +241,31 @@ export default function CatalogoMaster({ productos: inicial, pescaderias }) {
         </div>
       )}
 
+      {/* ── Tabs de rubro ── */}
+      <div className="flex gap-1.5 flex-wrap mb-1">
+        {rubrosPresentes.map((r) => {
+          const info = RUBROS.find(x => x.id === r)
+          return (
+            <button key={r} onClick={() => setFiltroRubro(r)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${filtroRubro === r ? 'bg-[#4db8ff] text-[#03174a]' : 'bg-white/[0.06] text-white/55 border border-white/10 hover:border-[#4db8ff]/40'}`}>
+              {r === 'todos' ? '🗂 Todos' : `${info?.emoji || '📦'} ${r.charAt(0).toUpperCase() + r.slice(1)}`}
+            </button>
+          )
+        })}
+      </div>
+
       {/* ── Pendientes de foto (propuestos por tiendas) ── */}
-      {productos.filter(p => p.pendiente_foto).length > 0 && (
+      {productosFiltrados.filter(p => p.pendiente_foto).length > 0 && (
         <div className="bg-[#f39c12]/[0.08] border border-[#f39c12]/30 rounded-2xl p-4 mb-2">
           <div className="flex items-center gap-2 mb-3">
             <span className="text-lg">📸</span>
             <span className="text-sm font-bold text-white">Pendientes de foto</span>
             <span className="text-[11px] bg-[#f39c12]/20 text-[#f39c12] font-bold px-2 py-0.5 rounded-full">
-              {productos.filter(p => p.pendiente_foto).length}
+              {productosFiltrados.filter(p => p.pendiente_foto).length}
             </span>
           </div>
           <div className="space-y-2">
-            {productos.filter(p => p.pendiente_foto).map((p) => (
+            {productosFiltrados.filter(p => p.pendiente_foto).map((p) => (
               <div key={p.id} className="flex items-center gap-3 bg-white/[0.04] border border-white/8 rounded-xl px-3 py-2.5">
                 <div className="w-9 h-9 rounded-lg bg-white/[0.06] flex items-center justify-center text-lg shrink-0">
                   {p.emoji || '📦'}
@@ -265,14 +285,14 @@ export default function CatalogoMaster({ productos: inicial, pescaderias }) {
       )}
 
       {/* Lista */}
-      {productos.length === 0 ? (
+      {productosFiltrados.length === 0 ? (
         <div className="text-center py-12 bg-white/[0.03] border border-white/8 rounded-2xl">
           <div className="text-4xl mb-3 opacity-40">📦</div>
           <p className="text-white/40 text-sm">El catálogo master está vacío.<br />Agregá productos para que las pescaderías puedan importarlos.</p>
         </div>
       ) : (
         <div className="space-y-2">
-          {productos.map((p) => (
+          {productosFiltrados.map((p) => (
             <div key={p.id} className={`bg-white/[0.06] border border-white/10 rounded-2xl p-3.5 flex items-center gap-3 ${importando !== null ? 'cursor-pointer' : ''} ${seleccionados.includes(p.id) ? 'border-[#2ecc71]/50 bg-[#2ecc71]/5' : ''}`}
               onClick={importando !== null ? () => toggleSeleccion(p.id) : undefined}>
               <div className="w-11 h-11 rounded-xl bg-[#4db8ff]/12 border border-[#4db8ff]/25 flex items-center justify-center text-xl shrink-0 overflow-hidden">

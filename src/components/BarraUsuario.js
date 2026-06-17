@@ -12,7 +12,7 @@ export default function BarraUsuario({ perfil = 'consumidor' }) {
 
   const etiquetas = {
     developer:  { texto: 'Perfil Developer',  color: '#4db8ff', emoji: '⚙️' },
-    pescaderia: { texto: 'Perfil Pescadería', color: '#2ecc71', emoji: '🐟' },
+    pescaderia: { texto: 'Mi tienda', color: '#2ecc71', emoji: '🏪' },
     consumidor: { texto: 'Perfil Consumidor', color: '#f39c12', emoji: '🛒' },
   }
   const etq = etiquetas[perfil] || etiquetas.consumidor
