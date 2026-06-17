@@ -9,6 +9,15 @@ const withPWA = require('next-pwa')({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   turbopack: {},
+  async redirects() {
+    return [
+      // /panel y /tienda → /pescaderia (URL genérica visible al dueño)
+      { source: '/panel', destination: '/pescaderia', permanent: false },
+      { source: '/panel/:path*', destination: '/pescaderia/:path*', permanent: false },
+      { source: '/tienda', destination: '/pescaderia', permanent: false },
+      { source: '/tienda/:path*', destination: '/pescaderia/:path*', permanent: false },
+    ]
+  },
 }
 
 module.exports = withPWA(nextConfig)
