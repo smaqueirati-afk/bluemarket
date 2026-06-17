@@ -7,6 +7,18 @@ import BarraUsuario from '../../../components/BarraUsuario'
 import { createClient } from '../../../lib/supabase/client'
 
 export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHabilitada, soloDelivery, pescaderia, retorno }) {
+
+  // Textos y emojis según el rubro de la tienda
+  const TEXTOS_RUBRO = {
+    'pescadería': { titulo: 'Frescos de hoy 🌊', subtitulo: 'Recién llegados del mar a tu mesa', buscar: 'Buscar merluza, langostinos...' },
+    'quesería':   { titulo: 'Lácteos frescos 🐄', subtitulo: 'Selección de quesos y lácteos artesanales', buscar: 'Buscar brie, mozzarella...' },
+    'carnicería': { titulo: 'Cortes del día 🥩', subtitulo: 'Carnes frescas directo al mostrador', buscar: 'Buscar asado, bife...' },
+    'verdulería': { titulo: 'Verduras de hoy 🌿', subtitulo: 'Frescas de la quinta a tu mesa', buscar: 'Buscar tomate, lechuga...' },
+    'panadería':  { titulo: 'Recién horneado 🥖', subtitulo: 'Pan y facturas del día', buscar: 'Buscar pan, medialunas...' },
+    'rotisería':  { titulo: 'Listo para comer 🍗', subtitulo: 'Comida casera recién hecha', buscar: 'Buscar pollo, milanesa...' },
+    'almacén':    { titulo: 'Productos del día 🛒', subtitulo: 'Todo lo que necesitás en un lugar', buscar: 'Buscar arroz, aceite...' },
+  }
+  const txRubro = TEXTOS_RUBRO[pescaderia?.rubro] || { titulo: 'Productos de hoy 🛍️', subtitulo: 'Todo para vos', buscar: 'Buscar productos...' }
   // carrito = array de { producto, cantidad }
   const [carrito, setCarrito] = useState(() => {
     if (typeof window === 'undefined') return []
@@ -193,13 +205,13 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
           </div>
 
           <h1 className="text-xl font-extrabold text-white mb-0.5">
-            Frescos de <span className="text-[#4db8ff]">hoy</span> 🌊
+            {txRubro.titulo}
           </h1>
-          <p className="text-[12px] text-white/45 mb-3.5">Recién llegados del mar a tu mesa</p>
+          <p className="text-[12px] text-white/45 mb-3.5">{txRubro.subtitulo}</p>
 
           <div className="flex items-center gap-2.5 bg-white/10 border border-white/12 rounded-xl px-3.5 py-3 mb-3.5 backdrop-blur-sm">
             <span className="text-white/35">🔍</span>
-            <span className="text-sm text-white/35">Buscar merluza, langostinos...</span>
+            <span className="text-sm text-white/35">{txRubro.buscar}</span>
           </div>
 
           <div className="flex gap-2 overflow-x-auto pb-3 bm-no-scrollbar">
