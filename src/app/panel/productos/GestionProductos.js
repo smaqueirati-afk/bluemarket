@@ -6,9 +6,15 @@ import BarraUsuario from '../../../components/BarraUsuario'
 import { createClient } from '../../../lib/supabase/client'
 
 const CATEGORIAS = [
-  { id: 'pescado', label: 'Pescado', emoji: '🐟' },
-  { id: 'mariscos', label: 'Mariscos', emoji: '🦐' },
-  { id: 'moluscos', label: 'Moluscos', emoji: '🦪' },
+  { id: 'lacteos',   label: 'Lácteos',    emoji: '🧀' },
+  { id: 'pescado',   label: 'Pescado',    emoji: '🐟' },
+  { id: 'mariscos',  label: 'Mariscos',   emoji: '🦐' },
+  { id: 'carnes',    label: 'Carnes',     emoji: '🥩' },
+  { id: 'fiambres',  label: 'Fiambres',   emoji: '🍖' },
+  { id: 'verduras',  label: 'Verduras',   emoji: '🥦' },
+  { id: 'panaderia', label: 'Panadería',  emoji: '🥖' },
+  { id: 'bebidas',   label: 'Bebidas',    emoji: '🧃' },
+  { id: 'otros',     label: 'Otros',      emoji: '📦' },
 ]
 const UNIDADES = [
   { id: 'kg', label: 'Por kg' },
@@ -328,7 +334,7 @@ export default function GestionProductos({ productos, nombrePescaderia, rubroIni
               </label>
               <div className="flex items-center gap-3 mb-2.5">
                 <div className="w-14 h-14 rounded-xl bg-[#4db8ff]/12 border border-[#4db8ff]/30 flex items-center justify-center text-3xl shrink-0">
-                  {form.emoji || EMOJI_POR_CATEGORIA[form.categoria] || '🐟'}
+                  {form.emoji || EMOJI_POR_CATEGORIA[form.categoria] || '📦'}
                 </div>
                 <p className="text-[12px] text-white/45 leading-relaxed">
                   Este es el ícono que verán tus clientes.<br />Tocá uno de abajo para cambiarlo.
