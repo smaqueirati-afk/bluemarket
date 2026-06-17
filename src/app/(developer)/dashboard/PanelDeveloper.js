@@ -16,6 +16,15 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
   const [asignandoId, setAsignandoId] = useState(null)
   const [emailDueno, setEmailDueno] = useState('')
   const [noExisteDueno, setNoExisteDueno] = useState(false)
+  const [rubrosAbiertos, setRubrosAbiertos] = useState({})
+
+  function toggleRubro(rubro) {
+    setRubrosAbiertos(prev => ({ ...prev, [rubro]: !prev[rubro] }))
+  }
+  function esAbierto(rubro) {
+    // Por defecto todos abiertos (undefined = true)
+    return rubrosAbiertos[rubro] !== false
+  }
   const [cargandoAsig, setCargandoAsig] = useState(false)
 
   const [borrandoId, setBorrandoId] = useState(null)
@@ -469,8 +478,33 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
               <p className="text-white/40 text-sm">Todavía no hay tiendas.<br />Creá la primera con el botón de arriba.</p>
             </div>
           ) : (
-            <div className="space-y-2.5">
-              {pescaderias.map((p, idx) => (
+            <div className="space-y-3">
+              {/* Agrupar por rubro */}
+              {Object.entries(
+                pescaderias.reduce((acc, p) => {
+                  const r = p.rubro || 'otro'
+                  if (!acc[r]) acc[r] = []
+                  acc[r].push(p)
+                  return acc
+                }, {})
+              ).map(([rubro, tiendas]) => (
+                <div key={rubro} className="bg-white/[0.03] border border-white/8 rounded-2xl overflow-hidden">
+                  {/* Header del acordeón */}
+                  <button
+                    onClick={() => toggleRubro(rubro)}
+                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/[0.04] transition-colors">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{tiendas[0]?.emoji_rubro || '🛒'}</span>
+                      <span className="text-sm font-bold text-white capitalize">{rubro}</span>
+                      <span className="text-[11px] bg-white/10 text-white/50 font-bold px-2 py-0.5 rounded-full">{tiendas.length}</span>
+                    </div>
+                    <span className="text-white/40 text-sm transition-transform" style={{ display: 'inline-block', transform: esAbierto(rubro) ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+                  </button>
+
+                  {/* Contenido del acordeón */}
+                  {esAbierto(rubro) && (
+                    <div className="border-t border-white/8 divide-y divide-white/[0.05]">
+                      {tiendas.map((p, idx) => (
                 <div key={p.id}
                   className="bg-white/[0.06] border border-white/10 rounded-2xl p-4 backdrop-blur-sm transition-all hover:border-[#4db8ff]/40"
                   style={{ animation: 'bmFadeUp 0.4s ease both', animationDelay: `${idx * 0.05}s` }}>
@@ -661,6 +695,10 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
                     )}
                   </div>
 
+                </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
