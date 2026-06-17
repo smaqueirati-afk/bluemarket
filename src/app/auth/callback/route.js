@@ -101,7 +101,7 @@ export async function GET(request) {
                   invitado_por: alta.invitadoPor || null,
                 }, { onConflict: 'id' })
 
-                const response = NextResponse.redirect(`${origin}/pescaderia`)
+                const response = NextResponse.redirect(`${origin}/panel`)
                 response.cookies.delete('bm_alta')
                 return response
               }
@@ -131,8 +131,8 @@ export async function GET(request) {
             // Venía comprando en una tienda por link: volver ahí después del login
             destino = returnTo
           } else if (perfil.rol === 'cliente' && perfil.pescaderia_id) {
-            // Dueño de pescadería: va a su panel
-            destino = '/pescaderia'
+            // Dueño de tienda: va a su panel
+            destino = '/panel'
           } else if (perfil.rol === 'developer') {
             destino = '/dashboard'
           } else if (perfil.pescaderia_id) {
