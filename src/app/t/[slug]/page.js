@@ -4,6 +4,28 @@ import { notFound } from 'next/navigation'
 import TiendaCliente from './TiendaCliente'
 import { retornoDisponible } from '../../../lib/fidelizacion'
 
+// Metadata dinámica por tienda: título, descripción e ícono según rubro
+export async function generateMetadata({ params }) {
+  const { slug } = await params
+  const admin = createAdminClient()
+  const { data: t } = await admin
+    .from('pescaderias')
+    .select('nombre, rubro')
+    .eq('slug', slug)
+    .maybeSingle()
+
+  const carpeta = t?.rubro === 'quesería' ? 'queseria' : 'pescaderia'
+
+  return {
+    title: t?.nombre || 'BlueMarket',
+    manifest: `/t/${slug}/manifest.json`,
+    icons: {
+      icon: `/icons/${carpeta}/icon-192.png`,
+      apple: `/icons/${carpeta}/apple-touch-icon.png`,
+    },
+  }
+}
+
 export default async function TiendaPorSlug(props) {
   const params = await props.params
   const slug = params?.slug ?? params?.nxtPslug ?? Object.values(params)[0]
