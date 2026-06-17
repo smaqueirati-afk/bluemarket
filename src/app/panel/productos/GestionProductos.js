@@ -372,7 +372,7 @@ export default function GestionProductos({ productos, nombrePescaderia, rubroIni
         {/* Lista de productos */}
         {productos.length === 0 && !mostrarForm ? (
           <div className="text-center py-16 bg-white/[0.03] border border-white/8 rounded-2xl">
-            <div className="text-4xl mb-3 opacity-40">🐟</div>
+            <div className="text-4xl mb-3 opacity-40">📦</div>
             <p className="text-white/45 text-sm mb-4">Todavía no cargaste productos.<br />Agregá el primero para empezar a vender.</p>
             <button onClick={abrirNuevo}
               className="bg-[#4db8ff] text-[#03174a] font-bold text-sm px-5 py-2.5 rounded-xl active:scale-95">
@@ -476,7 +476,7 @@ export default function GestionProductos({ productos, nombrePescaderia, rubroIni
                 <div className="text-center py-10 text-white/40 text-sm">Cargando catálogo...</div>
               ) : catalogo.length === 0 ? (
                 <div className="text-center py-10">
-                  <div className="text-4xl mb-3 opacity-40">{defaultsRubro(rubroTienda).emoji}</div>
+                  <div className="text-4xl mb-3 opacity-40">{rubroTienda ? defaultsRubro(rubroTienda).emoji : '📦'}</div>
                   <p className="text-white/40 text-sm">El catálogo master está vacío.</p>
                 </div>
               ) : (
