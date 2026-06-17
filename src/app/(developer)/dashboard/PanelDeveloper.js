@@ -182,7 +182,7 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
 
         {/* Tabs */}
         {!pescaderiaSeleccionada && (
-          <div className="flex gap-2 mb-6">
+          <div className="grid grid-cols-3 gap-2 mb-6">
             <button onClick={() => setPestana('pescaderias')}
               className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${pestana === 'pescaderias' ? 'bg-[#4db8ff] text-[#03174a]' : 'bg-white/[0.07] text-white/60 border border-white/10'}`}>
               🏪 Pescaderías
@@ -214,7 +214,7 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
             <div className="bg-[#e74c3c]/[0.07] border border-[#e74c3c]/30 rounded-2xl p-5">
               <h2 className="text-base font-extrabold text-white mb-2">🧹 Reset total</h2>
               <p className="text-sm text-white/70 leading-relaxed mb-3">
-                Deja la base como recién instalada. Borra <span className="text-white font-semibold">todas las pescaderías,
+                Deja la base como recién instalada. Borra <span className="text-white font-semibold">todas las tiendas,
                 productos, pedidos, clientes, cuentas corrientes y fidelización</span>, y reinicia la numeración de pedidos a #1.
               </p>
               <div className="bg-white/[0.04] border border-white/10 rounded-xl p-3 mb-4 text-[12px] text-white/55 leading-relaxed">
@@ -274,20 +274,20 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
             onClick={() => setMostrarForm(!mostrarForm)}
             className="w-full sm:w-auto bg-[#4db8ff] text-[#03174a] font-bold text-sm px-4 py-2.5 rounded-xl transition-all hover:shadow-[0_0_16px_rgba(77,184,255,0.4)] active:scale-95 whitespace-nowrap"
           >
-            {mostrarForm ? 'Cancelar' : '+ Nueva pescadería'}
+            {mostrarForm ? 'Cancelar' : '+ Nueva tienda'}
           </button>
         </div>
 
         {/* Métricas */}
-        {/* Invitar pescaderías */}
+        {/* Invitar tiendas */}
         {linkInvitacion && (
           <div className="bg-white/[0.05] border border-white/10 rounded-2xl p-4 mb-5">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-base">🤝</span>
-              <span className="text-sm font-bold text-white">Invitar pescaderías</span>
+              <span className="text-sm font-bold text-white">Invitar tiendas</span>
             </div>
             <p className="text-[12px] text-white/45 mb-3 leading-relaxed">
-              Compartí tu link o QR. La pescadería que entre por ahí se da de alta sola y queda recomendada por vos.
+              Compartí tu link o QR. La tienda que entre por ahí se da de alta sola y queda recomendada por vos.
             </p>
             <div className="flex justify-center mb-3">
               <img
@@ -315,7 +315,7 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
           <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-4 backdrop-blur-sm flex flex-col items-center justify-center text-center">
             <div className="text-[11px] text-white/40 uppercase tracking-wide">Total</div>
             <div className="text-2xl font-extrabold mt-1 text-white">{pescaderias.length}</div>
-            <div className="text-[11px] text-white/30 mt-1">pescaderías</div>
+            <div className="text-[11px] text-white/30 mt-1">tiendas</div>
           </div>
           <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-4 backdrop-blur-sm flex flex-col items-center justify-center text-center">
             <div className="text-[11px] text-white/40 uppercase tracking-wide">Activas</div>
@@ -450,10 +450,10 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
           )}
         </div>
 
-        {/* Lista de pescaderías */}
+        {/* Lista de tiendas */}
         <div>
           <h2 className="text-sm font-bold text-white/60 uppercase tracking-wide mb-3">
-            Pescaderías ({pescaderias.length})
+            Tiendas ({pescaderias.length})
           </h2>
 
           {pescaderias.length === 0 ? (
@@ -586,18 +586,13 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
                           <button
                             onClick={async () => {
                               const link = `${window.location.origin}/t/${p.slug}`
-                              const texto = `${p.emoji_rubro || '🛒'} ${p.nombre}\nAcá podés gestionar tu tienda en BlueMarket:\n${link}`
-                              if (navigator.share) {
-                                try { await navigator.share({ title: p.nombre, text: texto, url: link }) } catch (e) { }
-                              } else {
-                                await navigator.clipboard.writeText(texto)
-                                setMensaje({ tipo: 'ok', texto: `Link de ${p.nombre} copiado ✓` })
-                              }
+                              const msg = `${p.emoji_rubro || '🛒'} *${p.nombre}* ya está en BlueMarket!\n\nPodés ver el catálogo y hacer pedidos desde acá 👇\n${link}\n\n_Entrá con tu cuenta de Google, es gratis y rápido_ ✅`
+                              window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank')
                             }}
                             title="Compartir link de la tienda"
                             className="text-xs bg-[#4db8ff]/12 border border-[#4db8ff]/25 text-[#4db8ff] font-bold px-3 py-1.5 rounded-lg active:scale-95 transition-transform"
                           >
-                            📤 Compartir
+                            💬 WhatsApp
                           </button>
                           <button
                             onClick={() => { setAsignandoId(p.id); setEmailDueno(''); setMensaje(null) }}
@@ -618,13 +613,25 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
                         </div>
                       </div>
                     ) : (
-                      // Sin dueño: botón para asignar
-                      <button
-                        onClick={() => { setAsignandoId(p.id); setEmailDueno(''); setMensaje(null) }}
-                        className="text-xs text-[#4db8ff] font-medium hover:underline"
-                      >
-                        + Asignar dueño
-                      </button>
+                      // Sin dueño: compartir link + botón para asignar
+                      <div className="flex items-center justify-between">
+                        <button
+                          onClick={() => { setAsignandoId(p.id); setEmailDueno(''); setMensaje(null) }}
+                          className="text-xs text-[#4db8ff] font-medium hover:underline"
+                        >
+                          + Asignar dueño
+                        </button>
+                        <button
+                          onClick={async () => {
+                            const link = `${window.location.origin}/t/${p.slug}`
+                            const msg = `${p.emoji_rubro || '🛒'} *${p.nombre}* ya está en BlueMarket!\n\nPodés ver el catálogo y hacer pedidos desde acá 👇\n${link}\n\n_Entrá con tu cuenta de Google, es gratis y rápido_ ✅`
+                            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank')
+                          }}
+                          className="text-xs bg-[#4db8ff]/12 border border-[#4db8ff]/25 text-[#4db8ff] font-bold px-3 py-1.5 rounded-lg active:scale-95 transition-transform"
+                        >
+                          💬 WhatsApp
+                        </button>
+                      </div>
                     )}
                   </div>
 
