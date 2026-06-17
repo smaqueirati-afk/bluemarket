@@ -39,7 +39,7 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
   }
 
   async function compartirInvitacion() {
-    const texto = `Sumá tu pescadería a BlueMarket 🐟\n${linkInvitacion}`
+    const texto = `Sumá tu negocio a BlueMarket\n${linkInvitacion}`
     if (navigator.share) {
       try { await navigator.share({ title: 'BlueMarket', text: texto, url: linkInvitacion }) } catch (e) { }
     } else {
@@ -458,8 +458,8 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
 
           {pescaderias.length === 0 ? (
             <div className="text-center py-12 bg-white/[0.03] border border-white/8 rounded-2xl">
-              <div className="text-4xl mb-3 opacity-40">🐟</div>
-              <p className="text-white/40 text-sm">Todavía no hay pescaderías.<br />Creá la primera con el botón de arriba.</p>
+              <div className="text-4xl mb-3 opacity-40">🏪</div>
+              <p className="text-white/40 text-sm">Todavía no hay tiendas.<br />Creá la primera con el botón de arriba.</p>
             </div>
           ) : (
             <div className="space-y-2.5">
@@ -470,11 +470,11 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
 
                   <div className="flex items-center justify-between gap-3">
                     <div className="w-12 h-12 rounded-xl bg-[#4db8ff]/12 border border-[#4db8ff]/30 flex items-center justify-center text-2xl shrink-0">
-                      🐟
+                      {p.emoji_rubro || '🛒'}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold text-white text-base">{p.nombre}</div>
-                      <div className="text-xs text-white/40 mt-0.5">/{p.slug} · {p.telefono || 'sin teléfono'}</div>
+                      <div className="text-xs text-white/40 mt-0.5">/{p.slug} · {p.rubro || 'tienda'} · {p.telefono || 'sin teléfono'}</div>
                       <div className="flex items-center gap-2 mt-2">
                         <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg uppercase tracking-wide ${
                           p.plan === 'trial' ? 'bg-[#f39c12]/15 text-[#f39c12]' : 'bg-[#4db8ff]/15 text-[#4db8ff]'
@@ -582,6 +582,23 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
+                          {/* Compartir link de la tienda con el dueño */}
+                          <button
+                            onClick={async () => {
+                              const link = `${window.location.origin}/t/${p.slug}`
+                              const texto = `${p.emoji_rubro || '🛒'} ${p.nombre}\nAcá podés gestionar tu tienda en BlueMarket:\n${link}`
+                              if (navigator.share) {
+                                try { await navigator.share({ title: p.nombre, text: texto, url: link }) } catch (e) { }
+                              } else {
+                                await navigator.clipboard.writeText(texto)
+                                setMensaje({ tipo: 'ok', texto: `Link de ${p.nombre} copiado ✓` })
+                              }
+                            }}
+                            title="Compartir link de la tienda"
+                            className="text-xs bg-[#4db8ff]/12 border border-[#4db8ff]/25 text-[#4db8ff] font-bold px-3 py-1.5 rounded-lg active:scale-95 transition-transform"
+                          >
+                            📤 Compartir
+                          </button>
                           <button
                             onClick={() => { setAsignandoId(p.id); setEmailDueno(''); setMensaje(null) }}
                             className="text-xs text-white/40 hover:text-[#4db8ff] transition-colors"
