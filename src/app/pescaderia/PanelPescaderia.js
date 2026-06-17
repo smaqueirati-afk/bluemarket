@@ -122,7 +122,7 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
   }
 
   async function compartirLink() {
-    const texto = `¡Hacé tu pedido en ${pescaderia?.nombre}! ${pescaderia?.emoji_rubro || ''}\n${linkTienda}`
+    const texto = `*${pescaderia?.nombre}* está en BlueMarket 🛍️\n\nDescubrí el catálogo y hacé tu pedido online:\n${linkTienda}`
     if (navigator.share) {
       try {
         await navigator.share({ title: pescaderia?.nombre, text: texto, url: linkTienda })
@@ -149,7 +149,7 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
   }
 
   async function compartirInvitacion() {
-    const texto = `Sumá tu negocio a BlueMarket\n${linkInvitacion}`
+    const texto = `*${pescaderia?.nombre || 'BlueMarket'}* te invita a comprar online 🛍️\n\nDescubrí nuestro catálogo y hacé tu pedido:\n${linkInvitacion}`
     if (navigator.share) {
       try {
         await navigator.share({ title: 'BlueMarket', text: texto, url: linkInvitacion })
