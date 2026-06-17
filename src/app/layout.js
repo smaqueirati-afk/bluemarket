@@ -6,7 +6,13 @@ const geist = Geist({ subsets: ['latin'] })
 
 export const metadata = {
   title: 'BlueMarket',
-  description: 'Tu pescadería digital',
+  description: 'Tu comercio digital',
+  openGraph: {
+    title: 'BlueMarket',
+    description: 'Tu comercio digital',
+    url: 'https://bluemarket-two.vercel.app',
+    siteName: 'BlueMarket',
+  },
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,

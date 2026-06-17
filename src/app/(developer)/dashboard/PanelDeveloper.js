@@ -584,7 +584,7 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
                               Invitalo por WhatsApp para que entre con Google.
                             </p>
                             <a
-                              href={`https://wa.me/?text=${encodeURIComponent(`${p.emoji_rubro || '🛒'} *${p.nombre}* te invita a sumarte a BlueMarket!\n\nEntrá con tu cuenta de Google y empezá a gestionar la tienda:\nhttps://bluemarket-two.vercel.app/t/${p.slug}\n\n_Es gratis y rápido_ ✅`)}`}
+                              href={`https://wa.me/?text=${encodeURIComponent(`*${p.nombre}* te invita a BlueMarket 🛍️\n\nGestioná tu negocio online:\nhttps://bluemarket-two.vercel.app/t/${p.slug}`)}`}
                               target="_blank" rel="noopener noreferrer"
                               className="flex items-center justify-center gap-2 w-full bg-[#25D366] text-white text-xs font-bold py-2.5 rounded-xl active:scale-95 transition-transform">
                               💬 Invitar por WhatsApp
@@ -612,7 +612,7 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
                           <button
                             onClick={async () => {
                               const link = `${window.location.origin}/t/${p.slug}`
-                              const msg = `${p.emoji_rubro || '🛒'} *${p.nombre}* ya está en BlueMarket!\n\nPodés ver el catálogo y hacer pedidos desde acá 👇\n${link}\n\n_Entrá con tu cuenta de Google, es gratis y rápido_ ✅`
+                              const msg = `*${p.nombre}* ya está en BlueMarket 🛍️\n\nGestioná tu negocio online:\n${link}`
                               window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank')
                             }}
                             title="Compartir link de la tienda"
@@ -650,7 +650,7 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
                         <button
                           onClick={async () => {
                             const link = `${window.location.origin}/t/${p.slug}`
-                            const msg = `${p.emoji_rubro || '🛒'} *${p.nombre}* ya está en BlueMarket!\n\nPodés ver el catálogo y hacer pedidos desde acá 👇\n${link}\n\n_Entrá con tu cuenta de Google, es gratis y rápido_ ✅`
+                            const msg = `*${p.nombre}* ya está en BlueMarket 🛍️\n\nGestioná tu negocio online:\n${link}`
                             window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank')
                           }}
                           className="text-xs bg-[#4db8ff]/12 border border-[#4db8ff]/25 text-[#4db8ff] font-bold px-3 py-1.5 rounded-lg active:scale-95 transition-transform"
