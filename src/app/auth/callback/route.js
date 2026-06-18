@@ -84,6 +84,8 @@ export async function GET(request) {
                   slug,
                   telefono: alta.telefono || null,
                   modalidad: alta.modalidad || 'local_reparto',
+                  rubro: alta.rubro || 'pescadería',
+                  emoji_rubro: alta.emojiRubro || '🛒',
                   plan: 'trial',
                   activa: true,
                 })

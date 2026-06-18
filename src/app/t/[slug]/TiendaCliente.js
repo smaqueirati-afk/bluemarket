@@ -127,6 +127,12 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
     return `${entero}${simb}`
   }
 
+  // Igual que la anterior pero aclara "kg" en productos por peso (más claro para mayores)
+  function fmtCantPaso(c, unidad) {
+    if (unidad !== 'kg') return String(c)
+    return fmtCantCorto(c, 'kg') + ' kg'
+  }
+
   // ¿Hay algún producto que se vende por peso? -> el total pasa a ser estimado
   const hayPorPeso = carrito.some((i) => i.producto.unidad === 'kg')
 
@@ -207,18 +213,19 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
         {/* TOP BAR */}
         <div className="shrink-0 px-4 pt-5 pb-1">
           <div className="flex items-center justify-between mb-3.5">
-            <div className="flex items-center gap-1.5 bg-white/[0.07] border border-white/12 rounded-full px-3 py-1.5 backdrop-blur-sm">
-              <span>{pescaderia?.emoji_rubro || '🛒'}</span>
-              <strong className="text-[11px] text-white">{pescaderia?.nombre || 'Pescadería'}</strong>
+            <div className="flex items-center gap-1.5 bg-white/[0.07] border border-white/12 rounded-full px-3 py-1.5 backdrop-blur-sm min-w-0">
+              <span className="shrink-0">{pescaderia?.emoji_rubro || '🛒'}</span>
+              <strong className="text-[12px] text-white truncate">{pescaderia?.nombre || 'Pescadería'}</strong>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               {usuarioId && (
                 <button
                   onClick={() => setVerMisPedidos(true)}
-                  className="relative w-10 h-10 bg-white/[0.07] border border-white/12 rounded-xl flex items-center justify-center backdrop-blur-sm active:scale-95 transition-transform">
-                  <span className="text-white/70 text-lg">📦</span>
+                  className="relative flex items-center gap-1.5 h-10 px-3 bg-white/[0.07] border border-white/12 rounded-xl backdrop-blur-sm active:scale-95 transition-transform">
+                  <span className="text-lg">📦</span>
+                  <span className="text-xs font-bold text-white/85">Pedidos</span>
                   {misPedidosList.filter(p => !['entregado','cancelado'].includes(p.estado)).length > 0 && (
-                    <div className="absolute -top-1.5 -right-1.5 bg-[#f39c12] text-[#03174a] text-[9px] font-extrabold min-w-[17px] h-[17px] rounded-lg px-1 flex items-center justify-center">
+                    <div className="absolute -top-1.5 -right-1.5 bg-[#f39c12] text-[#03174a] text-[10px] font-extrabold min-w-[18px] h-[18px] rounded-lg px-1 flex items-center justify-center">
                       {misPedidosList.filter(p => !['entregado','cancelado'].includes(p.estado)).length}
                     </div>
                   )}
@@ -226,10 +233,11 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
               )}
               <button
                 onClick={() => setVerCarrito(true)}
-                className="relative w-10 h-10 bg-white/[0.07] border border-white/12 rounded-xl flex items-center justify-center backdrop-blur-sm active:scale-95 transition-transform">
-                <span className="text-white/70 text-lg">🛒</span>
+                className="relative flex items-center gap-1.5 h-10 px-3 bg-white/[0.07] border border-white/12 rounded-xl backdrop-blur-sm active:scale-95 transition-transform">
+                <span className="text-lg">🛒</span>
+                <span className="text-xs font-bold text-white/85">Carrito</span>
                 {totalItems > 0 && (
-                  <div className="absolute -top-1.5 -right-1.5 bg-[#4db8ff] text-[#03174a] text-[9px] font-extrabold min-w-[17px] h-[17px] rounded-lg px-1 flex items-center justify-center"
+                  <div className="absolute -top-1.5 -right-1.5 bg-[#4db8ff] text-[#03174a] text-[10px] font-extrabold min-w-[18px] h-[18px] rounded-lg px-1 flex items-center justify-center"
                        style={{ boxShadow: '0 0 10px rgba(77,184,255,0.5)' }}>
                     {totalItems}
                   </div>
@@ -326,7 +334,7 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
                     <div className="flex-1 min-w-0 py-3">
                       <div className="text-base font-semibold text-white leading-tight truncate">{p.nombre}</div>
                       <div className="text-[13px] text-white/55 mt-0.5">
-                        Por {p.unidad}
+                        Por {p.unidad === 'kg' ? 'kilo' : p.unidad}
                       </div>
                       <div className="text-xl font-extrabold text-[#4db8ff] mt-1">{fmt(p.precio)}</div>
                     </div>
@@ -338,7 +346,7 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
                             className="w-11 h-11 bg-white/10 rounded-xl text-white text-2xl font-bold flex items-center justify-center active:scale-90 transition-all">
                             −
                           </button>
-                          <span className="text-lg font-bold text-white min-w-[2.75rem] text-center px-0.5">{fmtCantCorto(enCarrito.cantidad, p.unidad)}</span>
+                          <span className="text-base font-bold text-white min-w-[3.5rem] text-center px-0.5">{fmtCantPaso(enCarrito.cantidad, p.unidad)}</span>
                           <button onClick={() => agregar(p)} aria-label="Agregar"
                             className="w-11 h-11 bg-[#4db8ff] rounded-xl text-[#03174a] text-2xl font-extrabold flex items-center justify-center active:scale-90 transition-all">
                             +
@@ -416,7 +424,7 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
                             className="w-11 h-11 bg-white/10 rounded-xl text-white text-2xl font-bold flex items-center justify-center active:scale-90">
                             −
                           </button>
-                          <span className="text-lg font-bold text-white min-w-[2.75rem] text-center px-0.5">{fmtCantCorto(item.cantidad, item.producto.unidad)}</span>
+                          <span className="text-base font-bold text-white min-w-[3.5rem] text-center px-0.5">{fmtCantPaso(item.cantidad, item.producto.unidad)}</span>
                           <button onClick={() => agregar(item.producto)} aria-label="Agregar"
                             className="w-11 h-11 bg-[#4db8ff] rounded-xl text-[#03174a] text-2xl font-extrabold flex items-center justify-center active:scale-90">
                             +
@@ -677,17 +685,17 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
             )}
             {palabraClave && (
               <div className="bg-white/[0.07] border border-white/15 rounded-2xl px-6 py-4 mb-5 w-full">
-                <div className="text-[11px] text-white/45 uppercase tracking-wide mb-1">Tu palabra clave 🔑</div>
+                <div className="text-[13px] text-white/60 mb-1">Tu palabra clave 🔑</div>
                 <div className="text-2xl font-extrabold text-[#4db8ff] tracking-wider">{palabraClave}</div>
-                <div className="text-[11px] text-white/40 mt-1.5">Guardala — te la van a pedir al entregar el pedido</div>
+                <div className="text-[13px] text-white/55 mt-1.5">Guardala — te la van a pedir al entregar el pedido</div>
               </div>
             )}
-            <p className="text-white/55 text-sm leading-relaxed mb-8">
-              Tu pedido fue recibido. {pescaderia?.nombre || 'La tienda'} lo va a preparar y te avisará cuando esté listo. {pescaderia?.emoji_rubro || ''}
+            <p className="text-white/70 text-base leading-relaxed mb-8">
+              ✅ Tu pedido fue recibido. <strong className="text-white">{pescaderia?.nombre || 'La tienda'}</strong> lo va a preparar y te va a contactar por <span className="text-[#25D366] font-semibold">WhatsApp</span> para coordinar. {pescaderia?.emoji_rubro || ''}
             </p>
             <button
               onClick={() => setPedidoConfirmado(false)}
-              className="bg-[#4db8ff] text-[#03174a] font-bold px-8 py-3 rounded-xl active:scale-95 transition-transform">
+              className="bg-[#4db8ff] text-[#03174a] font-extrabold text-lg px-8 py-4 rounded-xl active:scale-95 transition-transform">
               Volver a la tienda
             </button>
           </div>

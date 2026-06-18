@@ -25,7 +25,8 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
     const frac = +(c - entero).toFixed(2)
     const simb = { 0: '', 0.25: '¼', 0.5: '½', 0.75: '¾' }[frac]
     const txt = simb === undefined ? c.toLocaleString('es-AR') : (entero === 0 ? simb : `${entero}${simb}`)
-    return `${txt} kg`
+    const gr = Math.round(Number(c) * 1000)
+    return `${txt} kg · ${gr} g`
   }
 
   const hayPorPeso = carrito.some((i) => i.producto.unidad === 'kg')
@@ -78,17 +79,17 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
 
         {/* ENTREGA */}
         <div>
-          <h2 className="text-xs text-white/50 uppercase tracking-wide mb-2.5 font-bold">¿Cómo lo recibís?</h2>
+          <h2 className="text-[15px] text-white/85 mb-2.5 font-bold">📦 ¿Cómo lo recibís?</h2>
           {soloDelivery ? (
             <div>
               <div className="p-3.5 rounded-2xl border border-[#4db8ff] bg-[#4db8ff]/15 text-left">
                 <div className="text-2xl mb-1">🏠</div>
-                <div className="text-sm font-bold text-white">Envío a domicilio</div>
-                <div className="text-[11px] text-white/45 mt-0.5">Te lo llevamos</div>
+                <div className="text-base font-bold text-white">Envío a domicilio</div>
+                <div className="text-[13px] text-white/55 mt-0.5">Te lo llevamos</div>
               </div>
               <div className="flex items-start gap-2 mt-2.5 px-1">
                 <span className="text-[#f39c12] text-sm shrink-0">ℹ️</span>
-                <p className="text-[11px] text-white/45 leading-relaxed">
+                <p className="text-[13px] text-white/55 leading-relaxed">
                   Solo delivery disponible para tu primera compra. La pescadería te asignará el costo de envío y lo coordinará con vos.
                 </p>
               </div>
@@ -101,8 +102,8 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
                 entrega === 'envio' ? 'bg-[#4db8ff]/15 border-[#4db8ff]' : 'bg-white/[0.05] border-white/10'
               }`}>
               <div className="text-2xl mb-1">🏠</div>
-              <div className="text-sm font-bold text-white">Envío a domicilio</div>
-              <div className="text-[11px] text-white/45 mt-0.5">Te lo llevamos</div>
+              <div className="text-base font-bold text-white">Envío a domicilio</div>
+              <div className="text-[13px] text-white/55 mt-0.5">Te lo llevamos</div>
             </button>
             )}
             {puedeRetiro && (
@@ -111,8 +112,8 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
                 entrega === 'retiro' ? 'bg-[#4db8ff]/15 border-[#4db8ff]' : 'bg-white/[0.05] border-white/10'
               }`}>
               <div className="text-2xl mb-1">🏪</div>
-              <div className="text-sm font-bold text-white">Retiro en local</div>
-              <div className="text-[11px] text-white/45 mt-0.5">Lo pasás a buscar</div>
+              <div className="text-base font-bold text-white">Retiro en local</div>
+              <div className="text-[13px] text-white/55 mt-0.5">Lo pasás a buscar</div>
             </button>
             )}
           </div>
@@ -122,20 +123,20 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
         {/* DIRECCIÓN (siempre si soloDelivery, o si eligió envío) */}
         {(soloDelivery || entrega === 'envio') && (
           <div style={{ animation: 'bmFadeUp 0.3s ease both' }}>
-            <h2 className="text-xs text-white/50 uppercase tracking-wide mb-2.5 font-bold">Dirección de entrega</h2>
+            <h2 className="text-[15px] text-white/85 mb-2.5 font-bold">📍 ¿A dónde te lo llevamos?</h2>
             <input
               value={direccion}
               onChange={(e) => setDireccion(e.target.value)}
               placeholder="Calle, número, piso, localidad"
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-3 text-sm text-white placeholder-white/30 outline-none focus:border-[#4db8ff]"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-3.5 text-base text-white placeholder-white/30 outline-none focus:border-[#4db8ff]"
             />
           </div>
         )}
 
         {/* TELÉFONO */}
         <div>
-          <h2 className="text-xs text-white/50 uppercase tracking-wide mb-1.5 font-bold">Tu teléfono</h2>
-          <p className="text-[11px] text-white/40 mb-2.5 leading-relaxed">
+          <h2 className="text-[15px] text-white/85 mb-1.5 font-bold">📱 Tu teléfono</h2>
+          <p className="text-[13px] text-white/55 mb-2.5 leading-relaxed">
             📲 La pescadería te va a contactar por <span className="text-[#25D366] font-semibold">WhatsApp</span> para coordinar el pedido.
           </p>
           <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3.5 py-3 focus-within:border-[#25D366]/60 transition-colors">
@@ -146,28 +147,28 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
               placeholder="Ej: 11 2345-6789"
               type="tel"
               inputMode="tel"
-              className="flex-1 bg-transparent text-sm text-white placeholder-white/30 outline-none"
+              className="flex-1 bg-transparent text-base text-white placeholder-white/30 outline-none"
             />
           </div>
         </div>
 
         {/* PAGO */}
         <div>
-          <h2 className="text-xs text-white/50 uppercase tracking-wide mb-2.5 font-bold">¿Cómo pagás?</h2>
+          <h2 className="text-[15px] text-white/85 mb-2.5 font-bold">💳 ¿Cómo pagás?</h2>
           <div className="space-y-2">
             <button onClick={() => setPago('efectivo')}
               className={`w-full p-3.5 rounded-2xl border flex items-center gap-3 transition-all ${
                 pago === 'efectivo' ? 'bg-[#4db8ff]/15 border-[#4db8ff]' : 'bg-white/[0.05] border-white/10'
               }`}>
               <span className="text-2xl">💵</span>
-              <span className="text-sm font-bold text-white">Efectivo al recibir</span>
+              <span className="text-base font-bold text-white">Efectivo al recibir</span>
             </button>
             <button onClick={() => setPago('transferencia')}
               className={`w-full p-3.5 rounded-2xl border flex items-center gap-3 transition-all ${
                 pago === 'transferencia' ? 'bg-[#4db8ff]/15 border-[#4db8ff]' : 'bg-white/[0.05] border-white/10'
               }`}>
               <span className="text-2xl">🏦</span>
-              <span className="text-sm font-bold text-white">Transferencia</span>
+              <span className="text-base font-bold text-white">Transferencia</span>
             </button>
             {ccHabilitada && (
               <button onClick={() => setPago('cuenta_corriente')}
@@ -176,30 +177,23 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
                 }`}>
                 <span className="text-2xl">📒</span>
                 <div className="text-left">
-                  <span className="text-sm font-bold text-white block">Cuenta corriente</span>
+                  <span className="text-base font-bold text-white block">Cuenta corriente</span>
                   <span className="text-[10px] text-white/45">Se suma a tu cuenta para pagar después</span>
                 </div>
               </button>
             )}
-            <div className="w-full p-3.5 rounded-2xl border border-white/8 bg-white/[0.02] flex items-center gap-3 opacity-50">
-              <span className="text-2xl">💳</span>
-              <div>
-                <span className="text-sm font-bold text-white/60">Mercado Pago</span>
-                <span className="text-[10px] text-white/40 ml-2">próximamente</span>
-              </div>
-            </div>
           </div>
         </div>
 
         {/* NOTA */}
         <div>
-          <h2 className="text-xs text-white/50 uppercase tracking-wide mb-2.5 font-bold">Aclaraciones (opcional)</h2>
+          <h2 className="text-[15px] text-white/85 mb-2.5 font-bold">📝 Aclaraciones (opcional)</h2>
           <textarea
             value={nota}
             onChange={(e) => setNota(e.target.value)}
             placeholder="Ej: sin escamas, tocar timbre 2B, llamar al llegar..."
             rows={2}
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-3 text-sm text-white placeholder-white/30 outline-none focus:border-[#4db8ff] resize-none"
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-3.5 text-base text-white placeholder-white/30 outline-none focus:border-[#4db8ff] resize-none"
           />
         </div>
 
@@ -234,7 +228,7 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
 
         {/* RESUMEN */}
         <div>
-          <h2 className="text-xs text-white/50 uppercase tracking-wide mb-2.5 font-bold">Tu pedido ({totalItems})</h2>
+          <h2 className="text-[15px] text-white/85 mb-2.5 font-bold">🧾 Tu pedido ({totalItems})</h2>
           <div className="bg-white/[0.05] border border-white/8 rounded-2xl p-4 space-y-2.5">
             {carrito.map((item) => (
               <div key={item.producto.id} className="flex items-center justify-between text-base">
@@ -255,7 +249,7 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
               <span className="text-2xl font-extrabold text-[#4db8ff]">{hayPorPeso ? '~' : ''}{fmt(totalFinal)}</span>
             </div>
             {hayPorPeso && (
-              <p className="text-[11px] text-white/45 leading-snug flex items-start gap-1.5 pt-1">
+              <p className="text-[13px] text-white/55 leading-snug flex items-start gap-1.5 pt-1">
                 <span className="shrink-0">⚖️</span>
                 <span>Los productos por kg se pesan al preparar. El importe final puede variar según el corte.</span>
               </p>
