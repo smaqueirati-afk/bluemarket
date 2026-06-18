@@ -170,5 +170,54 @@ export async function borrarCliente(clienteId) {
   if (error) return { error: error.message }
 
   revalidatePath('/pescaderia/clientes')
+  revalidatePath('/panel/clientes')
   return { ok: true }
+}
+
+// ── Editar datos del cliente ──
+export async function editarCliente(clienteId, datos) {
+  const check = await verificarDueno()
+  if (check.error) return { error: check.error }
+
+  const admin = createAdminClient()
+  const cli = await clienteEsDeLaPescaderia(admin, clienteId, check.pescaderiaId)
+  if (!cli) return { error: 'Ese cliente no es de tu pescadería' }
+
+  const nombre = (datos?.nombre || '').trim()
+  if (!nombre) return { error: 'El nombre no puede quedar vacío' }
+
+  const { error } = await admin
+    .from('clientes')
+    .update({
+      nombre,
+      telefono: (datos?.telefono || '').trim() || null,
+      email: (datos?.email || '').trim() || null,
+      notas: (datos?.notas || '').trim() || null,
+    })
+    .eq('id', clienteId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/panel/clientes')
+  return { ok: true }
+}
+
+// ── Dar de baja / reactivar cliente (baja blanda: conserva el historial) ──
+export async function cambiarBajaCliente(clienteId, baja) {
+  const check = await verificarDueno()
+  if (check.error) return { error: check.error }
+
+  const admin = createAdminClient()
+  const cli = await clienteEsDeLaPescaderia(admin, clienteId, check.pescaderiaId)
+  if (!cli) return { error: 'Ese cliente no es de tu pescadería' }
+
+  const { error } = await admin
+    .from('clientes')
+    .update({ activo: !baja })
+    .eq('id', clienteId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/panel/clientes')
+  return { ok: true, activo: !baja }
 }

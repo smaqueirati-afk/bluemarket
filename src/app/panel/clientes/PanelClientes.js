@@ -1,13 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { configurarCC, registrarPago, registrarCargo, traerMovimientos, borrarCliente } from './actions'
+import { configurarCC, registrarPago, registrarCargo, traerMovimientos, borrarCliente, editarCliente, cambiarBajaCliente } from './actions'
 import BarraUsuario from '../../../components/BarraUsuario'
 
-export default function PanelClientes({ clientes, nombrePescaderia }) {
+export default function PanelClientes({ clientes: clientesIniciales, nombrePescaderia }) {
+  const [clientes, setClientes] = useState(clientesIniciales)
   const [expandido, setExpandido] = useState(null)      // cliente abierto
   const [mensaje, setMensaje] = useState(null)
-  const [accion, setAccion] = useState(null)            // 'config' | 'pago' | 'movimientos'
+  const [accion, setAccion] = useState(null)            // 'config' | 'pago' | 'movimientos' | 'editar'
   const [cargando, setCargando] = useState(false)
 
   // formularios
@@ -16,6 +17,11 @@ export default function PanelClientes({ clientes, nombrePescaderia }) {
   const [montoPago, setMontoPago] = useState('')
   const [notaPago, setNotaPago] = useState('')
   const [movimientos, setMovimientos] = useState([])
+  // edición de datos del cliente
+  const [editNombre, setEditNombre] = useState('')
+  const [editTelefono, setEditTelefono] = useState('')
+  const [editEmail, setEditEmail] = useState('')
+  const [editNotas, setEditNotas] = useState('')
 
   function fmt(n) {
     return '$' + Number(n || 0).toLocaleString('es-AR')
@@ -41,6 +47,12 @@ export default function PanelClientes({ clientes, nombrePescaderia }) {
     if (cualAccion === 'movimientos') {
       cargarMovimientos(cli.id)
     }
+    if (cualAccion === 'editar') {
+      setEditNombre(cli.nombre || '')
+      setEditTelefono(cli.telefono || '')
+      setEditEmail(cli.email || '')
+      setEditNotas(cli.notas || '')
+    }
   }
 
   async function cargarMovimientos(clienteId) {
@@ -62,7 +74,40 @@ export default function PanelClientes({ clientes, nombrePescaderia }) {
     setCargando(true); setMensaje(null)
     const res = await borrarCliente(cli.id)
     if (res.error) setMensaje({ tipo: 'error', texto: res.error })
-    else { setMensaje({ tipo: 'ok', texto: 'Cliente eliminado ✓' }); setExpandido(null); setAccion(null) }
+    else {
+      setClientes((prev) => prev.filter((c) => c.id !== cli.id))
+      setMensaje({ tipo: 'ok', texto: 'Cliente eliminado ✓' }); setExpandido(null); setAccion(null)
+    }
+    setCargando(false)
+  }
+
+  async function guardarEdicion(cli) {
+    setCargando(true); setMensaje(null)
+    const datos = {
+      nombre: editNombre.trim(),
+      telefono: editTelefono.trim(),
+      email: editEmail.trim(),
+      notas: editNotas.trim(),
+    }
+    const res = await editarCliente(cli.id, datos)
+    if (res.error) setMensaje({ tipo: 'error', texto: res.error })
+    else {
+      setClientes((prev) => prev.map((c) => c.id === cli.id ? { ...c, ...datos } : c))
+      setMensaje({ tipo: 'ok', texto: 'Datos actualizados ✓' }); setExpandido(null); setAccion(null)
+    }
+    setCargando(false)
+  }
+
+  async function toggleBaja(cli) {
+    const darBaja = cli.activo !== false  // si está activo, lo damos de baja
+    if (darBaja && !confirm(`¿Dar de baja a "${cli.nombre}"? Se oculta de tu lista activa pero se conserva todo su historial. Lo podés reactivar cuando quieras.`)) return
+    setCargando(true); setMensaje(null)
+    const res = await cambiarBajaCliente(cli.id, darBaja)
+    if (res.error) setMensaje({ tipo: 'error', texto: res.error })
+    else {
+      setClientes((prev) => prev.map((c) => c.id === cli.id ? { ...c, activo: !darBaja } : c))
+      setMensaje({ tipo: 'ok', texto: darBaja ? 'Cliente dado de baja ✓' : 'Cliente reactivado ✓' })
+    }
     setCargando(false)
   }
 
@@ -77,6 +122,8 @@ export default function PanelClientes({ clientes, nombrePescaderia }) {
   // Clientes con deuda primero
   const conCC = clientes.filter((c) => c.cc_habilitada)
   const deudaTotal = conCC.reduce((acc, c) => acc + (Number(c.cc_saldo) || 0), 0)
+  // Activos primero, dados de baja al final
+  const clientesOrdenados = [...clientes].sort((a, b) => (a.activo === false ? 1 : 0) - (b.activo === false ? 1 : 0))
 
   return (
     <div className="min-h-screen text-white bg-[linear-gradient(180deg,#051e5c_0%,#03174a_60%,#020f30_100%)]">
@@ -127,13 +174,13 @@ export default function PanelClientes({ clientes, nombrePescaderia }) {
           </div>
         ) : (
           <div className="space-y-2.5">
-            {clientes.map((cli, idx) => {
+            {clientesOrdenados.map((cli, idx) => {
               const saldo = Number(cli.cc_saldo) || 0
               const tieneDeuda = saldo > 0
               const estaAbierto = expandido === cli.id
               return (
                 <div key={cli.id}
-                  className="bg-white/[0.06] border border-white/10 rounded-2xl p-4 backdrop-blur-sm"
+                  className={`bg-white/[0.06] border border-white/10 rounded-2xl p-4 backdrop-blur-sm ${cli.activo === false ? 'opacity-55' : ''}`}
                   style={{ animation: 'bmFadeUp 0.4s ease both', animationDelay: `${idx * 0.04}s` }}>
 
                   {/* Fila principal */}
@@ -143,6 +190,9 @@ export default function PanelClientes({ clientes, nombrePescaderia }) {
                         <span className="font-semibold text-white truncate">{cli.nombre}</span>
                         {cli.cc_habilitada && (
                           <span className="text-[9px] bg-[#4db8ff]/15 text-[#4db8ff] px-1.5 py-0.5 rounded uppercase shrink-0 font-bold">CC</span>
+                        )}
+                        {cli.activo === false && (
+                          <span className="text-[9px] bg-white/10 text-white/55 px-1.5 py-0.5 rounded uppercase shrink-0 font-bold">Baja</span>
                         )}
                       </div>
                       <div className="text-xs text-white/40 mt-0.5 truncate">{cli.email || cli.telefono || 'sin contacto'}</div>
@@ -158,10 +208,14 @@ export default function PanelClientes({ clientes, nombrePescaderia }) {
                   </div>
 
                   {/* Botones de acción */}
-                  <div className="flex gap-2 mt-3 pt-3 border-t border-white/8">
+                  <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-white/8">
                     <button onClick={() => abrir(cli, 'config')}
-                      className="flex-1 bg-white/[0.07] border border-white/10 text-white text-xs font-medium py-2 rounded-lg active:scale-95 transition-all">
+                      className="flex-1 min-w-[130px] bg-white/[0.07] border border-white/10 text-white text-xs font-medium py-2 rounded-lg active:scale-95 transition-all">
                       ⚙️ Cuenta corriente
+                    </button>
+                    <button onClick={() => abrir(cli, 'editar')}
+                      className="flex-1 min-w-[110px] bg-white/[0.07] border border-white/10 text-white text-xs font-medium py-2 rounded-lg active:scale-95 transition-all">
+                      ✏️ Editar
                     </button>
                     {cli.cc_habilitada && (
                       <>
@@ -199,11 +253,50 @@ export default function PanelClientes({ clientes, nombrePescaderia }) {
                         className="w-full bg-[#4db8ff] text-[#03174a] font-bold py-2.5 rounded-xl active:scale-[0.98] disabled:opacity-60">
                         {cargando ? 'Guardando...' : 'Guardar'}
                       </button>
+                    </div>
+                  )}
 
-                      <div className="pt-2 mt-1 border-t border-white/8">
+                  {/* Panel expandible: EDITAR DATOS */}
+                  {estaAbierto && accion === 'editar' && (
+                    <div className="mt-3 pt-3 border-t border-white/8 space-y-3" style={{ animation: 'bmFadeUp 0.3s ease both' }}>
+                      <div>
+                        <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">Nombre</label>
+                        <input value={editNombre} onChange={(e) => setEditNombre(e.target.value)}
+                          placeholder="Nombre del cliente"
+                          className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-[#4db8ff]" />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">Teléfono</label>
+                        <input value={editTelefono} onChange={(e) => setEditTelefono(e.target.value)}
+                          inputMode="tel" placeholder="Ej: 11 2345 6789"
+                          className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-[#4db8ff]" />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">Email</label>
+                        <input value={editEmail} onChange={(e) => setEditEmail(e.target.value)}
+                          inputMode="email" placeholder="cliente@email.com"
+                          className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-[#4db8ff]" />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">Notas internas <span className="text-white/30 normal-case">(solo las ves vos)</span></label>
+                        <textarea value={editNotas} onChange={(e) => setEditNotas(e.target.value)} rows={2}
+                          placeholder="Ej: prefiere el pescado sin escamar, paga los viernes..."
+                          className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-[#4db8ff] resize-none" />
+                      </div>
+                      <button onClick={() => guardarEdicion(cli)} disabled={cargando}
+                        className="w-full bg-[#4db8ff] text-[#03174a] font-bold py-2.5 rounded-xl active:scale-[0.98] disabled:opacity-60">
+                        {cargando ? 'Guardando...' : 'Guardar cambios'}
+                      </button>
+
+                      {/* Gestión del cliente */}
+                      <div className="pt-3 mt-1 border-t border-white/8 flex flex-col gap-2">
+                        <button onClick={() => toggleBaja(cli)} disabled={cargando}
+                          className="w-full bg-white/[0.07] border border-white/12 text-white text-xs font-medium py-2 rounded-lg active:scale-95 transition-all disabled:opacity-50">
+                          {cli.activo === false ? '✓ Reactivar cliente' : '⏸ Dar de baja'}
+                        </button>
                         <button onClick={() => eliminarCliente(cli)} disabled={cargando}
                           className="w-full text-[#e74c3c] text-xs font-medium py-2 rounded-lg hover:bg-[#e74c3c]/10 transition-colors disabled:opacity-50">
-                          🗑 Eliminar cliente
+                          🗑 Eliminar definitivamente
                         </button>
                       </div>
                     </div>

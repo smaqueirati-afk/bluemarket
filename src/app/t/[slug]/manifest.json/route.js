@@ -8,19 +8,21 @@ export async function GET(request, { params }) {
   const admin = createAdminClient()
   const { data: tienda } = await admin
     .from('pescaderias')
-    .select('nombre, rubro, emoji_rubro')
+    .select('nombre, nombre_corto, rubro, emoji_rubro')
     .eq('slug', slug)
     .maybeSingle()
 
   const rubro = tienda?.rubro || 'pescadería'
   const nombre = tienda?.nombre || 'BlueMarket'
+  // Etiqueta corta del ícono en el celu del cliente (cae al nombre completo si no hay)
+  const nombreCorto = tienda?.nombre_corto || nombre
 
   // Mapeo rubro → carpeta de íconos
   const carpeta = rubro === 'quesería' ? 'queseria' : 'pescaderia'
 
   const manifest = {
     name: nombre,
-    short_name: nombre,
+    short_name: nombreCorto,
     description: `${nombre} en BlueMarket`,
     start_url: `/t/${slug}`,
     display: 'standalone',

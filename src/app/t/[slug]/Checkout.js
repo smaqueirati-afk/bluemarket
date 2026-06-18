@@ -237,9 +237,9 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
           <h2 className="text-xs text-white/50 uppercase tracking-wide mb-2.5 font-bold">Tu pedido ({totalItems})</h2>
           <div className="bg-white/[0.05] border border-white/8 rounded-2xl p-4 space-y-2.5">
             {carrito.map((item) => (
-              <div key={item.producto.id} className="flex items-center justify-between text-sm">
-                <span className="text-white/70">
-                  <span className="text-white/40">{fmtCant(item.cantidad, item.producto.unidad)}</span> {item.producto.emoji} {item.producto.nombre}
+              <div key={item.producto.id} className="flex items-center justify-between text-base">
+                <span className="text-white/80">
+                  <span className="text-[#4db8ff] font-bold">{fmtCant(item.cantidad, item.producto.unidad)}</span> {item.producto.emoji} {item.producto.nombre}
                 </span>
                 <span className="text-white font-semibold">{fmt(item.producto.precio * item.cantidad)}</span>
               </div>
@@ -251,8 +251,8 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
               </div>
             )}
             <div className="border-t border-white/8 pt-2.5 flex items-center justify-between">
-              <span className="text-white/55 text-sm">{hayPorPeso ? 'Total estimado' : 'Total'}</span>
-              <span className="text-xl font-extrabold text-[#4db8ff]">{hayPorPeso ? '~' : ''}{fmt(totalFinal)}</span>
+              <span className="text-white/70 text-base">{hayPorPeso ? 'Total estimado' : 'Total'}</span>
+              <span className="text-2xl font-extrabold text-[#4db8ff]">{hayPorPeso ? '~' : ''}{fmt(totalFinal)}</span>
             </div>
             {hayPorPeso && (
               <p className="text-[11px] text-white/45 leading-snug flex items-start gap-1.5 pt-1">
@@ -289,7 +289,7 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
           <button
             onClick={confirmar}
             disabled={cargando}
-            className="w-full bg-[#4db8ff] text-[#03174a] font-bold py-3.5 rounded-xl active:scale-[0.98] transition-transform disabled:opacity-60">
+            className="w-full bg-[#4db8ff] text-[#03174a] font-extrabold text-lg py-4 rounded-xl active:scale-[0.98] transition-transform disabled:opacity-60">
             {cargando ? 'Confirmando...' : `Confirmar pedido · ${hayPorPeso ? '~' : ''}${fmt(totalFinal)}`}
           </button>
         </div>

@@ -29,6 +29,7 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
     return []
   })
   const [categoria, setCategoria] = useState('todo')
+  const [busqueda, setBusqueda] = useState('')
   const [verCarrito, setVerCarrito] = useState(false)
   const [verCheckout, setVerCheckout] = useState(false)
   const [pedidoConfirmado, setPedidoConfirmado] = useState(false)
@@ -56,10 +57,21 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
     { id: 'otros', emoji: '📦', label: 'Otros' },
   ]
 
-  const productosFiltrados =
-    categoria === 'todo'
-      ? productos
-      : productos.filter((p) => p.categoria === categoria)
+  // Normaliza para buscar sin tildes ni mayúsculas
+  function normalizar(t) {
+    return (t || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  }
+
+  // Solo mostramos las categorías que la tienda realmente tiene (+ "Todo")
+  const idsConProductos = new Set(productos.map((p) => p.categoria))
+  const categoriasVisibles = categorias.filter((c) => c.id === 'todo' || idsConProductos.has(c.id))
+
+  const q = normalizar(busqueda)
+  const productosFiltrados = productos.filter((p) => {
+    const okCat = categoria === 'todo' || p.categoria === categoria
+    const okBusq = q === '' || normalizar(p.nombre).includes(q)
+    return okCat && okBusq
+  })
 
   // ── Funciones del carrito ──
   // Paso de cantidad: productos por kg van de a ¼ (0.25); el resto de a 1
@@ -229,19 +241,29 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
           <h1 className="text-xl font-extrabold text-white mb-0.5">
             {txRubro.titulo}
           </h1>
-          <p className="text-[12px] text-white/45 mb-3.5">{txRubro.subtitulo}</p>
+          <p className="text-sm text-white/55 mb-3.5">{txRubro.subtitulo}</p>
 
-          <div className="flex items-center gap-2.5 bg-white/10 border border-white/12 rounded-xl px-3.5 py-3 mb-3.5 backdrop-blur-sm">
-            <span className="text-white/35">🔍</span>
-            <span className="text-sm text-white/35">{txRubro.buscar}</span>
+          <div className="flex items-center gap-2.5 bg-white/10 border border-white/12 rounded-xl px-3.5 py-3 mb-3.5 backdrop-blur-sm focus-within:border-[#4db8ff]/60">
+            <span className="text-white/45 text-lg">🔍</span>
+            <input
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              placeholder={txRubro.buscar}
+              className="flex-1 bg-transparent text-base text-white placeholder-white/40 outline-none"
+            />
+            {busqueda && (
+              <button onClick={() => setBusqueda('')} aria-label="Borrar búsqueda"
+                className="text-white/50 text-2xl leading-none px-1">×</button>
+            )}
           </div>
 
+          {categoriasVisibles.length > 1 && (
           <div className="flex gap-2 overflow-x-auto pb-3 bm-no-scrollbar">
-            {categorias.map((cat) => (
+            {categoriasVisibles.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setCategoria(cat.id)}
-                className={`shrink-0 px-3.5 py-2 rounded-full text-xs font-medium whitespace-nowrap border transition-all ${
+                className={`shrink-0 px-4 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap border transition-all ${
                   categoria === cat.id
                     ? 'bg-[#4db8ff]/15 border-[#4db8ff] text-[#4db8ff]'
                     : 'bg-white/[0.06] border-white/10 text-white/55 hover:border-white/25'
@@ -251,6 +273,7 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
               </button>
             ))}
           </div>
+          )}
         </div>
 
         {/* CONTENT */}
@@ -277,7 +300,7 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
           {productosFiltrados.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-4xl mb-3 opacity-40">{pescaderia?.emoji_rubro || '🛒'}</div>
-              <p className="text-white/40 text-sm">No hay productos en esta categoría.</p>
+              <p className="text-white/55 text-base">{busqueda ? `No encontramos "${busqueda}".` : 'No hay productos en esta categoría.'}</p>
             </div>
           ) : (
             <div className="flex flex-col gap-3">
@@ -301,30 +324,30 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
                     </div>
                     {/* Info */}
                     <div className="flex-1 min-w-0 py-3">
-                      <div className="text-[13px] font-semibold text-white leading-tight truncate">{p.nombre}</div>
-                      <div className="text-[10px] text-white/35 mt-0.5">
+                      <div className="text-base font-semibold text-white leading-tight truncate">{p.nombre}</div>
+                      <div className="text-[13px] text-white/55 mt-0.5">
                         Por {p.unidad}
                       </div>
-                      <div className="text-[15px] font-extrabold text-[#4db8ff] mt-1">{fmt(p.precio)}</div>
+                      <div className="text-xl font-extrabold text-[#4db8ff] mt-1">{fmt(p.precio)}</div>
                     </div>
                     {/* Controles */}
                     <div className="shrink-0">
                       {enCarrito ? (
-                        <div className="flex items-center gap-1.5">
-                          <button onClick={() => quitar(p.id)}
-                            className="w-7 h-7 bg-white/10 rounded-lg text-white text-lg font-bold flex items-center justify-center active:scale-90 transition-all">
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => quitar(p.id)} aria-label="Quitar"
+                            className="w-11 h-11 bg-white/10 rounded-xl text-white text-2xl font-bold flex items-center justify-center active:scale-90 transition-all">
                             −
                           </button>
-                          <span className="text-sm font-bold text-white min-w-[2.25rem] text-center px-0.5">{fmtCantCorto(enCarrito.cantidad, p.unidad)}</span>
-                          <button onClick={() => agregar(p)}
-                            className="w-7 h-7 bg-[#4db8ff] rounded-lg text-[#03174a] text-lg font-extrabold flex items-center justify-center active:scale-90 transition-all">
+                          <span className="text-lg font-bold text-white min-w-[2.75rem] text-center px-0.5">{fmtCantCorto(enCarrito.cantidad, p.unidad)}</span>
+                          <button onClick={() => agregar(p)} aria-label="Agregar"
+                            className="w-11 h-11 bg-[#4db8ff] rounded-xl text-[#03174a] text-2xl font-extrabold flex items-center justify-center active:scale-90 transition-all">
                             +
                           </button>
                         </div>
                       ) : (
                         <button
-                          onClick={() => agregar(p)}
-                          className="w-8 h-8 bg-[#4db8ff] rounded-lg text-[#03174a] text-xl font-extrabold flex items-center justify-center active:scale-90 transition-all hover:shadow-[0_0_14px_rgba(77,184,255,0.5)]"
+                          onClick={() => agregar(p)} aria-label="Agregar al carrito"
+                          className="w-12 h-12 bg-[#4db8ff] rounded-xl text-[#03174a] text-3xl font-extrabold flex items-center justify-center active:scale-90 transition-all hover:shadow-[0_0_14px_rgba(77,184,255,0.5)]"
                         >
                           +
                         </button>
@@ -342,9 +365,9 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
           <div className="absolute bottom-4 left-4 right-4 z-20" style={{ animation: 'bmSlideUp 0.3s ease both' }}>
             <button
               onClick={() => setVerCarrito(true)}
-              className="w-full bg-[#4db8ff] text-[#03174a] rounded-2xl px-5 py-3.5 flex items-center justify-between font-bold shadow-[0_8px_24px_rgba(77,184,255,0.4)] active:scale-[0.98] transition-transform">
+              className="w-full bg-[#4db8ff] text-[#03174a] rounded-2xl px-5 py-4 flex items-center justify-between font-extrabold text-lg shadow-[0_8px_24px_rgba(77,184,255,0.4)] active:scale-[0.98] transition-transform">
               <span className="flex items-center gap-2">
-                <span className="bg-[#03174a] text-white w-6 h-6 rounded-lg text-xs flex items-center justify-center">{totalItems}</span>
+                <span className="bg-[#03174a] text-white w-7 h-7 rounded-lg text-sm flex items-center justify-center">{totalItems}</span>
                 Ver carrito
               </span>
               <span>{hayPorPeso ? '~' : ''}{fmt(totalPrecio)}</span>
@@ -385,17 +408,17 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
                           {item.producto.emoji}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-semibold text-white truncate">{item.producto.nombre}</div>
-                          <div className="text-xs text-[#4db8ff] font-bold mt-0.5">{fmt(item.producto.precio)} <span className="text-white/35 font-normal">/ {item.producto.unidad}</span></div>
+                          <div className="text-base font-semibold text-white truncate">{item.producto.nombre}</div>
+                          <div className="text-sm text-[#4db8ff] font-bold mt-0.5">{fmt(item.producto.precio)} <span className="text-white/45 font-normal">/ {item.producto.unidad}</span></div>
                         </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <button onClick={() => quitar(item.producto.id)}
-                            className="w-7 h-7 bg-white/10 rounded-lg text-white text-lg font-bold flex items-center justify-center active:scale-90">
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button onClick={() => quitar(item.producto.id)} aria-label="Quitar"
+                            className="w-11 h-11 bg-white/10 rounded-xl text-white text-2xl font-bold flex items-center justify-center active:scale-90">
                             −
                           </button>
-                          <span className="text-sm font-bold text-white min-w-[2.25rem] text-center px-0.5">{fmtCantCorto(item.cantidad, item.producto.unidad)}</span>
-                          <button onClick={() => agregar(item.producto)}
-                            className="w-7 h-7 bg-[#4db8ff] rounded-lg text-[#03174a] text-lg font-extrabold flex items-center justify-center active:scale-90">
+                          <span className="text-lg font-bold text-white min-w-[2.75rem] text-center px-0.5">{fmtCantCorto(item.cantidad, item.producto.unidad)}</span>
+                          <button onClick={() => agregar(item.producto)} aria-label="Agregar"
+                            className="w-11 h-11 bg-[#4db8ff] rounded-xl text-[#03174a] text-2xl font-extrabold flex items-center justify-center active:scale-90">
                             +
                           </button>
                         </div>
@@ -420,7 +443,7 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
                   )}
                   <button
                     onClick={() => { setVerCarrito(false); setErrorPedido(null); setVerCheckout(true) }}
-                    className="w-full bg-[#4db8ff] text-[#03174a] font-bold py-3.5 rounded-xl active:scale-[0.98] transition-transform">
+                    className="w-full bg-[#4db8ff] text-[#03174a] font-extrabold text-lg py-4 rounded-xl active:scale-[0.98] transition-transform">
                     Continuar con el pedido
                   </button>
                 </div>
