@@ -2,6 +2,7 @@ import { createAdminClient } from '../../../lib/supabase/admin'
 import { createClient } from '../../../lib/supabase/server'
 import { notFound } from 'next/navigation'
 import TiendaCliente from './TiendaCliente'
+import SplashTienda from './SplashTienda'
 import { retornoDisponible } from '../../../lib/fidelizacion'
 
 // Metadata dinámica por tienda: título, descripción e ícono según rubro
@@ -73,14 +74,17 @@ export default async function TiendaPorSlug(props) {
   }
 
   return (
-    <TiendaCliente
-      productos={productos || []}
-      pescaderia={pescaderia}
-      pescaderiaId={pescaderia.id}
-      usuarioId={user?.id || null}
-      ccHabilitada={ccHabilitada}
-      soloDelivery={soloDelivery}
-      retorno={retorno}
-    />
+    <>
+      <SplashTienda rubro={pescaderia.rubro} />
+      <TiendaCliente
+        productos={productos || []}
+        pescaderia={pescaderia}
+        pescaderiaId={pescaderia.id}
+        usuarioId={user?.id || null}
+        ccHabilitada={ccHabilitada}
+        soloDelivery={soloDelivery}
+        retorno={retorno}
+      />
+    </>
   )
 }
