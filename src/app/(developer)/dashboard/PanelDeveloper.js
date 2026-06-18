@@ -200,15 +200,15 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
         {!pescaderiaSeleccionada && (
           <div className="grid grid-cols-3 gap-2 mb-6">
             <button onClick={() => setPestana('pescaderias')}
-              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${pestana === 'pescaderias' ? 'bg-[#4db8ff] text-[#03174a]' : 'bg-white/[0.07] text-white/60 border border-white/10'}`}>
+              className={`px-2 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all text-center leading-tight ${pestana === 'pescaderias' ? 'bg-[#4db8ff] text-[#03174a]' : 'bg-white/[0.07] text-white/60 border border-white/10'}`}>
               🏪 Comercios Online
             </button>
             <button onClick={() => setPestana('catalogo')}
-              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${pestana === 'catalogo' ? 'bg-[#4db8ff] text-[#03174a]' : 'bg-white/[0.07] text-white/60 border border-white/10'}`}>
+              className={`px-2 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all text-center leading-tight ${pestana === 'catalogo' ? 'bg-[#4db8ff] text-[#03174a]' : 'bg-white/[0.07] text-white/60 border border-white/10'}`}>
               📦 Catálogo master
             </button>
             <button onClick={() => setPestana('limpieza')}
-              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${pestana === 'limpieza' ? 'bg-[#e74c3c] text-white' : 'bg-white/[0.07] text-white/60 border border-white/10'}`}>
+              className={`px-2 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all text-center leading-tight ${pestana === 'limpieza' ? 'bg-[#e74c3c] text-white' : 'bg-white/[0.07] text-white/60 border border-white/10'}`}>
               🧹 Limpieza
             </button>
           </div>
