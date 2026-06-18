@@ -2,6 +2,7 @@ import { createClient } from '../../../lib/supabase/server'
 import { createAdminClient } from '../../../lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import PanelDeveloper from './PanelDeveloper'
+import SplashAdmin from './SplashAdmin'
 
 export default async function DashboardDeveloper() {
   const supabase = await createClient()
@@ -49,5 +50,10 @@ export default async function DashboardDeveloper() {
     .eq('activo', true)
     .order('nombre', { ascending: true })
 
-  return <PanelDeveloper pescaderias={pescaderiasConDueno} catalogo={catalogo || []} usuarioId={user.id} />
+  return (
+    <>
+      <SplashAdmin />
+      <PanelDeveloper pescaderias={pescaderiasConDueno} catalogo={catalogo || []} usuarioId={user.id} />
+    </>
+  )
 }

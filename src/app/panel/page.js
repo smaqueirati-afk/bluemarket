@@ -2,6 +2,7 @@ import { createClient } from '../../lib/supabase/server'
 import { createAdminClient } from '../../lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import PanelPescaderia from './PanelPescaderia'
+import SplashPanel from './SplashPanel'
 
 export default async function DashboardPescaderia() {
   const supabase = await createClient()
@@ -55,11 +56,14 @@ export default async function DashboardPescaderia() {
   }
 
   return (
-    <PanelPescaderia
-      pescaderia={pescaderia}
-      pedidos={pedidosConTel}
-      nombreUsuario={perfil.nombre}
-      usuarioId={user.id}
-    />
+    <>
+      <SplashPanel rubro={pescaderia.rubro} />
+      <PanelPescaderia
+        pescaderia={pescaderia}
+        pedidos={pedidosConTel}
+        nombreUsuario={perfil.nombre}
+        usuarioId={user.id}
+      />
+    </>
   )
 }
