@@ -11,6 +11,16 @@ const ESTADOS_INFO = {
   cancelado:  { label: 'Cancelado',  color: '#e74c3c', emoji: '❌' },
 }
 
+// Cantidad legible: "½ kg", "1¼ kg" para productos por peso; el número en el resto.
+function fmtCant(c, unidad) {
+  if (unidad !== 'kg') return `${c} `
+  const entero = Math.floor(Number(c) + 1e-9)
+  const frac = +(Number(c) - entero).toFixed(2)
+  const simb = { 0: '', 0.25: '¼', 0.5: '½', 0.75: '¾' }[frac]
+  const txt = simb === undefined ? Number(c).toLocaleString('es-AR') : (entero === 0 ? simb : `${entero}${simb}`)
+  return `${txt} kg `
+}
+
 export default function MisPedidosPanel({ pedidos, onCerrar }) {
   return (
     <div className="absolute inset-0 z-50 flex flex-col">
@@ -50,7 +60,7 @@ export default function MisPedidosPanel({ pedidos, onCerrar }) {
                       </span>
                     </div>
                     <div className="text-[12px] text-white/50 mb-2">
-                      {p.items.map((it) => `${it.cantidad} ${it.nombre}`).join(' · ')}
+                      {p.items.map((it) => `${fmtCant(it.cantidad_final != null ? it.cantidad_final : it.cantidad, it.unidad)}${it.nombre}`).join(' · ')}
                     </div>
                     <div className="flex items-center gap-3 flex-wrap mb-2">
                       <span className="text-[11px] text-white/40">
@@ -68,9 +78,21 @@ export default function MisPedidosPanel({ pedidos, onCerrar }) {
                           day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
                         })}
                       </span>
-                      <span className="text-base font-extrabold text-[#4db8ff]">
-                        ${Number(p.total).toLocaleString('es-AR')}
-                      </span>
+                      {p.pesado && p.total_final != null ? (
+                        <span className="text-right leading-tight">
+                          <span className="block text-[9px] text-[#2ecc71] font-bold uppercase tracking-wide leading-none mb-0.5">Pesado ✓</span>
+                          <span className="text-base font-extrabold text-[#4db8ff]">${Number(p.total_final).toLocaleString('es-AR')}</span>
+                        </span>
+                      ) : p.items?.some((it) => it.unidad === 'kg') ? (
+                        <span className="text-right leading-tight">
+                          <span className="block text-[9px] text-white/40 font-bold uppercase tracking-wide leading-none mb-0.5">Estimado</span>
+                          <span className="text-base font-extrabold text-[#4db8ff]">~${Number(p.total).toLocaleString('es-AR')}</span>
+                        </span>
+                      ) : (
+                        <span className="text-base font-extrabold text-[#4db8ff]">
+                          ${Number(p.total).toLocaleString('es-AR')}
+                        </span>
+                      )}
                     </div>
 
                     {p.palabra_clave && p.estado !== 'entregado' && p.estado !== 'cancelado' && (

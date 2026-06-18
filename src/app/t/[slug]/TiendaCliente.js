@@ -143,7 +143,7 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
         table: 'pedidos',
       }, (payload) => {
         setMisPedidosList((prev) =>
-          prev.map((p) => p.id === payload.new.id ? { ...p, estado: payload.new.estado } : p)
+          prev.map((p) => p.id === payload.new.id ? { ...p, estado: payload.new.estado, total_final: payload.new.total_final, pesado: payload.new.pesado } : p)
         )
       })
       .subscribe()

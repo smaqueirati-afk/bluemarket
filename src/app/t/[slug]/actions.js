@@ -222,7 +222,7 @@ export async function misPedidos(pescaderiaId) {
   // Traer sus pedidos por usuario_id (no depende de la ficha de cliente)
   const { data: pedidos } = await admin
     .from('pedidos')
-    .select('id, numero, estado, tipo_entrega, total, created_at, palabra_clave, direccion')
+    .select('id, numero, estado, tipo_entrega, total, total_final, pesado, created_at, palabra_clave, direccion')
     .eq('pescaderia_id', pescaderiaId)
     .eq('usuario_id', user.id)
     .order('created_at', { ascending: false })
@@ -234,7 +234,7 @@ export async function misPedidos(pescaderiaId) {
   const ids = pedidos.map((p) => p.id)
   const { data: items } = await admin
     .from('items_pedido')
-    .select('pedido_id, nombre, cantidad, unidad')
+    .select('pedido_id, nombre, cantidad, cantidad_final, unidad')
     .in('pedido_id', ids)
 
   // Agrupar items por pedido
