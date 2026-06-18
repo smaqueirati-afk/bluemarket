@@ -54,7 +54,7 @@ export default function SplashTienda({ rubro }) {
         position: 'fixed',
         inset: 0,
         zIndex: 99999,
-        backgroundColor: '#000',
+        backgroundColor: '#fefefe',
         backgroundImage: `url(${src})`,
         backgroundSize: 'contain',
         backgroundPosition: 'center',
