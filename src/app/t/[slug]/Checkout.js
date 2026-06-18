@@ -18,6 +18,18 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
     return '$' + Number(n).toLocaleString('es-AR')
   }
 
+  // Cantidad legible: "½ kg", "1¼ kg"... para productos por peso; "2×" para el resto
+  function fmtCant(c, unidad) {
+    if (unidad !== 'kg') return `${c}×`
+    const entero = Math.floor(c + 1e-9)
+    const frac = +(c - entero).toFixed(2)
+    const simb = { 0: '', 0.25: '¼', 0.5: '½', 0.75: '¾' }[frac]
+    const txt = simb === undefined ? c.toLocaleString('es-AR') : (entero === 0 ? simb : `${entero}${simb}`)
+    return `${txt} kg`
+  }
+
+  const hayPorPeso = carrito.some((i) => i.producto.unidad === 'kg')
+
   const totalPrecio = carrito.reduce((acc, i) => acc + i.producto.precio * i.cantidad, 0)
   const totalItems = carrito.reduce((acc, i) => acc + i.cantidad, 0)
 
@@ -227,7 +239,7 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
             {carrito.map((item) => (
               <div key={item.producto.id} className="flex items-center justify-between text-sm">
                 <span className="text-white/70">
-                  <span className="text-white/40">{item.cantidad}×</span> {item.producto.emoji} {item.producto.nombre}
+                  <span className="text-white/40">{fmtCant(item.cantidad, item.producto.unidad)}</span> {item.producto.emoji} {item.producto.nombre}
                 </span>
                 <span className="text-white font-semibold">{fmt(item.producto.precio * item.cantidad)}</span>
               </div>
@@ -239,9 +251,15 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
               </div>
             )}
             <div className="border-t border-white/8 pt-2.5 flex items-center justify-between">
-              <span className="text-white/55 text-sm">Total</span>
-              <span className="text-xl font-extrabold text-[#4db8ff]">{fmt(totalFinal)}</span>
+              <span className="text-white/55 text-sm">{hayPorPeso ? 'Total estimado' : 'Total'}</span>
+              <span className="text-xl font-extrabold text-[#4db8ff]">{hayPorPeso ? '~' : ''}{fmt(totalFinal)}</span>
             </div>
+            {hayPorPeso && (
+              <p className="text-[11px] text-white/45 leading-snug flex items-start gap-1.5 pt-1">
+                <span className="shrink-0">⚖️</span>
+                <span>Los productos por kg se pesan al preparar. El importe final puede variar según el corte.</span>
+              </p>
+            )}
           </div>
         </div>
 
@@ -272,7 +290,7 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
             onClick={confirmar}
             disabled={cargando}
             className="w-full bg-[#4db8ff] text-[#03174a] font-bold py-3.5 rounded-xl active:scale-[0.98] transition-transform disabled:opacity-60">
-            {cargando ? 'Confirmando...' : `Confirmar pedido · ${fmt(totalFinal)}`}
+            {cargando ? 'Confirmando...' : `Confirmar pedido · ${hayPorPeso ? '~' : ''}${fmt(totalFinal)}`}
           </button>
         </div>
       )}

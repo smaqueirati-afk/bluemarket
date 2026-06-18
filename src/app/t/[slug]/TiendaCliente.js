@@ -62,26 +62,34 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
       : productos.filter((p) => p.categoria === categoria)
 
   // ── Funciones del carrito ──
+  // Paso de cantidad: productos por kg van de a ¼ (0.25); el resto de a 1
+  function stepDe(producto) {
+    return producto?.unidad === 'kg' ? 0.25 : 1
+  }
+
   function agregar(producto) {
+    const paso = stepDe(producto)
     setCarrito((prev) => {
       const existe = prev.find((item) => item.producto.id === producto.id)
       if (existe) {
         return prev.map((item) =>
           item.producto.id === producto.id
-            ? { ...item, cantidad: item.cantidad + 1 }
+            ? { ...item, cantidad: +(item.cantidad + paso).toFixed(2) }
             : item
         )
       }
-      return [...prev, { producto, cantidad: 1 }]
+      return [...prev, { producto, cantidad: paso }]
     })
   }
 
   function quitar(productoId) {
     setCarrito((prev) => {
       const item = prev.find((i) => i.producto.id === productoId)
-      if (item && item.cantidad > 1) {
+      if (!item) return prev
+      const paso = stepDe(item.producto)
+      if (item.cantidad - paso > 0.001) {
         return prev.map((i) =>
-          i.producto.id === productoId ? { ...i, cantidad: i.cantidad - 1 } : i
+          i.producto.id === productoId ? { ...i, cantidad: +(i.cantidad - paso).toFixed(2) } : i
         )
       }
       return prev.filter((i) => i.producto.id !== productoId)
@@ -95,6 +103,20 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
   function fmt(n) {
     return '$' + Number(n).toLocaleString('es-AR')
   }
+
+  // Cantidad corta para los steppers: "¼", "½", "1¼"... en kg; el número en el resto
+  function fmtCantCorto(c, unidad) {
+    if (unidad !== 'kg') return String(c)
+    const entero = Math.floor(c + 1e-9)
+    const frac = +(c - entero).toFixed(2)
+    const simb = { 0: '', 0.25: '¼', 0.5: '½', 0.75: '¾' }[frac]
+    if (simb === undefined) return c.toLocaleString('es-AR')
+    if (entero === 0) return simb
+    return `${entero}${simb}`
+  }
+
+  // ¿Hay algún producto que se vende por peso? -> el total pasa a ser estimado
+  const hayPorPeso = carrito.some((i) => i.producto.unidad === 'kg')
 
   // Invitación a la red (solo para usuarios logueados)
   const linkInvitacion = typeof window !== 'undefined' && usuarioId
@@ -293,7 +315,7 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
                             className="w-7 h-7 bg-white/10 rounded-lg text-white text-lg font-bold flex items-center justify-center active:scale-90 transition-all">
                             −
                           </button>
-                          <span className="text-sm font-bold text-white w-5 text-center">{enCarrito.cantidad}</span>
+                          <span className="text-sm font-bold text-white min-w-[2.25rem] text-center px-0.5">{fmtCantCorto(enCarrito.cantidad, p.unidad)}</span>
                           <button onClick={() => agregar(p)}
                             className="w-7 h-7 bg-[#4db8ff] rounded-lg text-[#03174a] text-lg font-extrabold flex items-center justify-center active:scale-90 transition-all">
                             +
@@ -325,7 +347,7 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
                 <span className="bg-[#03174a] text-white w-6 h-6 rounded-lg text-xs flex items-center justify-center">{totalItems}</span>
                 Ver carrito
               </span>
-              <span>{fmt(totalPrecio)}</span>
+              <span>{hayPorPeso ? '~' : ''}{fmt(totalPrecio)}</span>
             </button>
           </div>
         )}
@@ -371,7 +393,7 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
                             className="w-7 h-7 bg-white/10 rounded-lg text-white text-lg font-bold flex items-center justify-center active:scale-90">
                             −
                           </button>
-                          <span className="text-sm font-bold text-white w-5 text-center">{item.cantidad}</span>
+                          <span className="text-sm font-bold text-white min-w-[2.25rem] text-center px-0.5">{fmtCantCorto(item.cantidad, item.producto.unidad)}</span>
                           <button onClick={() => agregar(item.producto)}
                             className="w-7 h-7 bg-[#4db8ff] rounded-lg text-[#03174a] text-lg font-extrabold flex items-center justify-center active:scale-90">
                             +
@@ -387,9 +409,15 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
               {carrito.length > 0 && (
                 <div className="shrink-0 px-5 py-4 border-t border-white/8 bg-[#03174a]">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-white/55 text-sm">Total</span>
-                    <span className="text-2xl font-extrabold text-white">{fmt(totalPrecio)}</span>
+                    <span className="text-white/55 text-sm">{hayPorPeso ? 'Total estimado' : 'Total'}</span>
+                    <span className="text-2xl font-extrabold text-white">{hayPorPeso ? '~' : ''}{fmt(totalPrecio)}</span>
                   </div>
+                  {hayPorPeso && (
+                    <p className="text-[11px] text-white/45 leading-snug -mt-1.5 mb-3 flex items-start gap-1.5">
+                      <span className="shrink-0">⚖️</span>
+                      <span>Los productos por kg se pesan al preparar el pedido. El importe final puede variar (más o menos) según el corte.</span>
+                    </p>
+                  )}
                   <button
                     onClick={() => { setVerCarrito(false); setErrorPedido(null); setVerCheckout(true) }}
                     className="w-full bg-[#4db8ff] text-[#03174a] font-bold py-3.5 rounded-xl active:scale-[0.98] transition-transform">
