@@ -55,6 +55,22 @@ export default async function DashboardPescaderia() {
     }))
   }
 
+  // Traer los ítems de cada pedido (para mostrarlos y poder cargar el peso real)
+  const pedidoIds = pedidosConTel.map((p) => p.id)
+  if (pedidoIds.length > 0) {
+    const { data: items } = await admin
+      .from('items_pedido')
+      .select('id, pedido_id, producto_id, nombre, cantidad, unidad, precio_unit, subtotal, cantidad_final, subtotal_final')
+      .in('pedido_id', pedidoIds)
+
+    const porPedido = {}
+    for (const it of items || []) {
+      if (!porPedido[it.pedido_id]) porPedido[it.pedido_id] = []
+      porPedido[it.pedido_id].push(it)
+    }
+    pedidosConTel = pedidosConTel.map((p) => ({ ...p, items: porPedido[p.id] || [] }))
+  }
+
   return (
     <>
       <SplashPanel rubro={pescaderia.rubro} />

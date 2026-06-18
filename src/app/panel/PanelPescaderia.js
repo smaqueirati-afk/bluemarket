@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { cambiarEstadoPedido, guardarHorario, guardarMontoMinimoReparto } from './actions'
+import { cambiarEstadoPedido, guardarHorario, guardarMontoMinimoReparto, ajustarPesosPedido } from './actions'
 import BarraUsuario from '../../components/BarraUsuario'
 import MapaReparto from '../../components/MapaReparto'
 import { createClient } from '../../lib/supabase/client'
@@ -266,6 +266,73 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
     .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
 
   // Filtrar pedidos
+  // ── Pesaje: cargar el peso real de los ítems por kg ──
+  const [pesando, setPesando] = useState(null)        // id del pedido en modo pesaje
+  const [pesosInput, setPesosInput] = useState({})     // { itemId: stringKg }
+  const [guardandoPeso, setGuardandoPeso] = useState(false)
+  const [errorPeso, setErrorPeso] = useState(null)
+
+  // Cantidad en kg legible: "½ kg", "1¼ kg"; o el número exacto si es un peso real (0.54 kg)
+  function fmtKg(c) {
+    const n = Number(c)
+    const entero = Math.floor(n + 1e-9)
+    const frac = +(n - entero).toFixed(2)
+    const simb = { 0: '', 0.25: '¼', 0.5: '½', 0.75: '¾' }[frac]
+    if (simb !== undefined) return (entero === 0 ? simb : `${entero}${simb}`) + ' kg'
+    return n.toLocaleString('es-AR') + ' kg'
+  }
+
+  function abrirPesaje(pedido) {
+    const init = {}
+    for (const it of (pedido.items || [])) {
+      if (it.unidad === 'kg') {
+        const base = it.cantidad_final != null ? it.cantidad_final : it.cantidad
+        init[it.id] = String(base)
+      }
+    }
+    setPesosInput(init)
+    setErrorPeso(null)
+    setPesando(pedido.id)
+  }
+
+  // Total recalculado en vivo mientras el dueño carga pesos
+  function totalPesando(pedido) {
+    let t = 0
+    for (const it of (pedido.items || [])) {
+      let cant
+      if (it.unidad === 'kg') {
+        const v = pesosInput[it.id]
+        cant = (v !== undefined && v !== '') ? Number(v) : (it.cantidad_final != null ? it.cantidad_final : it.cantidad)
+      } else {
+        cant = it.cantidad
+      }
+      if (Number.isNaN(cant) || cant < 0) cant = 0
+      t += Math.round(Number(it.precio_unit) * cant)
+    }
+    t += Number(pedido.envio || 0) - Number(pedido.descuento || 0)
+    return Math.max(0, t)
+  }
+
+  async function confirmarPesos(pedido) {
+    setGuardandoPeso(true)
+    setErrorPeso(null)
+    const pesos = (pedido.items || [])
+      .filter((it) => it.unidad === 'kg')
+      .map((it) => ({ itemId: it.id, cantidadFinal: Number(pesosInput[it.id]) }))
+    const res = await ajustarPesosPedido(pedido.id, pesos)
+    setGuardandoPeso(false)
+    if (res?.error) { setErrorPeso(res.error); return }
+    setPedidos((prev) => prev.map((p) => {
+      if (p.id !== pedido.id) return p
+      const nuevosItems = (p.items || []).map((it) => {
+        const aj = res.items?.find((u) => u.id === it.id)
+        return aj ? { ...it, cantidad_final: aj.cantidad_final, subtotal_final: aj.subtotal_final } : it
+      })
+      return { ...p, items: nuevosItems, total_final: res.total_final, pesado: true }
+    }))
+    setPesando(null)
+  }
+
   const activos = pedidos.filter((p) => !['entregado', 'cancelado'].includes(p.estado))
   const finalizados = pedidos.filter((p) => ['entregado', 'cancelado'].includes(p.estado))
   const lista =
@@ -705,9 +772,83 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
                     </div>
                   )}
 
+                  {/* Productos del pedido + pesaje */}
+                  {pedido.items && pedido.items.length > 0 && (
+                    <div className="pt-3 border-t border-white/8">
+                      <p className="text-[10px] text-white/35 uppercase tracking-wide font-bold mb-2">
+                        Productos
+                        {pedido.pesado && <span className="text-[#2ecc71] normal-case"> · pesado ✓</span>}
+                      </p>
+                      <div className="space-y-1.5">
+                        {pedido.items.map((it) => {
+                          const esKg = it.unidad === 'kg'
+                          const pesandoEste = pesando === pedido.id && esKg
+                          return (
+                            <div key={it.id} className="flex items-center justify-between gap-2 text-sm">
+                              <span className="text-white/75 min-w-0 truncate">
+                                <span className="text-white/45">{esKg ? fmtKg(it.cantidad_final != null ? it.cantidad_final : it.cantidad) : `${it.cantidad}×`}</span> {it.nombre}
+                              </span>
+                              {pesandoEste ? (
+                                <div className="flex items-center gap-1 shrink-0">
+                                  <input
+                                    type="number" step="0.001" min="0" inputMode="decimal"
+                                    value={pesosInput[it.id] ?? ''}
+                                    onChange={(e) => setPesosInput((s) => ({ ...s, [it.id]: e.target.value }))}
+                                    className="w-20 bg-white/[0.06] border border-[#4db8ff]/40 rounded-lg px-2 py-1 text-white text-right text-sm outline-none focus:border-[#4db8ff]"
+                                  />
+                                  <span className="text-white/40 text-xs">kg</span>
+                                </div>
+                              ) : (
+                                <span className="text-white/55 shrink-0">{fmt(it.subtotal_final != null ? it.subtotal_final : it.subtotal)}</span>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+
+                      {!['entregado', 'cancelado'].includes(pedido.estado) && pedido.items.some((it) => it.unidad === 'kg') && (
+                        pesando === pedido.id ? (
+                          <div className="mt-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-white/55 text-sm">Total con pesos</span>
+                              <span className="text-lg font-extrabold text-[#2ecc71]">{fmt(totalPesando(pedido))}</span>
+                            </div>
+                            {errorPeso && <div className="text-[#e74c3c] text-xs mb-2">{errorPeso}</div>}
+                            <div className="flex gap-2">
+                              <button onClick={() => { setPesando(null); setErrorPeso(null) }}
+                                className="flex-1 bg-white/[0.08] border border-white/12 text-white/70 text-sm font-medium py-2 rounded-xl active:scale-95 transition-all">
+                                Cancelar
+                              </button>
+                              <button onClick={() => confirmarPesos(pedido)} disabled={guardandoPeso}
+                                className="flex-[2] bg-[#2ecc71] text-[#03351b] font-bold text-sm py-2 rounded-xl active:scale-95 transition-all disabled:opacity-60">
+                                {guardandoPeso ? 'Guardando...' : '✓ Confirmar pesos'}
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button onClick={() => abrirPesaje(pedido)}
+                            className="mt-3 w-full bg-[#4db8ff]/12 border border-[#4db8ff]/30 text-[#4db8ff] text-sm font-bold py-2 rounded-xl active:scale-95 transition-all flex items-center justify-center gap-1.5">
+                            ⚖️ {pedido.pesado ? 'Reajustar pesos' : 'Cargar peso real'}
+                          </button>
+                        )
+                      )}
+                    </div>
+                  )}
+
                   {/* Total y acciones */}
                   <div className="flex items-center justify-between gap-2 pt-3 border-t border-white/8 flex-wrap">
-                    <span className="text-lg font-extrabold text-[#4db8ff]">{fmt(pedido.total)}</span>
+                    {(() => {
+                      const hayKg = (pedido.items || []).some((it) => it.unidad === 'kg')
+                      const esFinal = pedido.pesado && pedido.total_final != null
+                      const mostrar = esFinal ? pedido.total_final : pedido.total
+                      return (
+                        <span className="flex flex-col leading-tight">
+                          <span className="text-lg font-extrabold text-[#4db8ff]">{(!pedido.pesado && hayKg) ? '~' : ''}{fmt(mostrar)}</span>
+                          {(!pedido.pesado && hayKg) && <span className="text-[10px] text-white/40">estimado</span>}
+                          {esFinal && <span className="text-[10px] text-[#2ecc71]">final · pesado</span>}
+                        </span>
+                      )
+                    })()}
 
                     {!['entregado', 'cancelado'].includes(pedido.estado) && (
                       <div className="flex gap-2 shrink-0">
