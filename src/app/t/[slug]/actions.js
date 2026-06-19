@@ -70,10 +70,15 @@ export async function crearPedido(pescaderiaId, datos, items) {
 
   const { data: porUsuario } = await admin
     .from('clientes')
-    .select('id')
+    .select('id, activo')
     .eq('pescaderia_id', pescaderiaId)
     .eq('usuario_id', user.id)
     .maybeSingle()
+
+  // Si el local dio de baja a este cliente, no puede comprar
+  if (porUsuario && porUsuario.activo === false) {
+    return { error: 'Tu cuenta en esta tienda fue dada de baja. Comunicate con el local para reactivarla.' }
+  }
 
   if (porUsuario) {
     clienteId = porUsuario.id

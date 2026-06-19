@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { crearPescaderia, asignarDueno, borrarPescaderia, reactivarUsuario, reactivarUsuarioPorEmail, toggleTrial, resetTotal } from './actions'
 import BarraUsuario from '../../../components/BarraUsuario'
 import PescaderiaDetalle from './PescaderiaDetalle'
@@ -11,6 +11,13 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
   const [mostrarForm, setMostrarForm] = useState(false)
   const [cargando, setCargando] = useState(false)
   const [mensaje, setMensaje] = useState(null)
+
+  // El mensaje (error o éxito) se borra solo a los 6s para no quedar pegado en pantalla
+  useEffect(() => {
+    if (!mensaje) return
+    const t = setTimeout(() => setMensaje(null), 6000)
+    return () => clearTimeout(t)
+  }, [mensaje])
   const [pescaderiaSeleccionada, setPescaderiaSeleccionada] = useState(null)
 
   const [asignandoId, setAsignandoId] = useState(null)
@@ -347,12 +354,15 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
 
         {/* Mensaje */}
         {mensaje && (
-          <div className={`mb-4 px-4 py-3 rounded-xl text-sm font-medium border ${
-            mensaje.tipo === 'error'
-              ? 'bg-[#e74c3c]/15 border-[#e74c3c]/30 text-[#e74c3c]'
-              : 'bg-[#2ecc71]/15 border-[#2ecc71]/30 text-[#2ecc71]'
-          }`}>
-            {mensaje.texto}
+          <div
+            onClick={() => setMensaje(null)}
+            className={`mb-4 px-4 py-3 rounded-xl text-sm font-medium border cursor-pointer flex items-start justify-between gap-3 ${
+              mensaje.tipo === 'error'
+                ? 'bg-[#e74c3c]/15 border-[#e74c3c]/30 text-[#e74c3c]'
+                : 'bg-[#2ecc71]/15 border-[#2ecc71]/30 text-[#2ecc71]'
+            }`}>
+            <span>{mensaje.texto}</span>
+            <span className="opacity-60 shrink-0 text-base leading-none">×</span>
           </div>
         )}
 
