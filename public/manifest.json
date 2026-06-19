@@ -1,7 +1,7 @@
 {
   "name": "BlueMarket",
-  "short_name": "BlueMarket",
-  "description": "Tu pescadería digital",
+  "short_name": "Blue",
+  "description": "Tu tienda digital",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
