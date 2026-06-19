@@ -1,8 +1,10 @@
 {
+  "id": "/",
   "name": "BlueMarket",
-  "short_name": "Blue",
-  "description": "Tu tienda digital",
+  "short_name": "BlueMarket",
+  "description": "Tu comercio digital",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#03174a",

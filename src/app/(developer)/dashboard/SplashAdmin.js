@@ -57,7 +57,7 @@ export default function SplashAdmin() {
         zIndex: 99999,
         backgroundColor: '#eef5ff',
         backgroundImage: `url(${src})`,
-        backgroundSize: 'cover',
+        backgroundSize: 'contain',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
         opacity: estado === 'saliendo' ? 0 : 1,

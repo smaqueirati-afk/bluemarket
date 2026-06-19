@@ -107,26 +107,9 @@ export default function LoginPage() {
         <div className="relative z-10 h-full flex flex-col items-center justify-between px-7 pt-[72px] pb-10">
 
           <div className="flex flex-col items-center gap-3.5" style={{ animation: 'bmFadeUp 0.7s ease both' }}>
-            <div className="w-20 h-20 rounded-full bg-[#4db8ff]/12 border-[1.5px] border-[#4db8ff]/50 flex items-center justify-center text-[38px]"
-                 style={{ boxShadow: '0 0 30px rgba(77,184,255,0.25)', animation: 'bmFloat 3.5s ease-in-out infinite' }}>
-              <svg viewBox="0 0 64 64" width="42" height="42" fill="none" xmlns="http://www.w3.org/2000/svg">
-                {/* Edificio del local */}
-                <rect x="10" y="28" width="44" height="28" rx="3" fill="#4db8ff" fillOpacity="0.25" stroke="#4db8ff" strokeWidth="2"/>
-                {/* Techo / marquesina */}
-                <rect x="6" y="22" width="52" height="8" rx="2" fill="#4db8ff" fillOpacity="0.5" stroke="#4db8ff" strokeWidth="1.5"/>
-                {/* Cartel del local */}
-                <rect x="14" y="26" width="36" height="6" rx="1.5" fill="#4db8ff" fillOpacity="0.7"/>
-                {/* Puerta */}
-                <rect x="27" y="42" width="10" height="14" rx="2" fill="#4db8ff" fillOpacity="0.6" stroke="#4db8ff" strokeWidth="1.5"/>
-                {/* Ventana izq */}
-                <rect x="13" y="34" width="10" height="8" rx="1.5" fill="#4db8ff" fillOpacity="0.4" stroke="#4db8ff" strokeWidth="1.5"/>
-                {/* Ventana der */}
-                <rect x="41" y="34" width="10" height="8" rx="1.5" fill="#4db8ff" fillOpacity="0.4" stroke="#4db8ff" strokeWidth="1.5"/>
-                {/* Punto wifi / digital arriba */}
-                <circle cx="32" cy="10" r="2.5" fill="#4db8ff"/>
-                <path d="M24 14.5 Q32 8 40 14.5" stroke="#4db8ff" strokeWidth="1.8" fill="none" strokeLinecap="round"/>
-                <path d="M20 18.5 Q32 10 44 18.5" stroke="#4db8ff" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeOpacity="0.5"/>
-              </svg>
+            <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center overflow-hidden"
+                 style={{ boxShadow: '0 0 34px rgba(77,184,255,0.45)', animation: 'bmFloat 3.5s ease-in-out infinite' }}>
+              <img src="/icons/bm-isotipo.png" alt="BlueMarket" width={90} height={90} className="object-contain" />
             </div>
             <div className="text-center">
               <h1 className="text-3xl font-extrabold text-white tracking-tight">
