@@ -28,6 +28,15 @@ const SIGUIENTE = {
   en_camino: 'entregado',
 }
 
+// Próximo estado según retiro/entrega: en RETIRO no hay "en camino"
+// (el cliente lo pasa a buscar), así que de "Listo" pasa directo a "Entregado".
+function siguienteEstado(pedido) {
+  if (pedido?.estado === 'listo' && pedido?.tipo_entrega !== 'delivery') {
+    return 'entregado'
+  }
+  return SIGUIENTE[pedido?.estado]
+}
+
 // Normaliza un teléfono a formato internacional para wa.me (Argentina: 549...)
 function waNumero(tel) {
   if (!tel) return null
@@ -170,7 +179,7 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
   }
 
   async function avanzar(pedido) {
-    const siguiente = SIGUIENTE[pedido.estado]
+    const siguiente = siguienteEstado(pedido)
     if (!siguiente) return
     if (siguiente === 'entregado') {
       entregar(pedido)
@@ -636,7 +645,7 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
           <div className="space-y-3">
             {lista.map((pedido, idx) => {
               const est = datosEstado(pedido.estado)
-              const siguiente = SIGUIENTE[pedido.estado]
+              const siguiente = siguienteEstado(pedido)
               const telWa = filtro === 'reparto'
                 ? waNumero(pedido.cliente_telefono || pedido.telefono || pedido.telefono_contacto)
                 : null
@@ -656,7 +665,7 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
                       <span className="text-lg font-extrabold text-white shrink-0">#{pedido.numero}</span>
                       <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg shrink-0"
                         style={{ background: `${est.color}22`, color: est.color }}>
-                        {est.emoji} {est.label}
+                        {est.emoji} {pedido.estado === 'listo' && pedido.tipo_entrega !== 'delivery' ? 'Listo para retirar' : est.label}
                       </span>
                     </div>
                     <span className="text-[11px] text-white/35 shrink-0">{fmtHora(pedido.created_at)}</span>

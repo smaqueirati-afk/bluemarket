@@ -56,7 +56,7 @@ export default function MisPedidosPanel({ pedidos, onCerrar }) {
                         className="text-[11px] font-bold px-2.5 py-1 rounded-lg"
                         style={{ background: `${est.color}22`, color: est.color }}
                       >
-                        {est.emoji} {est.label}
+                        {est.emoji} {p.estado === 'listo' && p.tipo_entrega !== 'delivery' ? 'Listo para retirar' : est.label}
                       </span>
                     </div>
                     <div className="text-[12px] text-white/50 mb-2">
@@ -99,6 +99,12 @@ export default function MisPedidosPanel({ pedidos, onCerrar }) {
                       <div className="mt-2.5 flex items-center justify-between bg-[#4db8ff]/10 border border-[#4db8ff]/25 rounded-xl px-3 py-2">
                         <span className="text-[10px] text-white/55 uppercase tracking-wide font-bold">🔑 Palabra clave</span>
                         <span className="text-sm font-extrabold text-[#4db8ff] tracking-widest">{p.palabra_clave}</span>
+                      </div>
+                    )}
+
+                    {p.estado === 'listo' && p.tipo_entrega !== 'delivery' && (
+                      <div className="mt-2 text-[12px] text-[#2ecc71] font-medium leading-snug">
+                        ✅ Está listo — pasá a buscarlo y mostrá la palabra clave.
                       </div>
                     )}
                   </div>
