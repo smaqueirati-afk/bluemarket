@@ -27,12 +27,12 @@ function resolverCarpeta(rubro, slug) {
   return 'bluemarket'
 }
 
-export default function SplashTienda({ rubro, slug }) {
+export default function SplashTienda({ rubro, slug, logoUrl }) {
   // estados: 'cargando' | 'mostrando' | 'saliendo' | 'oculto'
   const [estado, setEstado] = useState('cargando')
 
   const carpeta = resolverCarpeta(rubro, slug)
-  const src = `/splash/${carpeta}.png`
+  const src = logoUrl || `/splash/${carpeta}.png`
   const flagVisto = `bm_splash_visto_${slug || 'x'}`
 
   // Precarga la imagen del rubro. Si no existe, no muestra nada.

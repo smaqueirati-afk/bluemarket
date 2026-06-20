@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { cambiarEstadoPedido, guardarHorario, guardarMontoMinimoReparto, guardarEnvioConfig, ajustarPesosPedido } from './actions'
+import { cambiarEstadoPedido, guardarHorario, guardarMontoMinimoReparto, guardarEnvioConfig, guardarLogoTienda, ajustarPesosPedido } from './actions'
 import BarraUsuario from '../../components/BarraUsuario'
 import MapaReparto from '../../components/MapaReparto'
 import { createClient } from '../../lib/supabase/client'
@@ -81,6 +81,8 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
   const [envioModoInput, setEnvioModoInput] = useState('gratis')
   const [envioDesdeInput, setEnvioDesdeInput] = useState('')
   const [guardandoEnvio, setGuardandoEnvio] = useState(false)
+  const [subiendoLogo, setSubiendoLogo] = useState(false)
+  const logoRef = useRef(null)
   const [guardandoMin, setGuardandoMin] = useState(false)
   const [copiadoInvite, setCopiadoInvite] = useState(false)
   const [toastPedido, setToastPedido] = useState(null) // { numero, total }
@@ -284,6 +286,55 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
     setEditandoEnvio(false)
   }
 
+  function comprimirImagen(archivo) {
+    return new Promise((resolve) => {
+      const MAX = 800
+      const CALIDAD = 0.8
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const img = new Image()
+        img.onload = () => {
+          let w = img.width, h = img.height
+          if (w > MAX || h > MAX) {
+            if (w > h) { h = Math.round(h * MAX / w); w = MAX }
+            else { w = Math.round(w * MAX / h); h = MAX }
+          }
+          const canvas = document.createElement('canvas')
+          canvas.width = w; canvas.height = h
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+          canvas.toBlob((blob) => resolve(blob), 'image/jpeg', CALIDAD)
+        }
+        img.src = e.target.result
+      }
+      reader.readAsDataURL(archivo)
+    })
+  }
+
+  async function subirLogo(archivo) {
+    if (!archivo) return
+    setSubiendoLogo(true)
+    try {
+      const supabase = createClient()
+      const blob = await comprimirImagen(archivo)
+      const path = `logos/${Date.now()}.jpg`
+      const { error } = await supabase.storage.from('Productos').upload(path, blob, {
+        upsert: true,
+        contentType: 'image/jpeg',
+      })
+      if (error) { alert('Error al subir la imagen: ' + error.message); return }
+      const { data } = supabase.storage.from('Productos').getPublicUrl(path)
+      await guardarLogoTienda(data.publicUrl)
+    } finally {
+      setSubiendoLogo(false)
+    }
+  }
+
+  async function quitarLogo() {
+    setSubiendoLogo(true)
+    await guardarLogoTienda(null)
+    setSubiendoLogo(false)
+  }
+
   // Métricas del día
   const hoy = new Date().toDateString()
   const pedidosHoy = pedidos.filter((p) => new Date(p.created_at).toDateString() === hoy)
@@ -379,6 +430,7 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
   const activos = pedidos.filter((p) => !['entregado', 'cancelado'].includes(p.estado))
   const finalizados = pedidos.filter((p) => ['entregado', 'cancelado'].includes(p.estado))
   const lista =
+    filtro === 'ajustes' ? [] :
     filtro === 'reparto' ? repartoHoy :
     filtro === 'activos' ? activos : finalizados
 
@@ -606,6 +658,12 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
             }`}>
             Finalizados ({finalizados.length})
           </button>
+          <button onClick={() => setFiltro('ajustes')}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+              filtro === 'ajustes' ? 'bg-[#4db8ff] text-[#03174a]' : 'bg-white/[0.06] text-white/55 border border-white/10'
+            }`}>
+            ⚙️ Ajustes
+          </button>
         </div>
 
         {/* Pedido mínimo para envío (configuración del dueño, solo en reparto) */}
@@ -717,8 +775,35 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
           <MapaReparto pedidos={repartoHoy} ciudad={pescaderia?.localidad || pescaderia?.ciudad || ''} origen={pescaderia?.direccion || ''} />
         )}
 
+        {filtro === 'ajustes' && (
+          <div className="bg-white/[0.05] border border-white/10 rounded-2xl p-4 mb-4">
+            <div className="text-[10px] text-white/40 uppercase tracking-wide font-bold mb-3">Imagen de la tienda</div>
+            <div className="flex items-center gap-4">
+              <div className="w-20 h-20 rounded-2xl bg-white border border-white/15 overflow-hidden flex items-center justify-center shrink-0">
+                <img src={pescaderia?.logo_url || '/icons/bluemarket/icon-192.png'} alt="logo" className="w-full h-full object-contain" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[13px] text-white/55 leading-snug">Se usa como ícono y splash cuando instalan tu tienda en el celular. Si no subís ninguna, se usa la de BlueMarket.</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <button onClick={() => logoRef.current?.click()} disabled={subiendoLogo}
+                    className="bg-[#4db8ff] text-[#03174a] font-bold text-xs px-3 py-2 rounded-lg active:scale-95 transition-all disabled:opacity-60">
+                    {subiendoLogo ? 'Subiendo...' : (pescaderia?.logo_url ? 'Cambiar imagen' : 'Subir imagen')}
+                  </button>
+                  {pescaderia?.logo_url && (
+                    <button onClick={quitarLogo} disabled={subiendoLogo}
+                      className="text-white/45 hover:text-white text-xs px-2 py-2">Quitar</button>
+                  )}
+                </div>
+                <input ref={logoRef} type="file" accept="image/*" className="hidden"
+                  onChange={async (e) => { const f = e.target.files?.[0]; await subirLogo(f); e.target.value = '' }} />
+              </div>
+            </div>
+            <p className="text-[11px] text-white/35 mt-3">Tip: usá una imagen cuadrada (logo sobre fondo claro) para que se vea bien como ícono.</p>
+          </div>
+        )}
+
         {/* Lista de pedidos */}
-        {lista.length === 0 ? (
+        {filtro !== 'ajustes' && lista.length === 0 ? (
           <div className="text-center py-16 bg-white/[0.03] border border-white/8 rounded-2xl">
             <div className="text-4xl mb-3 opacity-40">{filtro === 'reparto' ? '🛵' : '📦'}</div>
             <p className="text-white/40 text-sm">

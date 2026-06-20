@@ -11,7 +11,7 @@ export async function generateMetadata({ params }) {
   const admin = createAdminClient()
   const { data: t } = await admin
     .from('pescaderias')
-    .select('nombre, rubro')
+    .select('nombre, rubro, logo_url')
     .eq('slug', slug)
     .maybeSingle()
 
@@ -21,8 +21,8 @@ export async function generateMetadata({ params }) {
     title: t?.nombre || 'BlueMarket',
     manifest: `/t/${slug}/manifest.json`,
     icons: {
-      icon: `/icons/${carpeta}/icon-192.png`,
-      apple: `/icons/${carpeta}/apple-touch-icon.png`,
+      icon: t?.logo_url || `/icons/${carpeta}/icon-192.png`,
+      apple: t?.logo_url || `/icons/${carpeta}/apple-touch-icon.png`,
     },
   }
 }
@@ -34,7 +34,7 @@ export default async function TiendaPorSlug(props) {
 
   const { data: pescaderia } = await admin
     .from('pescaderias')
-    .select('id, nombre, slug, activa, modalidad, direccion, telefono, rubro, emoji_rubro, envio_modo, envio_gratis_desde')
+    .select('id, nombre, slug, activa, modalidad, direccion, telefono, rubro, emoji_rubro, envio_modo, envio_gratis_desde, logo_url')
     .eq('slug', slug)
     .maybeSingle()
 
@@ -75,7 +75,7 @@ export default async function TiendaPorSlug(props) {
 
   return (
     <>
-      <SplashTienda rubro={pescaderia.rubro} slug={pescaderia.slug} />
+      <SplashTienda rubro={pescaderia.rubro} slug={pescaderia.slug} logoUrl={pescaderia.logo_url} />
       <TiendaCliente
         productos={productos || []}
         pescaderia={pescaderia}

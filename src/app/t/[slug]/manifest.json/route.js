@@ -8,7 +8,7 @@ export async function GET(request, { params }) {
   const admin = createAdminClient()
   const { data: tienda } = await admin
     .from('pescaderias')
-    .select('nombre, nombre_corto, rubro, emoji_rubro')
+    .select('nombre, nombre_corto, rubro, emoji_rubro, logo_url')
     .eq('slug', slug)
     .maybeSingle()
 
@@ -25,6 +25,7 @@ export async function GET(request, { params }) {
 
   // Los archivos de la carpeta pescadería tienen sufijo propio en el nombre
   const sufijo = carpeta === 'pescaderia' ? '-pescaderia' : ''
+  const logo = tienda?.logo_url || null
 
   const manifest = {
     name: nombre,
@@ -39,19 +40,19 @@ export async function GET(request, { params }) {
     orientation: 'portrait',
     icons: [
       {
-        src: `/icons/${carpeta}/icon-192${sufijo}.png`,
+        src: logo || `/icons/${carpeta}/icon-192${sufijo}.png`,
         sizes: '192x192',
         type: 'image/png',
         purpose: 'any maskable',
       },
       {
-        src: `/icons/${carpeta}/icon-512${sufijo}.png`,
+        src: logo || `/icons/${carpeta}/icon-512${sufijo}.png`,
         sizes: '512x512',
         type: 'image/png',
         purpose: 'any maskable',
       },
       {
-        src: `/icons/${carpeta}/apple-touch-icon${sufijo}.png`,
+        src: logo || `/icons/${carpeta}/apple-touch-icon${sufijo}.png`,
         sizes: '180x180',
         type: 'image/png',
       },
