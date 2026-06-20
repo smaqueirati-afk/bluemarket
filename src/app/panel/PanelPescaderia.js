@@ -37,6 +37,20 @@ function siguienteEstado(pedido) {
   return SIGUIENTE[pedido?.estado]
 }
 
+// Franjas horarias para la agenda de reparto. La franja null = "Sin preferencia".
+const FRANJAS = {
+  manana:     { orden: 1, label: 'Mañana', emoji: '☀️' },
+  tarde:      { orden: 2, label: 'Tarde', emoji: '🌇' },
+  noche:      { orden: 3, label: 'Noche', emoji: '🌙' },
+  cualquiera: { orden: 4, label: 'Sin preferencia', emoji: '🤷' },
+}
+function franjaInfo(f) {
+  return FRANJAS[f] || FRANJAS.cualquiera
+}
+function franjaOrden(f) {
+  return (FRANJAS[f] || FRANJAS.cualquiera).orden
+}
+
 // Normaliza un teléfono a formato internacional para wa.me (Argentina: 549...)
 function waNumero(tel) {
   if (!tel) return null
@@ -272,7 +286,10 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
       p.estado !== 'cancelado' &&
       new Date(p.created_at).toDateString() === hoy
     )
-    .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+    .sort((a, b) =>
+      franjaOrden(a.franja) - franjaOrden(b.franja) ||
+      new Date(a.created_at) - new Date(b.created_at)
+    )
 
   // Filtrar pedidos
   // ── Pesaje: cargar el peso real de los ítems por kg ──
@@ -649,8 +666,17 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
               const telWa = filtro === 'reparto'
                 ? waNumero(pedido.cliente_telefono || pedido.telefono || pedido.telefono_contacto)
                 : null
+              const fr = franjaInfo(pedido.franja)
+              const mostrarFranja = filtro === 'reparto' && (idx === 0 || franjaInfo(lista[idx - 1].franja).label !== fr.label)
               return (
-                <div key={pedido.id}
+                <div key={pedido.id}>
+                  {mostrarFranja && (
+                    <div className="flex items-center gap-2 mt-4 mb-2 first:mt-0">
+                      <span className="text-base">{fr.emoji}</span>
+                      <span className="text-sm font-bold text-white/80 uppercase tracking-wide">{fr.label}</span>
+                    </div>
+                  )}
+                <div
                   className="bg-white/[0.06] border border-white/10 rounded-2xl p-4 backdrop-blur-sm"
                   style={{ animation: 'bmFadeUp 0.4s ease both', animationDelay: `${idx * 0.05}s` }}>
 
@@ -888,6 +914,7 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
                     )}
                   </div>
 
+                </div>
                 </div>
               )
             })}

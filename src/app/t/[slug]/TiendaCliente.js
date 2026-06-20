@@ -452,7 +452,7 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
                   <button
                     onClick={() => { setVerCarrito(false); setErrorPedido(null); setVerCheckout(true) }}
                     className="w-full bg-[#4db8ff] text-[#03174a] font-extrabold text-lg py-4 rounded-xl active:scale-[0.98] transition-transform">
-                    Continuar con el pedido
+                    Finalizar compra
                   </button>
                 </div>
               )}

@@ -37,11 +37,47 @@ export default async function DashboardDeveloper() {
     }
   })
 
+  // Métricas por tienda, para mostrarlas en cada tarjeta sin abrir el detalle
+  const { data: pedidosAll } = await admin
+    .from('pedidos')
+    .select('pescaderia_id, total, created_at')
+
+  const { data: clientesAll } = await admin
+    .from('clientes')
+    .select('pescaderia_id, usuario_id, email')
+
+  const duenoIds = new Set((duenos || []).map((d) => d.id))
+  const duenoEmails = new Set((duenos || []).map((d) => (d.email || '').toLowerCase()))
+  const ahora = new Date()
+
+  const metricasPorPescaderia = {}
+  for (const p of (pescaderias || [])) {
+    const ped = (pedidosAll || []).filter((x) => x.pescaderia_id === p.id)
+    const cli = (clientesAll || []).filter(
+      (c) =>
+        c.pescaderia_id === p.id &&
+        !duenoIds.has(c.usuario_id) &&
+        !duenoEmails.has((c.email || '').toLowerCase())
+    )
+    const totalFacturado = ped.reduce((acc, x) => acc + Number(x.total || 0), 0)
+    const pedidosMes = ped.filter((x) => {
+      const f = new Date(x.created_at)
+      return f.getMonth() === ahora.getMonth() && f.getFullYear() === ahora.getFullYear()
+    }).length
+    metricasPorPescaderia[p.id] = {
+      totalClientes: cli.length,
+      totalPedidos: ped.length,
+      pedidosMes,
+      totalFacturado,
+    }
+  }
+
   const pescaderiasConDueno = (pescaderias || []).map((p) => ({
     ...p,
     dueno_nombre: duenoPorPescaderia[p.id]?.nombre || null,
     dueno_email: duenoPorPescaderia[p.id]?.email || null,
     dueno_auth_id: duenoPorPescaderia[p.id]?.id || null,
+    metricas: metricasPorPescaderia[p.id] || null,
   }))
 
   const { data: catalogo } = await admin

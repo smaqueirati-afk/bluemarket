@@ -76,7 +76,23 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
         <h1 className="text-lg font-extrabold text-white">Confirmar pedido</h1>
       </div>
 
-      {/* Contenido scrolleable */}
+      {/* Login primero: si no inició sesión, ve solo esto */}
+      {necesitaLogin && (
+        <div className="flex-1 flex items-center justify-center px-6">
+          <div className="w-full max-w-sm px-5 py-7 rounded-2xl bg-[#4db8ff]/10 border border-[#4db8ff]/30 text-center" style={{ animation: 'bmFadeUp 0.3s ease both' }}>
+            <div className="text-4xl mb-3">🔑</div>
+            <p className="text-lg text-white font-bold mb-1.5">Iniciá sesión para confirmar</p>
+            <p className="text-sm text-white/55 mb-5 leading-snug">Necesitamos saber quién sos para enviarte el pedido. Tu carrito se mantiene.</p>
+            <button onClick={onLogin}
+              className="w-full bg-white text-[#03174a] font-extrabold text-base py-3.5 rounded-xl active:scale-[0.98] transition-transform">
+              Continuar con Google
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Contenido scrolleable (solo cuando ya inició sesión) */}
+      {!necesitaLogin && (
       <div className="flex-1 overflow-y-auto px-4 py-4 bm-no-scrollbar space-y-5">
 
         {/* ENTREGA */}
@@ -289,19 +305,8 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
           </div>
         )}
 
-        {necesitaLogin && (
-          <div className="px-4 py-4 rounded-xl bg-[#4db8ff]/10 border border-[#4db8ff]/30 text-center">
-            <div className="text-2xl mb-2">🔑</div>
-            <p className="text-sm text-white font-semibold mb-1">Iniciá sesión para confirmar</p>
-            <p className="text-[12px] text-white/55 mb-3">Necesitamos saber quién sos para enviarte el pedido. Tu carrito se mantiene.</p>
-            <button onClick={onLogin}
-              className="w-full bg-white text-[#03174a] font-bold py-3 rounded-xl active:scale-[0.98] transition-transform flex items-center justify-center gap-2">
-              <span>Continuar con Google</span>
-            </button>
-          </div>
-        )}
-
       </div>
+      )}
 
       {/* Footer fijo */}
       {!necesitaLogin && (

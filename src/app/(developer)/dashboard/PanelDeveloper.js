@@ -555,6 +555,23 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
                     </div>
                   </div>
 
+                  {/* Métricas de la tienda (sin entrar al detalle) */}
+                  {p.metricas && (
+                    <div className="grid grid-cols-4 gap-2 mt-3">
+                      {[
+                        { label: 'Clientes', valor: p.metricas.totalClientes, color: '#4db8ff' },
+                        { label: 'Pedidos', valor: p.metricas.totalPedidos, color: '#2ecc71' },
+                        { label: 'Este mes', valor: p.metricas.pedidosMes, color: '#f39c12' },
+                        { label: 'Facturado', valor: '$' + Number(p.metricas.totalFacturado || 0).toLocaleString('es-AR'), color: '#9b59b6' },
+                      ].map((m) => (
+                        <div key={m.label} className="bg-white/[0.04] border border-white/8 rounded-xl px-2 py-2 text-center">
+                          <div className="text-[9px] text-white/40 uppercase tracking-wide font-bold leading-none mb-1">{m.label}</div>
+                          <div className="text-sm font-extrabold truncate" style={{ color: m.color }}>{m.valor}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   {/* Trial */}
                   <div className="mt-3 pt-3 border-t border-white/8 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2.5">
