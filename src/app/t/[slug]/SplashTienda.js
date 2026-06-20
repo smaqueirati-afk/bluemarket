@@ -8,7 +8,7 @@ export default function SplashTienda({ rubro }) {
   // estados: 'cargando' | 'mostrando' | 'saliendo' | 'oculto'
   const [estado, setEstado] = useState('cargando')
 
-  const carpeta = rubro === 'quesería' ? 'queseria' : 'pescaderia'
+  const carpeta = rubro === 'quesería' ? 'queseria' : rubro === 'pescadería' ? 'pescaderia' : 'bluemarket'
   const src = `/splash/${carpeta}.png`
 
   // Precarga la imagen del rubro. Si no existe, no muestra nada.

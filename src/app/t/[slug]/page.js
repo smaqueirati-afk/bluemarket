@@ -15,7 +15,7 @@ export async function generateMetadata({ params }) {
     .eq('slug', slug)
     .maybeSingle()
 
-  const carpeta = t?.rubro === 'quesería' ? 'queseria' : 'pescaderia'
+  const carpeta = t?.rubro === 'quesería' ? 'queseria' : t?.rubro === 'pescadería' ? 'pescaderia' : 'bluemarket'
 
   return {
     title: t?.nombre || 'BlueMarket',

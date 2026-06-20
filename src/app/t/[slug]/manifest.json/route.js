@@ -18,7 +18,7 @@ export async function GET(request, { params }) {
   const nombreCorto = tienda?.nombre_corto || nombre
 
   // Mapeo rubro → carpeta de íconos
-  const carpeta = rubro === 'quesería' ? 'queseria' : 'pescaderia'
+  const carpeta = rubro === 'quesería' ? 'queseria' : rubro === 'pescadería' ? 'pescaderia' : 'bluemarket'
 
   const manifest = {
     name: nombre,
