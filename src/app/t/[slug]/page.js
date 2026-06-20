@@ -75,7 +75,7 @@ export default async function TiendaPorSlug(props) {
 
   return (
     <>
-      <SplashTienda rubro={pescaderia.rubro} />
+      <SplashTienda slug={pescaderia.slug} />
       <TiendaCliente
         productos={productos || []}
         pescaderia={pescaderia}

@@ -2,13 +2,21 @@
 
 import { useState, useEffect } from 'react'
 
-// Splash de la tienda: muestra el logo del rubro sobre fondo negro al abrir,
+// Splash de la tienda: muestra el logo sobre fondo blanco al abrir,
 // y se desvanece solo. Se muestra una vez por sesión. Se puede saltear con un tap.
-export default function SplashTienda({ rubro }) {
+//
+// Por defecto, toda tienda nueva usa el splash genérico de BlueMarket.
+// Excepciones puntuales (tiendas con splash propio) se agregan acá por slug.
+const SPLASH_POR_SLUG = {
+  'pescaderia-loma-verde': 'pescaderia',
+  // 'otro-slug': 'queseria',
+}
+
+export default function SplashTienda({ slug }) {
   // estados: 'cargando' | 'mostrando' | 'saliendo' | 'oculto'
   const [estado, setEstado] = useState('cargando')
 
-  const carpeta = rubro === 'quesería' ? 'queseria' : rubro === 'pescadería' ? 'pescaderia' : 'bluemarket'
+  const carpeta = SPLASH_POR_SLUG[slug] || 'bluemarket'
   const src = `/splash/${carpeta}.png`
 
   // Precarga la imagen del rubro. Si no existe, no muestra nada.
