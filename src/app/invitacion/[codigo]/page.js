@@ -26,14 +26,13 @@ export default async function InvitacionPage({ params }) {
     const nombre = formData.get('nombre')?.toString().trim()
     const telefono = formData.get('telefono')?.toString().trim()
     const modalidad = formData.get('modalidad')?.toString() || 'local_reparto'
-    const rubro = formData.get('rubro')?.toString() || 'pescadería'
-    const emojiRubro = formData.get('emoji_' + rubro)?.toString() || '🛒'
+    const rubro = formData.get('rubro')?.toString().trim() || 'Comercio'
 
     if (nombre) {
       const ck = await cookies()
       ck.set(
         'bm_alta',
-        encodeURIComponent(JSON.stringify({ nombre, telefono, modalidad, rubro, emojiRubro, invitadoPor: codigo })),
+        encodeURIComponent(JSON.stringify({ nombre, telefono, modalidad, rubro, invitadoPor: codigo })),
         { httpOnly: true, maxAge: 60 * 30, path: '/', sameSite: 'lax' }
       )
     }
@@ -84,27 +83,15 @@ export default async function InvitacionPage({ params }) {
           </div>
 
           <div>
-            <label className="block text-[11px] uppercase tracking-wide text-white/45 font-bold mb-2">
+            <label className="block text-[11px] uppercase tracking-wide text-white/45 font-bold mb-1.5">
               Rubro
             </label>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { rubro: 'pescadería', emoji: '🐟' },
-                { rubro: 'quesería',   emoji: '🧀' },
-                { rubro: 'carnicería', emoji: '🥩' },
-                { rubro: 'verdulería', emoji: '🥦' },
-                { rubro: 'panadería',  emoji: '🥖' },
-                { rubro: 'almacén',    emoji: '🛒' },
-                { rubro: 'rotisería',  emoji: '🍗' },
-                { rubro: 'otro',       emoji: '📦' },
-              ].map((r) => (
-                <label key={r.rubro} className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 cursor-pointer has-[:checked]:border-[#4db8ff] has-[:checked]:bg-[#4db8ff]/10 transition-all">
-                  <input type="radio" name="rubro" value={r.rubro} defaultChecked={r.rubro === 'pescadería'} className="accent-[#4db8ff]" />
-                  <span className="text-sm">{r.emoji} {r.rubro.charAt(0).toUpperCase() + r.rubro.slice(1)}</span>
-                  <input type="hidden" name={`emoji_${r.rubro}`} value={r.emoji} />
-                </label>
-              ))}
-            </div>
+            <input
+              name="rubro"
+              required
+              placeholder="Ej: Pescadería, Vivero, Dietética..."
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-[#4db8ff]"
+            />
           </div>
 
           <div>
