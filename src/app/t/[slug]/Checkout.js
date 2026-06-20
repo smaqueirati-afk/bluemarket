@@ -3,7 +3,7 @@
 import { useState } from 'react'
 
 // Pantalla de checkout. Recibe el carrito y una función para volver/confirmar.
-export default function Checkout({ carrito, onVolver, onConfirmar, cargando, errorExterno, ccHabilitada, necesitaLogin, onLogin, modalidad, soloDelivery, retorno, envioModo, envioGratisDesde }) {
+export default function Checkout({ carrito, onVolver, onConfirmar, cargando, errorExterno, ccHabilitada, necesitaLogin, onLogin, modalidad, soloDelivery, retorno, envioModo, envioGratisDesde, mpActivo }) {
   const puedeEnvio = modalidad !== 'solo_local'
   const puedeRetiro = modalidad !== 'solo_reparto' && !soloDelivery
   const [entrega, setEntrega] = useState(puedeEnvio ? 'envio' : 'retiro')
@@ -234,6 +234,18 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
               <span className="text-2xl">🏦</span>
               <span className="text-base font-bold text-white">Transferencia</span>
             </button>
+            {mpActivo && (
+              <button onClick={() => setPago('mercadopago')}
+                className={`w-full p-3.5 rounded-2xl border flex items-center gap-3 transition-all ${
+                  pago === 'mercadopago' ? 'bg-[#009ee3]/20 border-[#009ee3]' : 'bg-white/[0.05] border-white/10'
+                }`}>
+                <span className="text-2xl">💳</span>
+                <div className="text-left">
+                  <span className="text-base font-bold text-white block">Mercado Pago</span>
+                  <span className="text-[10px] text-white/45">Pagás online ahora, con tarjeta o dinero en cuenta</span>
+                </div>
+              </button>
+            )}
             {ccHabilitada && (
               <button onClick={() => setPago('cuenta_corriente')}
                 className={`w-full p-3.5 rounded-2xl border flex items-center gap-3 transition-all ${
@@ -346,7 +358,7 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
             onClick={confirmar}
             disabled={cargando}
             className="w-full bg-[#4db8ff] text-[#03174a] font-extrabold text-lg py-4 rounded-xl active:scale-[0.98] transition-transform disabled:opacity-60">
-            {cargando ? 'Confirmando...' : `Confirmar pedido · ${hayPorPeso ? '~' : ''}${fmt(totalFinal)}`}
+            {cargando ? 'Confirmando...' : (pago === 'mercadopago' ? `Pagar con Mercado Pago · ${hayPorPeso ? '~' : ''}${fmt(totalFinal)}` : `Confirmar pedido · ${hayPorPeso ? '~' : ''}${fmt(totalFinal)}`)}
           </button>
         </div>
       )}

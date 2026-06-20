@@ -46,11 +46,21 @@ export default async function DashboardDeveloper() {
     .from('clientes')
     .select('pescaderia_id, usuario_id, email')
 
+  const { data: productosAll } = await admin
+    .from('productos')
+    .select('pescaderia_id')
+
   const duenoIds = new Set((duenos || []).map((d) => d.id))
   const duenoEmails = new Set((duenos || []).map((d) => (d.email || '').toLowerCase()))
   const ahora = new Date()
+  const MS_30D = 30 * 24 * 60 * 60 * 1000
+  const productosPorPescaderia = {}
+  for (const pr of (productosAll || [])) {
+    productosPorPescaderia[pr.pescaderia_id] = (productosPorPescaderia[pr.pescaderia_id] || 0) + 1
+  }
 
   const metricasPorPescaderia = {}
+  const alertasPorPescaderia = {}
   for (const p of (pescaderias || [])) {
     const ped = (pedidosAll || []).filter((x) => x.pescaderia_id === p.id)
     const cli = (clientesAll || []).filter(
@@ -70,6 +80,19 @@ export default async function DashboardDeveloper() {
       pedidosMes,
       totalFacturado,
     }
+
+    // Alertas de datos (diagnóstico rápido, sin logs)
+    const alertas = []
+    if (!duenoPorPescaderia[p.id]) alertas.push('Sin dueño')
+    if (!(productosPorPescaderia[p.id] > 0)) alertas.push('Sin productos')
+    if (p.plan === 'trial' && p.trial_hasta && new Date(p.trial_hasta) < ahora) alertas.push('Trial vencido')
+    if (ped.length === 0) {
+      alertas.push('Sin pedidos')
+    } else {
+      const ultimo = ped.reduce((max, x) => { const d = new Date(x.created_at); return d > max ? d : max }, new Date(0))
+      if (ahora - ultimo > MS_30D) alertas.push('Sin pedidos hace +30 días')
+    }
+    alertasPorPescaderia[p.id] = alertas
   }
 
   const pescaderiasConDueno = (pescaderias || []).map((p) => ({
@@ -78,6 +101,7 @@ export default async function DashboardDeveloper() {
     dueno_email: duenoPorPescaderia[p.id]?.email || null,
     dueno_auth_id: duenoPorPescaderia[p.id]?.id || null,
     metricas: metricasPorPescaderia[p.id] || null,
+    alertas: alertasPorPescaderia[p.id] || [],
   }))
 
   const { data: catalogo } = await admin

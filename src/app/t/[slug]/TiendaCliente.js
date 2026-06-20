@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Checkout from './Checkout'
-import { crearPedido, misPedidos } from './actions'
+import { crearPedido, crearPreferenciaMP, misPedidos } from './actions'
 import BarraUsuario from '../../../components/BarraUsuario'
 import { createClient } from '../../../lib/supabase/client'
 
@@ -472,6 +472,7 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
             modalidad={pescaderia?.modalidad}
             envioModo={pescaderia?.envio_modo}
             envioGratisDesde={pescaderia?.envio_gratis_desde}
+            mpActivo={pescaderia?.mp_activo}
             retorno={retorno}
             necesitaLogin={!usuarioId}
             onLogin={async () => {
@@ -496,6 +497,17 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
                 const resultado = await crearPedido(pescaderiaId, datos, carrito)
                 if (resultado?.error) {
                   setErrorPedido(resultado.error)
+                  return
+                }
+                // Si paga con Mercado Pago, ir a pagar antes de mostrar la confirmación
+                if (datos.pago === 'mercadopago') {
+                  const pref = await crearPreferenciaMP(resultado.pedidoId)
+                  if (pref?.init_point) {
+                    setCarrito([])
+                    window.location.href = pref.init_point
+                    return
+                  }
+                  setErrorPedido(pref?.error || 'No se pudo iniciar el pago. El pedido quedó pendiente; coordiná con el local.')
                   return
                 }
                 setVerCheckout(false)

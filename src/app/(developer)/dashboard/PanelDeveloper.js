@@ -538,6 +538,14 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <button
+                        onClick={() => window.open(`/t/${p.slug}`, '_blank')}
+                        title="Abrir tienda pública"
+                        className="h-11 px-3 rounded-xl bg-white/[0.06] border border-white/10 flex items-center gap-1.5 text-xs font-semibold text-white/60 hover:text-[#2ecc71] hover:border-[#2ecc71]/40 transition-colors active:scale-90"
+                      >
+                        <span>🛒</span>
+                        <span>Abrir</span>
+                      </button>
+                      <button
                         onClick={() => { setPescaderiaSeleccionada(p); setMensaje(null) }}
                         title="Ver detalle"
                         className="h-11 px-3 rounded-xl bg-white/[0.06] border border-white/10 flex items-center gap-1.5 text-xs font-semibold text-white/60 hover:text-[#4db8ff] hover:border-[#4db8ff]/40 transition-colors active:scale-90"
@@ -568,6 +576,17 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
                           <div className="text-[9px] text-white/40 uppercase tracking-wide font-bold leading-none mb-1">{m.label}</div>
                           <div className="text-sm font-extrabold truncate" style={{ color: m.color }}>{m.valor}</div>
                         </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Alertas de datos (diagnóstico rápido) */}
+                  {p.alertas && p.alertas.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-3">
+                      {p.alertas.map((a) => (
+                        <span key={a} className="text-[10px] font-bold px-2 py-1 rounded-lg bg-[#e74c3c]/15 text-[#e74c3c] border border-[#e74c3c]/25">
+                          ⚠️ {a}
+                        </span>
                       ))}
                     </div>
                   )}

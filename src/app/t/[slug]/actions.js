@@ -1,5 +1,6 @@
 'use server'
 
+import { headers } from 'next/headers'
 import { createClient } from '../../../lib/supabase/server'
 import { createAdminClient } from '../../../lib/supabase/admin'
 import { acumularPedido, retornoDisponible, redimirCiclo } from '../../../lib/fidelizacion'
@@ -135,6 +136,7 @@ export async function crearPedido(pescaderiaId, datos, items) {
       franja: datos.franja || null,
       metodo_pago: datos.pago,
       pagado: false,
+      pago_estado: datos.pago === 'mercadopago' ? 'pendiente' : 'no_aplica',
       subtotal,
       envio,
       descuento: descuentoRetorno,
@@ -213,6 +215,85 @@ export async function crearPedido(pescaderiaId, datos, items) {
   } catch (e) { /* ignorar */ }
 
   return { ok: true, numero: pedido.numero, pedidoId: pedido.id, palabraClave: pedido.palabra_clave, descuentoRetorno, logroNivel }
+}
+
+
+// ── Crea la preferencia de pago en Mercado Pago y devuelve el init_point ──
+export async function crearPreferenciaMP(pedidoId) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Tenés que iniciar sesión' }
+
+  const admin = createAdminClient()
+
+  const { data: pedido } = await admin
+    .from('pedidos')
+    .select('id, numero, total, pescaderia_id, usuario_id, metodo_pago')
+    .eq('id', pedidoId)
+    .single()
+
+  if (!pedido) return { error: 'No se encontró el pedido' }
+  if (pedido.usuario_id !== user.id) return { error: 'No autorizado' }
+  if (pedido.metodo_pago !== 'mercadopago') return { error: 'Este pedido no es con Mercado Pago' }
+
+  const { data: tienda } = await admin
+    .from('pescaderias')
+    .select('slug, nombre, mp_access_token, mp_activo')
+    .eq('id', pedido.pescaderia_id)
+    .single()
+
+  if (!tienda?.mp_activo || !tienda?.mp_access_token) {
+    return { error: 'La tienda no tiene Mercado Pago activo' }
+  }
+
+  const h = await headers()
+  const host = h.get('host')
+  const proto = (host && host.includes('localhost')) ? 'http' : 'https'
+  const base = `${proto}://${host}`
+
+  const pref = {
+    items: [
+      {
+        id: String(pedido.id),
+        title: `${tienda.nombre} - Pedido #${pedido.numero}`,
+        quantity: 1,
+        currency_id: 'ARS',
+        unit_price: Number(pedido.total) || 0,
+      },
+    ],
+    external_reference: String(pedido.id),
+    back_urls: {
+      success: `${base}/t/${tienda.slug}?pago=ok`,
+      failure: `${base}/t/${tienda.slug}?pago=error`,
+      pending: `${base}/t/${tienda.slug}?pago=pendiente`,
+    },
+    auto_return: 'approved',
+    notification_url: `${base}/api/mp/webhook?tienda=${pedido.pescaderia_id}`,
+  }
+
+  let data
+  try {
+    const res = await fetch('https://api.mercadopago.com/checkout/preferences', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${tienda.mp_access_token}`,
+      },
+      body: JSON.stringify(pref),
+    })
+    data = await res.json()
+    if (!res.ok) {
+      return { error: data?.message || 'Mercado Pago rechazó la creación del pago' }
+    }
+  } catch (e) {
+    return { error: 'No se pudo conectar con Mercado Pago. Probá de nuevo.' }
+  }
+
+  if (data?.id) {
+    await admin.from('pedidos').update({ mp_preference_id: data.id }).eq('id', pedido.id)
+  }
+
+  return { init_point: data.init_point || data.sandbox_init_point }
 }
 
 
