@@ -73,7 +73,7 @@ export default async function DashboardPescaderia() {
 
   return (
     <>
-      <SplashPanel rubro={pescaderia.rubro} />
+      <SplashPanel rubro={pescaderia.rubro} slug={pescaderia.slug} />
       <PanelPescaderia
         pescaderia={pescaderia}
         pedidos={pedidosConTel}
