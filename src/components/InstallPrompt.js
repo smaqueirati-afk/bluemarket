@@ -86,8 +86,8 @@ export default function InstallPrompt() {
          style={{ animation: 'bmSlideUp 0.5s ease both' }}>
       <div className="bg-[#0a3a7a]/95 border border-[#4db8ff]/40 rounded-2xl p-4 backdrop-blur-md shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
         <div className="flex items-start gap-3">
-          <div className="w-11 h-11 rounded-xl bg-[#4db8ff]/15 border border-[#4db8ff]/40 flex items-center justify-center text-2xl shrink-0">
-            🐟
+          <div className="w-11 h-11 rounded-xl bg-[#4db8ff]/15 border border-[#4db8ff]/40 flex items-center justify-center overflow-hidden shrink-0">
+            <img src="/icons/bluemarket/icon-192.png" alt="BlueMarket" className="w-full h-full object-cover" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-white font-bold text-sm">Instalá BlueMarket</div>
