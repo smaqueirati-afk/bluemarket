@@ -3,7 +3,7 @@
 import { useState } from 'react'
 
 // Pantalla de checkout. Recibe el carrito y una función para volver/confirmar.
-export default function Checkout({ carrito, onVolver, onConfirmar, cargando, errorExterno, ccHabilitada, necesitaLogin, onLogin, modalidad, soloDelivery, retorno }) {
+export default function Checkout({ carrito, onVolver, onConfirmar, cargando, errorExterno, ccHabilitada, necesitaLogin, onLogin, modalidad, soloDelivery, retorno, envioModo, envioGratisDesde }) {
   const puedeEnvio = modalidad !== 'solo_local'
   const puedeRetiro = modalidad !== 'solo_reparto' && !soloDelivery
   const [entrega, setEntrega] = useState(puedeEnvio ? 'envio' : 'retiro')
@@ -41,6 +41,28 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
   const aplicaRetorno = hayRetorno && (ret.maxTier || usarRetorno)
   const descuentoRetorno = aplicaRetorno ? Math.min(Number(ret.disponible), totalPrecio) : 0
   const totalFinal = totalPrecio - descuentoRetorno
+
+  // ── Envío: no se cobra un número fijo; o es gratis o se coordina ──
+  const envModo = envioModo || 'gratis'
+  const envDesde = Number(envioGratisDesde) || 0
+  const esEnvio = soloDelivery || entrega === 'envio'
+  let envioTexto = 'Gratis'
+  let envioColor = '#2ecc71'
+  let envioNota = null
+  if (envModo === 'gratis_desde') {
+    if (envDesde > 0 && totalPrecio >= envDesde) {
+      envioTexto = '¡Gratis! 🎉'
+    } else {
+      envioTexto = 'A coordinar'
+      envioColor = '#f39c12'
+      const falta = envDesde - totalPrecio
+      if (falta > 0) envioNota = `Comprando ${fmt(falta)} más, tu envío es gratis 🎉`
+    }
+  } else if (envModo === 'coordinar') {
+    envioTexto = 'A coordinar'
+    envioColor = '#f39c12'
+    envioNota = 'El costo del envío lo coordinás con el local por WhatsApp.'
+  }
 
   function confirmar() {
     setError(null)
@@ -286,10 +308,19 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
                 <span className="text-[#2ecc71] font-semibold">−{fmt(descuentoRetorno)}</span>
               </div>
             )}
+            {esEnvio && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-white/70">🚚 Envío</span>
+                <span className="font-bold" style={{ color: envioColor }}>{envioTexto}</span>
+              </div>
+            )}
             <div className="border-t border-white/8 pt-2.5 flex items-center justify-between">
               <span className="text-white/70 text-base">{hayPorPeso ? 'Total estimado' : 'Total'}</span>
               <span className="text-2xl font-extrabold text-[#4db8ff]">{hayPorPeso ? '~' : ''}{fmt(totalFinal)}</span>
             </div>
+            {esEnvio && envioNota && (
+              <p className="text-[12px] leading-snug pt-1" style={{ color: '#f39c12' }}>{envioNota}</p>
+            )}
             {hayPorPeso && (
               <p className="text-[13px] text-white/55 leading-snug flex items-start gap-1.5 pt-1">
                 <span className="shrink-0">⚖️</span>

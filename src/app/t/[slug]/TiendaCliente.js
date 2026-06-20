@@ -470,6 +470,8 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
             soloDelivery={soloDelivery}
             ccHabilitada={ccHabilitada}
             modalidad={pescaderia?.modalidad}
+            envioModo={pescaderia?.envio_modo}
+            envioGratisDesde={pescaderia?.envio_gratis_desde}
             retorno={retorno}
             necesitaLogin={!usuarioId}
             onLogin={async () => {

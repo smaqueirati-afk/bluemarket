@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { cambiarEstadoPedido, guardarHorario, guardarMontoMinimoReparto, ajustarPesosPedido } from './actions'
+import { cambiarEstadoPedido, guardarHorario, guardarMontoMinimoReparto, guardarEnvioConfig, ajustarPesosPedido } from './actions'
 import BarraUsuario from '../../components/BarraUsuario'
 import MapaReparto from '../../components/MapaReparto'
 import { createClient } from '../../lib/supabase/client'
@@ -77,6 +77,10 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
   const [horarioInput, setHorarioInput] = useState('')
   const [editandoMinimo, setEditandoMinimo] = useState(false)
   const [minimoInput, setMinimoInput] = useState('')
+  const [editandoEnvio, setEditandoEnvio] = useState(false)
+  const [envioModoInput, setEnvioModoInput] = useState('gratis')
+  const [envioDesdeInput, setEnvioDesdeInput] = useState('')
+  const [guardandoEnvio, setGuardandoEnvio] = useState(false)
   const [guardandoMin, setGuardandoMin] = useState(false)
   const [copiadoInvite, setCopiadoInvite] = useState(false)
   const [toastPedido, setToastPedido] = useState(null) // { numero, total }
@@ -265,6 +269,19 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
     await guardarMontoMinimoReparto(Number(minimoInput) || 0)
     setGuardandoMin(false)
     setEditandoMinimo(false)
+  }
+
+  function abrirEnvio() {
+    setEnvioModoInput(pescaderia?.envio_modo || 'gratis')
+    setEnvioDesdeInput(pescaderia?.envio_gratis_desde ? String(pescaderia.envio_gratis_desde) : '')
+    setEditandoEnvio(true)
+  }
+
+  async function guardarEnvio() {
+    setGuardandoEnvio(true)
+    await guardarEnvioConfig(envioModoInput, Number(envioDesdeInput) || 0)
+    setGuardandoEnvio(false)
+    setEditandoEnvio(false)
   }
 
   // Métricas del día
@@ -638,6 +655,60 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
               )}
             </div>
             <p className="text-[11px] text-white/35 mt-2">Los clientes no van a poder pedir envío por menos de este monto. Ponelo en 0 para no exigir mínimo.</p>
+          </div>
+        )}
+
+        {filtro === 'reparto' && (
+          <div className="bg-white/[0.05] border border-white/10 rounded-2xl p-4 mb-4">
+            <div className="text-[10px] text-white/40 uppercase tracking-wide font-bold mb-2">Costo de envío</div>
+            {editandoEnvio ? (
+              <div>
+                <div className="grid grid-cols-1 gap-2">
+                  {[
+                    { id: 'gratis', emoji: '🆓', label: 'Gratis siempre', desc: 'El envío nunca tiene costo.' },
+                    { id: 'gratis_desde', emoji: '🎯', label: 'Gratis a partir de un monto', desc: 'Por debajo de ese monto, a coordinar.' },
+                    { id: 'coordinar', emoji: '🤝', label: 'A coordinar con el cliente', desc: 'El costo lo arreglás por WhatsApp.' },
+                  ].map((m) => (
+                    <button key={m.id} onClick={() => setEnvioModoInput(m.id)}
+                      className={`text-left p-3 rounded-xl border transition-all ${envioModoInput === m.id ? 'bg-[#4db8ff]/15 border-[#4db8ff]' : 'bg-white/[0.04] border-white/10'}`}>
+                      <div className="text-sm font-bold text-white">{m.emoji} {m.label}</div>
+                      <div className="text-[11px] text-white/45 mt-0.5">{m.desc}</div>
+                    </button>
+                  ))}
+                </div>
+                {envioModoInput === 'gratis_desde' && (
+                  <div className="flex items-center gap-2 mt-3">
+                    <span className="text-[12px] text-white/55">Gratis desde</span>
+                    <div className="flex items-center bg-white/[0.06] border border-white/15 rounded-lg px-2 focus-within:border-[#4db8ff]/60">
+                      <span className="text-white/40 text-sm">$</span>
+                      <input type="number" inputMode="numeric" min="0" value={envioDesdeInput}
+                        onChange={(e) => setEnvioDesdeInput(e.target.value)} placeholder="0"
+                        className="w-28 bg-transparent py-2 px-1 text-sm text-white focus:outline-none" />
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 mt-3">
+                  <button onClick={guardarEnvio} disabled={guardandoEnvio}
+                    className="bg-[#4db8ff] text-[#03174a] font-bold text-xs px-3 py-2 rounded-lg active:scale-95 transition-all disabled:opacity-60">
+                    {guardandoEnvio ? '...' : 'Guardar'}
+                  </button>
+                  <button onClick={() => setEditandoEnvio(false)} className="text-white/40 hover:text-white text-sm px-1">✕</button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-xl font-extrabold text-white">
+                  {pescaderia?.envio_modo === 'coordinar' ? '🤝 A coordinar'
+                    : pescaderia?.envio_modo === 'gratis_desde' ? `🎯 Gratis desde ${fmt(pescaderia?.envio_gratis_desde || 0)}`
+                    : '🆓 Gratis'}
+                </div>
+                <button onClick={abrirEnvio}
+                  className="bg-white/[0.08] border border-white/12 text-white text-xs font-medium px-3 py-2 rounded-lg active:scale-95 transition-all shrink-0">
+                  Editar
+                </button>
+              </div>
+            )}
+            <p className="text-[11px] text-white/35 mt-2">Nunca se le cobra un monto fijo al cliente: o el envío es gratis, o se coordina con vos.</p>
           </div>
         )}
 

@@ -110,6 +110,37 @@ export async function guardarMontoMinimoReparto(monto) {
   return { ok: true }
 }
 
+export async function guardarEnvioConfig(modo, gratisDesde) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'No autenticado' }
+
+  const { data: perfil } = await supabase
+    .from('usuarios')
+    .select('rol, pescaderia_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!perfil || perfil.rol !== 'cliente' || !perfil.pescaderia_id) {
+    return { error: 'No autorizado' }
+  }
+
+  const modos = ['gratis', 'gratis_desde', 'coordinar']
+  const modoFinal = modos.includes(modo) ? modo : 'gratis'
+  const desdeFinal = modoFinal === 'gratis_desde' ? Math.max(0, Number(gratisDesde) || 0) : null
+
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('pescaderias')
+    .update({ envio_modo: modoFinal, envio_gratis_desde: desdeFinal })
+    .eq('id', perfil.pescaderia_id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/pescaderia')
+  return { ok: true }
+}
+
 // Ajusta el pedido con los pesos reales que carga el dueño al armarlo.
 // pesos = [{ itemId, cantidadFinal }] (en kg). Recalcula subtotales, fija total_final,
 // marca pesado=true y reconcilia el saldo de cuenta corriente por la diferencia.
