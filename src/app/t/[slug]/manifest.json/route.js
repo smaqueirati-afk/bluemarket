@@ -12,13 +12,19 @@ export async function GET(request, { params }) {
     .eq('slug', slug)
     .maybeSingle()
 
-  const rubro = tienda?.rubro || 'pescadería'
+  const rubro = tienda?.rubro || 'Comercio'
   const nombre = tienda?.nombre || 'BlueMarket'
   // Etiqueta corta del ícono en el celu del cliente (cae al nombre completo si no hay)
   const nombreCorto = tienda?.nombre_corto || nombre
 
-  // Mapeo rubro → carpeta de íconos
-  const carpeta = rubro === 'quesería' ? 'queseria' : rubro === 'pescadería' ? 'pescaderia' : 'bluemarket'
+  // Mapeo rubro → carpeta de íconos (normalizado: sin tildes, sin importar mayúsculas)
+  const r = rubro.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim()
+  const esPescaderia = r.includes('pescaderia') || r.includes('pescado')
+  const esQueseria = r.includes('queseria') || r.includes('queso')
+  const carpeta = esQueseria ? 'queseria' : esPescaderia ? 'pescaderia' : 'bluemarket'
+
+  // Los archivos de la carpeta pescadería tienen sufijo propio en el nombre
+  const sufijo = carpeta === 'pescaderia' ? '-pescaderia' : ''
 
   const manifest = {
     name: nombre,
@@ -33,19 +39,19 @@ export async function GET(request, { params }) {
     orientation: 'portrait',
     icons: [
       {
-        src: `/icons/${carpeta}/icon-192.png`,
+        src: `/icons/${carpeta}/icon-192${sufijo}.png`,
         sizes: '192x192',
         type: 'image/png',
         purpose: 'any maskable',
       },
       {
-        src: `/icons/${carpeta}/icon-512.png`,
+        src: `/icons/${carpeta}/icon-512${sufijo}.png`,
         sizes: '512x512',
         type: 'image/png',
         purpose: 'any maskable',
       },
       {
-        src: `/icons/${carpeta}/apple-touch-icon.png`,
+        src: `/icons/${carpeta}/apple-touch-icon${sufijo}.png`,
         sizes: '180x180',
         type: 'image/png',
       },

@@ -33,11 +33,12 @@ export default function SplashTienda({ rubro, slug }) {
 
   const carpeta = resolverCarpeta(rubro, slug)
   const src = `/splash/${carpeta}.png`
+  const flagVisto = `bm_splash_visto_${slug || 'x'}`
 
   // Precarga la imagen del rubro. Si no existe, no muestra nada.
   useEffect(() => {
     try {
-      if (sessionStorage.getItem('bm_splash_visto')) {
+      if (sessionStorage.getItem(flagVisto)) {
         setEstado('oculto')
         return
       }
@@ -47,7 +48,7 @@ export default function SplashTienda({ rubro, slug }) {
     img.onload = () => setEstado('mostrando')
     img.onerror = () => setEstado('oculto')
     img.src = src
-  }, [src])
+  }, [src, flagVisto])
 
   // Tiempos de visibilidad y fade
   useEffect(() => {
@@ -55,10 +56,10 @@ export default function SplashTienda({ rubro, slug }) {
     const tFade = setTimeout(() => setEstado('saliendo'), 1100)
     const tFin = setTimeout(() => {
       setEstado('oculto')
-      try { sessionStorage.setItem('bm_splash_visto', '1') } catch (e) {}
+      try { sessionStorage.setItem(flagVisto, '1') } catch (e) {}
     }, 1650)
     return () => { clearTimeout(tFade); clearTimeout(tFin) }
-  }, [estado])
+  }, [estado, flagVisto])
 
   if (estado === 'oculto' || estado === 'cargando') return null
 
@@ -66,7 +67,7 @@ export default function SplashTienda({ rubro, slug }) {
     setEstado('saliendo')
     setTimeout(() => {
       setEstado('oculto')
-      try { sessionStorage.setItem('bm_splash_visto', '1') } catch (e) {}
+      try { sessionStorage.setItem(flagVisto, '1') } catch (e) {}
     }, 450)
   }
 
