@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { createAdminClient } from '../../../lib/supabase/admin'
+import RubroSelector from './RubroSelector'
 
 export default async function InvitacionPage({ params }) {
   const { codigo } = await params
@@ -82,17 +83,7 @@ export default async function InvitacionPage({ params }) {
             />
           </div>
 
-          <div>
-            <label className="block text-[11px] uppercase tracking-wide text-white/45 font-bold mb-1.5">
-              Rubro
-            </label>
-            <input
-              name="rubro"
-              required
-              placeholder="Ej: Pescadería, Vivero, Dietética..."
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-[#4db8ff]"
-            />
-          </div>
+          <RubroSelector />
 
           <div>
             <label className="block text-[11px] uppercase tracking-wide text-white/45 font-bold mb-2">
