@@ -85,7 +85,7 @@ export async function GET(request) {
                   telefono: alta.telefono || null,
                   modalidad: alta.modalidad || 'local_reparto',
                   rubro: alta.rubro || 'Comercio',
-                  emoji_rubro: '🛍️',
+                  emoji_rubro: alta.emojiRubro || '🛍️',
                   plan: 'trial',
                   activa: true,
                 })

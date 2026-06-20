@@ -28,12 +28,13 @@ export default async function InvitacionPage({ params }) {
     const telefono = formData.get('telefono')?.toString().trim()
     const modalidad = formData.get('modalidad')?.toString() || 'local_reparto'
     const rubro = formData.get('rubro')?.toString().trim() || 'Comercio'
+    const emojiRubro = formData.get('emoji_rubro')?.toString().trim() || '🛍️'
 
     if (nombre) {
       const ck = await cookies()
       ck.set(
         'bm_alta',
-        encodeURIComponent(JSON.stringify({ nombre, telefono, modalidad, rubro, invitadoPor: codigo })),
+        encodeURIComponent(JSON.stringify({ nombre, telefono, modalidad, rubro, emojiRubro, invitadoPor: codigo })),
         { httpOnly: true, maxAge: 60 * 30, path: '/', sameSite: 'lax' }
       )
     }

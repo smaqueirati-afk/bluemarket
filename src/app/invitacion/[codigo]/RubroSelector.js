@@ -69,8 +69,9 @@ export default function RubroSelector() {
         />
       )}
 
-      {/* Valor real que viaja en el form */}
+      {/* Valores reales que viajan en el form */}
       <input type="hidden" name="rubro" value={otro ? texto : seleccion} required />
+      <input type="hidden" name="emoji_rubro" value={otro ? '🛍️' : (RUBROS.find((r) => r.rubro === seleccion)?.emoji || '🛍️')} />
     </div>
   )
 }
