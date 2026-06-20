@@ -6,17 +6,32 @@ import { useState, useEffect } from 'react'
 // y se desvanece solo. Se muestra una vez por sesión. Se puede saltear con un tap.
 //
 // Por defecto, toda tienda nueva usa el splash genérico de BlueMarket.
-// Excepciones puntuales (tiendas con splash propio) se agregan acá por slug.
+// Pescaderías y queserías (cualquier tienda con ese rubro) usan su splash propio.
+// Excepciones puntuales por tienda individual se agregan acá por slug.
 const SPLASH_POR_SLUG = {
-  'pescaderia-loma-verde': 'pescaderia',
-  // 'otro-slug': 'queseria',
+  // 'algun-slug': 'pescaderia',
 }
 
-export default function SplashTienda({ slug }) {
+function normalizar(texto) {
+  return (texto || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // saca tildes
+    .trim()
+}
+
+function resolverCarpeta(rubro, slug) {
+  if (slug && SPLASH_POR_SLUG[slug]) return SPLASH_POR_SLUG[slug]
+  const r = normalizar(rubro)
+  if (r.includes('pescaderia') || r.includes('pescado')) return 'pescaderia'
+  if (r.includes('queseria') || r.includes('queso')) return 'queseria'
+  return 'bluemarket'
+}
+
+export default function SplashTienda({ rubro, slug }) {
   // estados: 'cargando' | 'mostrando' | 'saliendo' | 'oculto'
   const [estado, setEstado] = useState('cargando')
 
-  const carpeta = SPLASH_POR_SLUG[slug] || 'bluemarket'
+  const carpeta = resolverCarpeta(rubro, slug)
   const src = `/splash/${carpeta}.png`
 
   // Precarga la imagen del rubro. Si no existe, no muestra nada.
