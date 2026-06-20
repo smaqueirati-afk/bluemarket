@@ -1,21 +1,10 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { crearProducto, editarProducto, toggleDisponible, borrarProducto, importarDesdeCatalogo, getCatalogoMaster, proponerAlCatalogo } from './actions'
+import { crearProducto, editarProducto, toggleDisponible, borrarProducto, importarDesdeCatalogo, getCatalogoMaster, proponerAlCatalogo, crearCategoria, borrarCategoria } from './actions'
 import BarraUsuario from '../../../components/BarraUsuario'
 import { createClient } from '../../../lib/supabase/client'
 
-const CATEGORIAS = [
-  { id: 'lacteos',   label: 'Lácteos',    emoji: '🧀' },
-  { id: 'pescado',   label: 'Pescado',    emoji: '🐟' },
-  { id: 'mariscos',  label: 'Mariscos',   emoji: '🦐' },
-  { id: 'carnes',    label: 'Carnes',     emoji: '🥩' },
-  { id: 'fiambres',  label: 'Fiambres',   emoji: '🍖' },
-  { id: 'verduras',  label: 'Verduras',   emoji: '🥦' },
-  { id: 'panaderia', label: 'Panadería',  emoji: '🥖' },
-  { id: 'bebidas',   label: 'Bebidas',    emoji: '🧃' },
-  { id: 'otros',     label: 'Otros',      emoji: '📦' },
-]
 const UNIDADES = [
   { id: 'kg', label: 'Por kg' },
   { id: 'unidad', label: 'Por unidad' },
@@ -24,63 +13,25 @@ const UNIDADES = [
   { id: 'porcion', label: 'Por porción' },
 ]
 
-// Emoji por defecto según la categoría
-const EMOJI_POR_CATEGORIA = {
-  pescado: '🐟',
-  mariscos: '🦐',
-  moluscos: '🦪',
+const LOGO_BLUEMARKET = '/icons/bluemarket/icon-192.png'
+
+const FORM_VACIO = { nombre: '', precio: '', categoria: '', unidad: 'kg', stock: '', descripcion: '', foto_url: '' }
+
+// Placeholder de nombre por rubro (solo a modo de ejemplo en el input)
+const PLACEHOLDER_RUBRO = {
+  'pescadería': 'Merluza fresca',
+  'quesería': 'Brie 250g',
+  'carnicería': 'Asado de tira x kg',
+  'verdulería': 'Tomate redondo x kg',
+  'panadería': 'Medialunas x docena',
+  'rotisería': 'Pollo entero',
+  'almacén': 'Arroz largo fino x kg',
+}
+function placeholderNombre(rubro) {
+  return PLACEHOLDER_RUBRO[rubro] || 'Nombre del producto'
 }
 
-// Paleta de emojis para elegir (productos de pescadería)
-const EMOJIS_DISPONIBLES = [
-  '🐟', '🐠', '🐡', '🦈', '🐙', '🦑', '🦐', '🦞', '🦀',
-  '🦪', '🐚', '🍤', '🍣', '🍥', '🐳', '🐬', '🧊', '🍋',
-]
-
-// Adivina el emoji según palabras en el nombre del producto.
-// El orden importa: primero las más específicas.
-const PALABRAS_EMOJI = [
-  { palabras: ['langostino', 'camaron', 'camarón', 'gamba'], emoji: '🦐' },
-  { palabras: ['langosta', 'bogavante'], emoji: '🦞' },
-  { palabras: ['cangrejo', 'centolla'], emoji: '🦀' },
-  { palabras: ['pulpo'], emoji: '🐙' },
-  { palabras: ['calamar', 'sepia', 'anillo'], emoji: '🦑' },
-  { palabras: ['mejillon', 'mejillón', 'almeja', 'ostra', 'vieira', 'molusco'], emoji: '🦪' },
-  { palabras: ['caracol', 'cholga'], emoji: '🐚' },
-  { palabras: ['tiburon', 'tiburón', 'cazon', 'cazón'], emoji: '🦈' },
-  { palabras: ['sushi', 'roll'], emoji: '🍣' },
-  { palabras: ['rebozado', 'milanesa', 'frito', 'tempura', 'nugget'], emoji: '🍤' },
-  { palabras: ['salmon', 'salmón', 'trucha', 'atun', 'atún'], emoji: '🐟' },
-  { palabras: ['merluza', 'corvina', 'lenguado', 'brotola', 'brótola', 'pejerrey', 'dorado', 'pez', 'pescado', 'filet', 'lomo'], emoji: '🐟' },
-  { palabras: ['limon', 'limón'], emoji: '🍋' },
-  { palabras: ['hielo', 'congelado'], emoji: '🧊' },
-]
-
-function adivinarEmoji(nombre) {
-  const n = (nombre || '').toLowerCase()
-  for (const item of PALABRAS_EMOJI) {
-    if (item.palabras.some((p) => n.includes(p))) return item.emoji
-  }
-  return null // no encontró coincidencia
-}
-
-const FORM_VACIO = { nombre: '', precio: '', categoria: 'otros', unidad: 'kg', emoji: '📦', stock: '', descripcion: '', foto_url: '' }
-
-// Defaults visuales por rubro — placeholder del nombre, categoría y emoji sugerido
-const DEFAULTS_RUBRO = {
-  'pescadería': { placeholder: 'Merluza fresca',     categoria: 'pescado',   emoji: '🐟' },
-  'quesería':   { placeholder: 'Brie 250g',          categoria: 'lacteos',   emoji: '🧀' },
-  'carnicería': { placeholder: 'Asado de tira x kg', categoria: 'carnes',    emoji: '🥩' },
-  'verdulería': { placeholder: 'Tomate redondo x kg',categoria: 'verduras',  emoji: '🥦' },
-  'panadería':  { placeholder: 'Medialunas x docena',categoria: 'panaderia', emoji: '🥖' },
-  'rotisería':  { placeholder: 'Pollo entero',       categoria: 'carnes',    emoji: '🍗' },
-  'almacén':    { placeholder: 'Arroz largo fino x kg', categoria: 'otros',  emoji: '🛒' },
-}
-function defaultsRubro(rubro) {
-  return DEFAULTS_RUBRO[rubro] || { placeholder: 'Nombre del producto', categoria: 'otros', emoji: '📦' }
-}
-
-export default function GestionProductos({ productos, nombrePescaderia, rubroInicial }) {
+export default function GestionProductos({ productos, categorias: categoriasIniciales, nombrePescaderia, rubroInicial }) {
   const [form, setForm] = useState(FORM_VACIO)
   const [editandoId, setEditandoId] = useState(null)
   const [mostrarForm, setMostrarForm] = useState(false)
@@ -89,6 +40,7 @@ export default function GestionProductos({ productos, nombrePescaderia, rubroIni
   const [accionando, setAccionando] = useState(null)
   const [subiendoFoto, setSubiendoFoto] = useState(false)
   const fotoRef = useRef(null)
+  const fotoCamaraRef = useRef(null)
   const formRef = useRef(null)
   const [verCatalogo, setVerCatalogo] = useState(false)
   const [catalogo, setCatalogo] = useState([])
@@ -98,6 +50,10 @@ export default function GestionProductos({ productos, nombrePescaderia, rubroIni
   const [rubroTienda, setRubroTienda] = useState(() => rubroInicial || null)
   const [proponiendo, setProponiendo] = useState(null) // productoId que se está proponiendo
   const [msgPropuesta, setMsgPropuesta] = useState(null)
+  const [categorias, setCategorias] = useState(categoriasIniciales || [])
+  const [nuevaCategoria, setNuevaCategoria] = useState('')
+  const [creandoCategoria, setCreandoCategoria] = useState(false)
+  const [mostrarInputCategoria, setMostrarInputCategoria] = useState(false)
 
   function fmt(n) {
     return '$' + Number(n).toLocaleString('es-AR')
@@ -107,9 +63,8 @@ export default function GestionProductos({ productos, nombrePescaderia, rubroIni
     setForm({
       nombre: p.nombre || '',
       precio: p.precio || '',
-      categoria: p.categoria || defaultsRubro(rubroTienda).categoria,
+      categoria: p.categoria || '',
       unidad: p.unidad || 'kg',
-      emoji: p.emoji || '',
       stock: p.stock ?? '',
       descripcion: p.descripcion || '',
       foto_url: p.foto_url || '',
@@ -127,12 +82,37 @@ export default function GestionProductos({ productos, nombrePescaderia, rubroIni
   }
 
   function abrirNuevo() {
-    const d = defaultsRubro(rubroTienda)
-    setForm({ ...FORM_VACIO, categoria: d.categoria, emoji: d.emoji })
+    setForm({ ...FORM_VACIO, categoria: categorias[0]?.nombre || '' })
     setEditandoId(null)
     setMostrarForm(true)
     setMensaje(null)
     setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+  }
+
+  async function agregarCategoria() {
+    const nombre = nuevaCategoria.trim()
+    if (!nombre) return
+    setCreandoCategoria(true)
+    const res = await crearCategoria(nombre)
+    setCreandoCategoria(false)
+    if (res?.error) {
+      setMensaje({ tipo: 'error', texto: res.error })
+      return
+    }
+    if (res?.categoria && !categorias.some((c) => c.id === res.categoria.id)) {
+      setCategorias((prev) => [...prev, res.categoria])
+    }
+    setForm((f) => ({ ...f, categoria: res.categoria?.nombre || nombre }))
+    setNuevaCategoria('')
+    setMostrarInputCategoria(false)
+  }
+
+  async function eliminarCategoria(cat) {
+    if (!confirm(`¿Borrar la categoría "${cat.nombre}"? Los productos que la usaban quedan sin categoría.`)) return
+    const res = await borrarCategoria(cat.id)
+    if (res?.error) { setMensaje({ tipo: 'error', texto: res.error }); return }
+    setCategorias((prev) => prev.filter((c) => c.id !== cat.id))
+    if (form.categoria === cat.nombre) setForm((f) => ({ ...f, categoria: '' }))
   }
 
   async function abrirCatalogo() {
@@ -208,15 +188,9 @@ export default function GestionProductos({ productos, nombrePescaderia, rubroIni
   async function guardar() {
     setCargando(true)
     setMensaje(null)
-    let fotoUrl = form.foto_url
-    if (fotoRef.current?.files?.[0]) {
-      fotoUrl = await subirFoto(fotoRef.current.files[0])
-      if (!fotoUrl) { setCargando(false); return }
-    }
-    const formConFoto = { ...form, foto_url: fotoUrl }
     const resultado = editandoId
-      ? await editarProducto(editandoId, formConFoto)
-      : await crearProducto(formConFoto)
+      ? await editarProducto(editandoId, form)
+      : await crearProducto(form)
 
     if (resultado.error) {
       setMensaje({ tipo: 'error', texto: resultado.error })
@@ -289,19 +263,8 @@ export default function GestionProductos({ productos, nombrePescaderia, rubroIni
 
             <div>
               <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">Nombre *</label>
-              <input value={form.nombre} onChange={(e) => {
-                  const nuevoNombre = e.target.value
-                  const emojiAdivinado = adivinarEmoji(nuevoNombre)
-                  // Solo autocompleto si el emoji actual es un default (de categoría) o está vacío,
-                  // así no piso un emoji que el usuario eligió a mano de la grilla.
-                  const esDefault = !form.emoji || Object.values(EMOJI_POR_CATEGORIA).includes(form.emoji) || form._emojiAuto
-                  if (emojiAdivinado && esDefault) {
-                    setForm({ ...form, nombre: nuevoNombre, emoji: emojiAdivinado, _emojiAuto: true })
-                  } else {
-                    setForm({ ...form, nombre: nuevoNombre })
-                  }
-                }}
-                placeholder={defaultsRubro(rubroTienda).placeholder}
+              <input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+                placeholder={placeholderNombre(rubroTienda)}
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-[#4db8ff]" />
             </div>
 
@@ -312,77 +275,119 @@ export default function GestionProductos({ productos, nombrePescaderia, rubroIni
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-[#4db8ff]" />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">Categoría</label>
-                <select value={form.categoria} onChange={(e) => {
-                    const nuevaCat = e.target.value
-                    // Si el emoji actual está vacío o es el default de otra categoría, lo actualizo
-                    const esDefaultDeOtra = Object.values(EMOJI_POR_CATEGORIA).includes(form.emoji)
-                    setForm({
-                      ...form,
-                      categoria: nuevaCat,
-                      emoji: (!form.emoji || esDefaultDeOtra) ? EMOJI_POR_CATEGORIA[nuevaCat] : form.emoji,
-                    })
-                  }}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#4db8ff]">
-                  {CATEGORIAS.map((c) => <option key={c.id} value={c.id} className="bg-[#051e5c]">{c.emoji} {c.label}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">Unidad</label>
-                <select value={form.unidad} onChange={(e) => setForm({ ...form, unidad: e.target.value })}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#4db8ff]">
-                  {UNIDADES.map((u) => <option key={u.id} value={u.id} className="bg-[#051e5c]">{u.label}</option>)}
-                </select>
-              </div>
+            <div>
+              <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">Categoría</label>
+              {categorias.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {categorias.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setForm({ ...form, categoria: c.nombre })}
+                      className={`group relative flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                        form.categoria === c.nombre
+                          ? 'bg-[#4db8ff] text-[#03174a] border-[#4db8ff]'
+                          : 'bg-white/5 text-white/70 border-white/10'
+                      }`}
+                    >
+                      {c.nombre}
+                      <span
+                        onClick={(e) => { e.stopPropagation(); eliminarCategoria(c) }}
+                        className={`ml-0.5 opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity ${form.categoria === c.nombre ? 'text-[#03174a]' : 'text-white'}`}
+                      >
+                        ×
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {mostrarInputCategoria ? (
+                <div className="flex gap-2">
+                  <input
+                    autoFocus
+                    value={nuevaCategoria}
+                    onChange={(e) => setNuevaCategoria(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), agregarCategoria())}
+                    placeholder="Ej: Frutas, Verduras..."
+                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-[#4db8ff]"
+                  />
+                  <button type="button" onClick={agregarCategoria} disabled={creandoCategoria}
+                    className="bg-[#4db8ff] text-[#03174a] font-bold text-sm px-4 rounded-xl active:scale-95 disabled:opacity-60">
+                    {creandoCategoria ? '...' : 'Crear'}
+                  </button>
+                  <button type="button" onClick={() => { setMostrarInputCategoria(false); setNuevaCategoria('') }}
+                    className="bg-white/8 text-white/60 px-3 rounded-xl text-sm">
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <button type="button" onClick={() => setMostrarInputCategoria(true)}
+                  className="text-xs text-[#4db8ff] font-medium flex items-center gap-1">
+                  + Nueva categoría
+                </button>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">Unidad</label>
+              <select value={form.unidad} onChange={(e) => setForm({ ...form, unidad: e.target.value })}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#4db8ff]">
+                {UNIDADES.map((u) => <option key={u.id} value={u.id} className="bg-[#051e5c]">{u.label}</option>)}
+              </select>
             </div>
 
             <div>
               <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">Foto del producto (opcional)</label>
-              <div className="flex items-center gap-3">
-                {form.foto_url && (
-                  <img src={form.foto_url} alt="foto" className="w-14 h-14 rounded-xl object-cover border border-white/20 shrink-0" />
-                )}
-                <label className="flex-1 flex items-center gap-2 bg-white/5 border border-white/10 border-dashed rounded-xl px-3.5 py-2.5 cursor-pointer hover:bg-white/8 transition-all">
-                  <span className="text-lg">📷</span>
-                  <span className="text-sm text-white/50">{subiendoFoto ? 'Subiendo...' : form.foto_url ? 'Cambiar foto' : 'Subir foto'}</span>
-                  <input ref={fotoRef} type="file" accept="image/*" className="hidden" disabled={subiendoFoto} />
-                </label>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-14 h-14 rounded-xl border border-white/20 shrink-0 overflow-hidden bg-white/5 flex items-center justify-center">
+                  <img src={form.foto_url || LOGO_BLUEMARKET} alt="foto" className={form.foto_url ? 'w-full h-full object-cover' : 'w-8 h-8 opacity-40'} />
+                </div>
                 {form.foto_url && (
                   <button type="button" onClick={() => setForm({ ...form, foto_url: '' })}
                     className="text-[#e74c3c] text-xs px-2 py-1 rounded-lg bg-[#e74c3c]/10 border border-[#e74c3c]/20">
-                    ✕
+                    Quitar foto
                   </button>
                 )}
               </div>
-            </div>
-
-            <div>
-              <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">
-                Emoji (así se ve si no hay foto)
-              </label>
-              <div className="flex items-center gap-3 mb-2.5">
-                <div className="w-14 h-14 rounded-xl bg-[#4db8ff]/12 border border-[#4db8ff]/30 flex items-center justify-center text-3xl shrink-0">
-                  {form.emoji || EMOJI_POR_CATEGORIA[form.categoria] || '📦'}
-                </div>
-                <p className="text-[12px] text-white/45 leading-relaxed">
-                  Este es el ícono que verán tus clientes.<br />Tocá uno de abajo para cambiarlo.
-                </p>
-              </div>
-              <div className="grid grid-cols-9 gap-1.5 bg-white/[0.03] border border-white/8 rounded-xl p-2.5">
-                {EMOJIS_DISPONIBLES.map((em) => (
-                  <button
-                    key={em}
-                    type="button"
-                    onClick={() => setForm({ ...form, emoji: em, _emojiAuto: false })}
-                    className={`aspect-square rounded-lg text-xl flex items-center justify-center transition-all active:scale-90 ${
-                      form.emoji === em ? 'bg-[#4db8ff]/30 border border-[#4db8ff]' : 'bg-white/[0.04] border border-transparent hover:bg-white/10'
-                    }`}
-                  >
-                    {em}
-                  </button>
-                ))}
+              <div className="grid grid-cols-2 gap-2">
+                <label className="flex items-center justify-center gap-2 bg-white/5 border border-white/10 border-dashed rounded-xl px-3 py-2.5 cursor-pointer hover:bg-white/8 transition-all">
+                  <span className="text-lg">🖼️</span>
+                  <span className="text-sm text-white/50">{subiendoFoto ? 'Subiendo...' : 'Galería'}</span>
+                  <input
+                    ref={fotoRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={subiendoFoto}
+                    onChange={async (e) => {
+                      const archivo = e.target.files?.[0]
+                      if (!archivo) return
+                      const url = await subirFoto(archivo)
+                      if (url) setForm((f) => ({ ...f, foto_url: url }))
+                      e.target.value = ''
+                    }}
+                  />
+                </label>
+                <label className="flex items-center justify-center gap-2 bg-white/5 border border-white/10 border-dashed rounded-xl px-3 py-2.5 cursor-pointer hover:bg-white/8 transition-all">
+                  <span className="text-lg">📷</span>
+                  <span className="text-sm text-white/50">{subiendoFoto ? 'Subiendo...' : 'Sacar foto'}</span>
+                  <input
+                    ref={fotoCamaraRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    disabled={subiendoFoto}
+                    onChange={async (e) => {
+                      const archivo = e.target.files?.[0]
+                      if (!archivo) return
+                      const url = await subirFoto(archivo)
+                      if (url) setForm((f) => ({ ...f, foto_url: url }))
+                      e.target.value = ''
+                    }}
+                  />
+                </label>
               </div>
             </div>
 
@@ -418,10 +423,10 @@ export default function GestionProductos({ productos, nombrePescaderia, rubroIni
                 }`}
                 style={{ animation: 'bmFadeUp 0.4s ease both', animationDelay: `${idx * 0.04}s` }}>
                 <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-xl bg-[#4db8ff]/12 border border-[#4db8ff]/25 flex items-center justify-center text-xl shrink-0 overflow-hidden">
+                  <div className="w-11 h-11 rounded-xl bg-white/5 border border-white/15 flex items-center justify-center shrink-0 overflow-hidden">
                     {p.foto_url
                       ? <img src={p.foto_url} alt={p.nombre} className="w-full h-full object-cover" />
-                      : (p.emoji || '🐟')}
+                      : <img src={LOGO_BLUEMARKET} alt="" className="w-6 h-6 opacity-50" />}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
@@ -461,7 +466,7 @@ export default function GestionProductos({ productos, nombrePescaderia, rubroIni
                       setMsgPropuesta(null)
                       const res = await proponerAlCatalogo({
                         nombre: p.nombre, descripcion: p.descripcion,
-                        categoria: p.categoria, emoji: p.emoji,
+                        categoria: p.categoria,
                         precio: p.precio, unidad: p.unidad,
                       })
                       setProponiendo(null)
@@ -506,7 +511,7 @@ export default function GestionProductos({ productos, nombrePescaderia, rubroIni
                 <div className="text-center py-10 text-white/40 text-sm">Cargando catálogo...</div>
               ) : catalogo.length === 0 ? (
                 <div className="text-center py-10">
-                  <div className="text-4xl mb-3 opacity-40">{rubroTienda ? defaultsRubro(rubroTienda).emoji : '📦'}</div>
+                  <img src={LOGO_BLUEMARKET} alt="" className="w-12 h-12 mx-auto mb-3 opacity-40 rounded-lg" />
                   <p className="text-white/40 text-sm">El catálogo master está vacío.</p>
                 </div>
               ) : (
@@ -515,8 +520,10 @@ export default function GestionProductos({ productos, nombrePescaderia, rubroIni
                     <div key={p.id}
                       onClick={() => toggleSel(p.id)}
                       className={`flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition-all ${seleccionados.includes(p.id) ? 'bg-[#2ecc71]/10 border-[#2ecc71]/40' : 'bg-white/[0.04] border-white/10'}`}>
-                      <div className="w-11 h-11 rounded-xl bg-[#4db8ff]/12 border border-[#4db8ff]/25 flex items-center justify-center text-xl shrink-0 overflow-hidden">
-                        {p.foto_url ? <img src={p.foto_url} alt={p.nombre} className="w-full h-full object-cover" /> : (p.emoji || '🐟')}
+                      <div className="w-11 h-11 rounded-xl bg-white/5 border border-white/15 flex items-center justify-center shrink-0 overflow-hidden">
+                        {p.foto_url
+                          ? <img src={p.foto_url} alt={p.nombre} className="w-full h-full object-cover" />
+                          : <img src={LOGO_BLUEMARKET} alt="" className="w-6 h-6 opacity-50" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="font-semibold text-white text-sm truncate">{p.nombre}</div>

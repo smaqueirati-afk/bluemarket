@@ -33,9 +33,16 @@ export default async function ProductosPage() {
     .eq('pescaderia_id', perfil.pescaderia_id)
     .order('created_at', { ascending: false })
 
+  const { data: categorias } = await admin
+    .from('categorias_producto')
+    .select('*')
+    .eq('pescaderia_id', perfil.pescaderia_id)
+    .order('orden', { ascending: true })
+
   return (
     <GestionProductos
       productos={productos || []}
+      categorias={categorias || []}
       nombrePescaderia={pescaderia?.nombre || 'Mi tienda'}
       rubroInicial={pescaderia?.rubro || null}
     />

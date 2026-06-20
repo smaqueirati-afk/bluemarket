@@ -21,6 +21,86 @@ async function verificarDueno() {
   return { pescaderiaId: perfil.pescaderia_id }
 }
 
+// ── Categorías propias de la tienda ──
+export async function getCategorias() {
+  const check = await verificarDueno()
+  if (check.error) return { error: check.error }
+
+  const admin = createAdminClient()
+  const { data, error } = await admin
+    .from('categorias_producto')
+    .select('*')
+    .eq('pescaderia_id', check.pescaderiaId)
+    .order('orden', { ascending: true })
+
+  if (error) return { error: error.message }
+  return { categorias: data || [] }
+}
+
+export async function crearCategoria(nombre) {
+  const check = await verificarDueno()
+  if (check.error) return { error: check.error }
+  const limpio = nombre?.trim()
+  if (!limpio) return { error: 'Ingresá un nombre' }
+
+  const admin = createAdminClient()
+
+  // Evitar duplicados (case-insensitive) dentro de la misma tienda
+  const { data: existente } = await admin
+    .from('categorias_producto')
+    .select('id, nombre')
+    .eq('pescaderia_id', check.pescaderiaId)
+    .ilike('nombre', limpio)
+    .maybeSingle()
+
+  if (existente) return { ok: true, categoria: existente, yaExistia: true }
+
+  const { count } = await admin
+    .from('categorias_producto')
+    .select('id', { count: 'exact', head: true })
+    .eq('pescaderia_id', check.pescaderiaId)
+
+  const { data, error } = await admin
+    .from('categorias_producto')
+    .insert({ pescaderia_id: check.pescaderiaId, nombre: limpio, orden: count || 0 })
+    .select('*')
+    .single()
+
+  if (error) return { error: error.message }
+  revalidatePath('/pescaderia/productos')
+  return { ok: true, categoria: data }
+}
+
+export async function borrarCategoria(categoriaId) {
+  const check = await verificarDueno()
+  if (check.error) return { error: check.error }
+
+  const admin = createAdminClient()
+
+  const { data: cat } = await admin
+    .from('categorias_producto')
+    .select('pescaderia_id, nombre')
+    .eq('id', categoriaId)
+    .maybeSingle()
+
+  if (!cat || cat.pescaderia_id !== check.pescaderiaId) {
+    return { error: 'Esa categoría no es de tu tienda' }
+  }
+
+  // Los productos que la usaban quedan sin categoría (no se borran)
+  await admin
+    .from('productos')
+    .update({ categoria: null })
+    .eq('pescaderia_id', check.pescaderiaId)
+    .eq('categoria', cat.nombre)
+
+  const { error } = await admin.from('categorias_producto').delete().eq('id', categoriaId)
+  if (error) return { error: error.message }
+
+  revalidatePath('/pescaderia/productos')
+  return { ok: true }
+}
+
 // ── Crear producto ──
 export async function crearProducto(datos) {
   const check = await verificarDueno()
