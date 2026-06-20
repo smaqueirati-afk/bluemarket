@@ -13,6 +13,7 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
   const [nota, setNota] = useState('')
   const [error, setError] = useState(null)
   const [usarRetorno, setUsarRetorno] = useState(false)
+  const [franja, setFranja] = useState('cualquiera')
 
   function fmt(n) {
     return '$' + Number(n).toLocaleString('es-AR')
@@ -58,6 +59,7 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
       direccion: entregaFinal === 'envio' ? direccion.trim() : null,
       telefono: telefono.trim(),
       nota: nota.trim() || null,
+      franja: entregaFinal === 'envio' && franja !== 'cualquiera' ? franja : null,
       total: totalFinal,
       usarRetorno: aplicaRetorno,
     })
@@ -130,6 +132,30 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
               placeholder="Calle, número, piso, localidad"
               className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-3.5 text-base text-white placeholder-white/30 outline-none focus:border-[#4db8ff]"
             />
+          </div>
+        )}
+
+        {/* FRANJA HORARIA (solo envío) */}
+        {(soloDelivery || entrega === 'envio') && (
+          <div style={{ animation: 'bmFadeUp 0.3s ease both' }}>
+            <h2 className="text-[15px] text-white/85 mb-2.5 font-bold">🕒 ¿En qué horario te viene bien?</h2>
+            <div className="grid grid-cols-2 gap-2.5">
+              {[
+                { id: 'cualquiera', emoji: '🤷', label: 'Cualquiera' },
+                { id: 'manana',     emoji: '☀️', label: 'Mañana' },
+                { id: 'tarde',      emoji: '🌇', label: 'Tarde' },
+                { id: 'noche',      emoji: '🌙', label: 'Noche' },
+              ].map((f) => (
+                <button key={f.id} onClick={() => setFranja(f.id)}
+                  className={`p-3 rounded-2xl border text-left transition-all ${
+                    franja === f.id ? 'bg-[#4db8ff]/15 border-[#4db8ff]' : 'bg-white/[0.05] border-white/10'
+                  }`}>
+                  <span className="text-xl">{f.emoji}</span>
+                  <span className="block text-base font-bold text-white mt-0.5">{f.label}</span>
+                </button>
+              ))}
+            </div>
+            <p className="text-[12px] text-white/45 mt-2">Es solo una preferencia; lo coordinamos por WhatsApp.</p>
           </div>
         )}
 

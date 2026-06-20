@@ -132,6 +132,7 @@ export async function crearPedido(pescaderiaId, datos, items) {
       estado: 'nuevo',
       tipo_entrega: datos.entrega === 'envio' ? 'delivery' : 'retiro',
       direccion: datos.direccion || null,
+      franja: datos.franja || null,
       metodo_pago: datos.pago,
       pagado: false,
       subtotal,
