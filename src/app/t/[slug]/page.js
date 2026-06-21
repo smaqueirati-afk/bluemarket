@@ -39,6 +39,7 @@ export default async function TiendaPorSlug(props) {
     .eq('slug', slug)
     .maybeSingle()
 
+  console.log("SLUG:", slug, "PESCADERIA:", JSON.stringify(pescaderia))
   if (!pescaderia) notFound()
 
   const supabase = await createClient()
