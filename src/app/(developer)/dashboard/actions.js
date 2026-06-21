@@ -261,6 +261,31 @@ export async function salirModoDeveloper() {
   store.delete('bm_dev_tienda')
   return { ok: true }
 }
+
+// ── Cambiar el rubro de una tienda existente (dev) ──
+const EMOJI_RUBRO = {
+  'pescadería': '🐟', 'quesería': '🧀', 'carnicería': '🥩', 'verdulería': '🥦',
+  'panadería': '🥖', 'almacén': '🛒', 'rotisería': '🍗', 'otro': '📦',
+}
+
+export async function cambiarRubro(pescaderiaId, rubro) {
+  const check = await verificarDeveloper()
+  if (check.error) return { error: check.error }
+
+  const emoji = EMOJI_RUBRO[rubro]
+  if (!emoji) return { error: 'Rubro inválido' }
+
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('pescaderias')
+    .update({ rubro, emoji_rubro: emoji })
+    .eq('id', pescaderiaId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/dashboard')
+  return { ok: true }
+}
 export async function toggleActiva(pescaderiaId, activar) {
   const check = await verificarDeveloper()
   if (check.error) return { error: check.error }
@@ -372,7 +397,7 @@ export async function getPescaderiaDetalle(pescaderiaId) {
 async function crearConfigFidelizacionPorDefecto(admin, pescaderiaId) {
   await admin.from('fidelizacion_config').upsert({
     pescaderia_id: pescaderiaId,
-    activo: false,
+    activo: true,
     bronce_min: 10000,
     bronce_pct: 2,
     plata_min: 30000,

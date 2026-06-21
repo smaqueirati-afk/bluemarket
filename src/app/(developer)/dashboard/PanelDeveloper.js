@@ -1,7 +1,18 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { crearPescaderia, asignarDueno, borrarPescaderia, reactivarUsuario, reactivarUsuarioPorEmail, toggleTrial, toggleActiva, entrarComoTienda, resetTotal } from './actions'
+import { crearPescaderia, asignarDueno, borrarPescaderia, reactivarUsuario, reactivarUsuarioPorEmail, toggleTrial, toggleActiva, entrarComoTienda, cambiarRubro, resetTotal } from './actions'
+
+const RUBROS = [
+  { rubro: 'pescadería', emoji: '🐟' },
+  { rubro: 'quesería',   emoji: '🧀' },
+  { rubro: 'carnicería', emoji: '🥩' },
+  { rubro: 'verdulería', emoji: '🥦' },
+  { rubro: 'panadería',  emoji: '🥖' },
+  { rubro: 'almacén',    emoji: '🛒' },
+  { rubro: 'rotisería',  emoji: '🍗' },
+  { rubro: 'otro',       emoji: '📦' },
+]
 import BarraUsuario from '../../../components/BarraUsuario'
 import PescaderiaDetalle from './PescaderiaDetalle'
 import CatalogoMaster from './CatalogoMaster'
@@ -94,7 +105,16 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
     setActivandoId(null)
   }
 
-  const [mostrarReactivar, setMostrarReactivar] = useState(false)
+  async function handleCambiarRubro(pescaderiaId, rubro) {
+    setMensaje(null)
+    const resultado = await cambiarRubro(pescaderiaId, rubro)
+    if (resultado.error) {
+      setMensaje({ tipo: 'error', texto: resultado.error })
+    } else {
+      const emoji = RUBROS.find((r) => r.rubro === rubro)?.emoji || ''
+      setMensaje({ tipo: 'ok', texto: `Rubro cambiado a ${emoji} ${rubro} ✓` })
+    }
+  }
   const [emailReactivar, setEmailReactivar] = useState('')
   const [cargandoReactivar, setCargandoReactivar] = useState(false)
 
@@ -538,7 +558,20 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold text-white text-base">{p.nombre}</div>
-                      <div className="text-xs text-white/40 mt-0.5">/{p.slug} · {p.rubro || 'tienda'} · {p.telefono || 'sin teléfono'}</div>
+                      <div className="text-xs text-white/40 mt-0.5">/{p.slug} · {p.telefono || 'sin teléfono'}</div>
+                      <div className="mt-1.5">
+                        <select
+                          value={p.rubro || 'otro'}
+                          onChange={(e) => handleCambiarRubro(p.id, e.target.value)}
+                          title="Cambiar el rubro de esta tienda"
+                          className="bg-[#0a2a6b] border border-white/15 rounded-lg text-[11px] text-white/80 px-2 py-1 outline-none focus:border-[#4db8ff] cursor-pointer">
+                          {RUBROS.map((r) => (
+                            <option key={r.rubro} value={r.rubro}>
+                              {r.emoji} {r.rubro.charAt(0).toUpperCase() + r.rubro.slice(1)}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                       <div className="flex items-center gap-2 mt-2">
                         <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg uppercase tracking-wide ${
                           p.plan === 'trial' ? 'bg-[#f39c12]/15 text-[#f39c12]' : 'bg-[#4db8ff]/15 text-[#4db8ff]'
