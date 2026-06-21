@@ -240,6 +240,24 @@ export async function toggleTrial(pescaderiaId, activar) {
   return { ok: true, trial_hasta: trialHasta }
 }
 
+// ── Activar / desactivar una tienda (controla si abre para los clientes) ──
+export async function toggleActiva(pescaderiaId, activar) {
+  const check = await verificarDeveloper()
+  if (check.error) return { error: check.error }
+
+  const admin = createAdminClient()
+
+  const { error } = await admin
+    .from('pescaderias')
+    .update({ activa: !!activar })
+    .eq('id', pescaderiaId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/dashboard')
+  return { ok: true }
+}
+
 // ── Borrar pescadería (definitivo, en cascada) ──
 // Todas las FK que apuntan a pescaderias están en ON DELETE CASCADE,
 // así que un solo delete arrastra productos, pedidos, clientes,

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { crearPescaderia, asignarDueno, borrarPescaderia, reactivarUsuario, reactivarUsuarioPorEmail, toggleTrial, resetTotal } from './actions'
+import { crearPescaderia, asignarDueno, borrarPescaderia, reactivarUsuario, reactivarUsuarioPorEmail, toggleTrial, toggleActiva, resetTotal } from './actions'
 import BarraUsuario from '../../../components/BarraUsuario'
 import PescaderiaDetalle from './PescaderiaDetalle'
 import CatalogoMaster from './CatalogoMaster'
@@ -79,6 +79,19 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
       })
     }
     setToggling(null)
+  }
+
+  const [activandoId, setActivandoId] = useState(null)
+  async function handleToggleActiva(pescaderiaId, activar) {
+    setActivandoId(pescaderiaId)
+    setMensaje(null)
+    const resultado = await toggleActiva(pescaderiaId, activar)
+    if (resultado.error) {
+      setMensaje({ tipo: 'error', texto: resultado.error })
+    } else {
+      setMensaje({ tipo: 'ok', texto: activar ? 'Tienda activada ✓' : 'Tienda desactivada ✓' })
+    }
+    setActivandoId(null)
   }
 
   const [mostrarReactivar, setMostrarReactivar] = useState(false)
@@ -532,8 +545,17 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
                         }`}>
                           {p.plan}
                         </span>
-                        <span className={`w-2.5 h-2.5 rounded-full ${p.activa ? 'bg-[#2ecc71]' : 'bg-white/20'}`}
-                              style={p.activa ? { boxShadow: '0 0 8px rgba(46,204,113,0.6)' } : {}}></span>
+                        <button
+                          onClick={() => handleToggleActiva(p.id, !p.activa)}
+                          disabled={activandoId === p.id}
+                          title={p.activa ? 'Tienda activa — tocá para desactivar' : 'Tienda inactiva — tocá para activar'}
+                          className={`text-[10px] font-bold px-2.5 py-1 rounded-lg uppercase tracking-wide transition-colors disabled:opacity-50 ${
+                            p.activa
+                              ? 'bg-[#2ecc71]/15 text-[#2ecc71] hover:bg-[#2ecc71]/25'
+                              : 'bg-[#e74c3c]/15 text-[#e74c3c] hover:bg-[#e74c3c]/25'
+                          }`}>
+                          {activandoId === p.id ? '...' : (p.activa ? '● Activa' : '○ Inactiva')}
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -542,9 +564,7 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
                   <div className="flex items-center gap-2 mt-3">
                     <a
                       href={`/t/${p.slug}?preview=1`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title="Abrir tienda pública (modo prueba)"
+                      title="Abrir tienda (modo prueba)"
                       className="flex-1 h-10 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center gap-1.5 text-xs font-semibold text-white/60 hover:text-[#2ecc71] hover:border-[#2ecc71]/40 transition-colors active:scale-95"
                     >
                       <span>🛒</span>
