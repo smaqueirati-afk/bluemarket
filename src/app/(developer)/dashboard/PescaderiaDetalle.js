@@ -131,7 +131,7 @@ export default function PescaderiaDetalle({ pescaderia, onVolver }) {
 
       {cargando ? (
         <div className="flex flex-col items-center justify-center py-20 text-white/30">
-          <div className="text-3xl mb-3 opacity-50">🐟</div>
+          <img src="/icons/icon-192.png" alt="BlueMarket" className="w-14 h-14 rounded-2xl mb-3 opacity-70 animate-pulse" />
           <p className="text-sm">Cargando datos...</p>
         </div>
       ) : error ? (
