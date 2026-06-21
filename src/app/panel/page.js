@@ -1,6 +1,7 @@
 import { createClient } from '../../lib/supabase/server'
 import { createAdminClient } from '../../lib/supabase/admin'
 import { redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
 import PanelPescaderia from './PanelPescaderia'
 import SplashPanel from './SplashPanel'
 
@@ -16,22 +17,32 @@ export default async function DashboardPescaderia() {
     .eq('id', user.id)
     .single()
 
-  if (!perfil || perfil.rol !== 'cliente' || !perfil.pescaderia_id) {
+  const admin = createAdminClient()
+
+  // Sobre qué tienda opera el panel:
+  // - el dueño ve la suya
+  // - el developer ve la que eligió desde el panel dev (cookie bm_dev_tienda)
+  let pescaderiaId = perfil?.pescaderia_id
+  let modoDeveloper = false
+  if (perfil?.rol === 'developer') {
+    const ck = (await cookies()).get('bm_dev_tienda')?.value
+    if (!ck) redirect('/dashboard')
+    pescaderiaId = ck
+    modoDeveloper = true
+  } else if (!perfil || perfil.rol !== 'cliente' || !perfil.pescaderia_id) {
     redirect('/inicio')
   }
-
-  const admin = createAdminClient()
 
   const { data: pescaderia } = await admin
     .from('pescaderias')
     .select('*')
-    .eq('id', perfil.pescaderia_id)
+    .eq('id', pescaderiaId)
     .single()
 
   const { data: pedidos } = await admin
     .from('pedidos')
     .select('*')
-    .eq('pescaderia_id', perfil.pescaderia_id)
+    .eq('pescaderia_id', pescaderiaId)
     .order('created_at', { ascending: false })
 
   // Sumar teléfono, nombre y email del cliente a cada pedido.
@@ -41,7 +52,7 @@ export default async function DashboardPescaderia() {
     const { data: clientes } = await admin
       .from('clientes')
       .select('usuario_id, telefono, nombre, email')
-      .eq('pescaderia_id', perfil.pescaderia_id)
+      .eq('pescaderia_id', pescaderiaId)
       .in('usuario_id', usuarioIds)
 
     const mapa = {}
@@ -71,14 +82,20 @@ export default async function DashboardPescaderia() {
     pedidosConTel = pedidosConTel.map((p) => ({ ...p, items: porPedido[p.id] || [] }))
   }
 
+  // Seguridad: el Access Token de MP nunca viaja al navegador.
+  // Mandamos solo un booleano de "conectado".
+  const { mp_access_token, ...pescaderiaSinToken } = pescaderia || {}
+  const pescaderiaSegura = { ...pescaderiaSinToken, mp_conectado: !!mp_access_token }
+
   return (
     <>
       <SplashPanel rubro={pescaderia.rubro} slug={pescaderia.slug} />
       <PanelPescaderia
-        pescaderia={pescaderia}
+        pescaderia={pescaderiaSegura}
         pedidos={pedidosConTel}
         nombreUsuario={perfil.nombre}
         usuarioId={user.id}
+        modoDeveloper={modoDeveloper}
       />
     </>
   )

@@ -3,6 +3,7 @@
 import { createClient } from '../../../lib/supabase/server'
 import { createAdminClient } from '../../../lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
+import { cookies } from 'next/headers'
 
 async function verificarDeveloper() {
   const supabase = await createClient()
@@ -240,7 +241,26 @@ export async function toggleTrial(pescaderiaId, activar) {
   return { ok: true, trial_hasta: trialHasta }
 }
 
-// ── Activar / desactivar una tienda (controla si abre para los clientes) ──
+// ── Modo developer: entrar a gestionar una tienda (guarda la tienda elegida en una cookie) ──
+export async function entrarComoTienda(pescaderiaId) {
+  const check = await verificarDeveloper()
+  if (check.error) return { error: check.error }
+
+  const store = await cookies()
+  store.set('bm_dev_tienda', String(pescaderiaId), {
+    httpOnly: true,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 60 * 60 * 6, // 6 horas
+  })
+  return { ok: true }
+}
+
+export async function salirModoDeveloper() {
+  const store = await cookies()
+  store.delete('bm_dev_tienda')
+  return { ok: true }
+}
 export async function toggleActiva(pescaderiaId, activar) {
   const check = await verificarDeveloper()
   if (check.error) return { error: check.error }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { crearPescaderia, asignarDueno, borrarPescaderia, reactivarUsuario, reactivarUsuarioPorEmail, toggleTrial, toggleActiva, resetTotal } from './actions'
+import { crearPescaderia, asignarDueno, borrarPescaderia, reactivarUsuario, reactivarUsuarioPorEmail, toggleTrial, toggleActiva, entrarComoTienda, resetTotal } from './actions'
 import BarraUsuario from '../../../components/BarraUsuario'
 import PescaderiaDetalle from './PescaderiaDetalle'
 import CatalogoMaster from './CatalogoMaster'
@@ -562,14 +562,19 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
 
                   {/* Acciones */}
                   <div className="flex items-center gap-2 mt-3">
-                    <a
-                      href={`/t/${p.slug}?preview=1`}
-                      title="Abrir tienda (modo prueba)"
-                      className="flex-1 h-10 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center gap-1.5 text-xs font-semibold text-white/60 hover:text-[#2ecc71] hover:border-[#2ecc71]/40 transition-colors active:scale-95"
+                    <button
+                      onClick={async () => {
+                        setMensaje(null)
+                        const r = await entrarComoTienda(p.id)
+                        if (r?.error) { setMensaje({ tipo: 'error', texto: r.error }); return }
+                        window.location.href = '/panel'
+                      }}
+                      title="Gestionar esta tienda como developer"
+                      className="flex-1 h-10 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center gap-1.5 text-xs font-semibold text-white/60 hover:text-[#4db8ff] hover:border-[#4db8ff]/40 transition-colors active:scale-95"
                     >
-                      <span>🛒</span>
-                      <span>Abrir</span>
-                    </a>
+                      <span>⚙️</span>
+                      <span>Gestionar</span>
+                    </button>
                     <button
                       onClick={() => { setPescaderiaSeleccionada(p); setMensaje(null) }}
                       title="Ver detalle"

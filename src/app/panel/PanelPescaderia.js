@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { cambiarEstadoPedido, guardarHorario, guardarMontoMinimoReparto, guardarEnvioConfig, guardarLogoTienda, ajustarPesosPedido } from './actions'
+import { cambiarEstadoPedido, guardarHorario, guardarMontoMinimoReparto, guardarEnvioConfig, guardarLogoTienda, guardarMercadoPago, ajustarPesosPedido } from './actions'
+import { salirModoDeveloper } from '../(developer)/dashboard/actions'
 import BarraUsuario from '../../components/BarraUsuario'
 import MapaReparto from '../../components/MapaReparto'
 import { createClient } from '../../lib/supabase/client'
@@ -67,7 +68,7 @@ function waNumero(tel) {
   return '549' + n
 }
 
-export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales, nombreUsuario, usuarioId }) {
+export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales, nombreUsuario, usuarioId, modoDeveloper }) {
   const [pedidos, setPedidos] = useState(pedidosIniciales || [])
   const [filtro, setFiltro] = useState('activos')
   const [actualizando, setActualizando] = useState(null)
@@ -83,6 +84,9 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
   const [guardandoEnvio, setGuardandoEnvio] = useState(false)
   const [subiendoLogo, setSubiendoLogo] = useState(false)
   const logoRef = useRef(null)
+  const [mpTokenInput, setMpTokenInput] = useState('')
+  const [mpActivoInput, setMpActivoInput] = useState(!!pescaderia?.mp_activo)
+  const [guardandoMP, setGuardandoMP] = useState(false)
   const [guardandoMin, setGuardandoMin] = useState(false)
   const [copiadoInvite, setCopiadoInvite] = useState(false)
   const [toastPedido, setToastPedido] = useState(null) // { numero, total }
@@ -335,6 +339,14 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
     setSubiendoLogo(false)
   }
 
+  async function guardarMP() {
+    setGuardandoMP(true)
+    const res = await guardarMercadoPago(mpTokenInput, mpActivoInput)
+    setGuardandoMP(false)
+    if (res?.error) { alert(res.error); return }
+    setMpTokenInput('')
+  }
+
   // Métricas del día
   const hoy = new Date().toDateString()
   const pedidosHoy = pedidos.filter((p) => new Date(p.created_at).toDateString() === hoy)
@@ -445,6 +457,16 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
 
   return (
     <div className="min-h-screen text-white bg-[linear-gradient(180deg,#051e5c_0%,#03174a_60%,#020f30_100%)]">
+      {modoDeveloper && (
+        <div className="sticky top-0 z-50 bg-[#4db8ff] text-[#03174a] px-4 py-2 flex items-center justify-between gap-3 text-sm font-bold shadow-lg">
+          <span className="truncate">⚙️ Gestionando "{pescaderia?.nombre}" como developer</span>
+          <button
+            onClick={async () => { await salirModoDeveloper(); window.location.href = '/dashboard' }}
+            className="bg-[#03174a] text-white px-3 py-1 rounded-lg text-xs font-bold shrink-0 active:scale-95">
+            Salir
+          </button>
+        </div>
+      )}
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] blur-3xl pointer-events-none"
            style={{ background: 'radial-gradient(circle, rgba(77,184,255,0.12), transparent 70%)' }} />
 
@@ -799,6 +821,44 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
               </div>
             </div>
             <p className="text-[11px] text-white/35 mt-3">Tip: usá una imagen cuadrada (logo sobre fondo claro) para que se vea bien como ícono.</p>
+          </div>
+        )}
+
+        {filtro === 'ajustes' && (
+          <div className="bg-white/[0.05] border border-white/10 rounded-2xl p-4 mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-[10px] text-white/40 uppercase tracking-wide font-bold">Mercado Pago · cobro de pedidos</div>
+              <span className={`text-[11px] font-bold px-2 py-1 rounded-lg ${pescaderia?.mp_conectado ? 'bg-[#2ecc71]/15 text-[#2ecc71]' : 'bg-white/[0.06] text-white/45'}`}>
+                {pescaderia?.mp_conectado ? '✅ Conectado' : '○ No conectado'}
+              </span>
+            </div>
+            <label className="text-[12px] text-white/55">Access Token de producción</label>
+            <input
+              type="password"
+              value={mpTokenInput}
+              onChange={(e) => setMpTokenInput(e.target.value)}
+              placeholder={pescaderia?.mp_conectado ? '•••••• (dejalo vacío para no cambiarlo)' : 'APP_USR-...'}
+              className="w-full mt-1 bg-white/[0.06] border border-white/15 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#4db8ff]/60"
+            />
+            <label className="flex items-center gap-2.5 mt-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={mpActivoInput}
+                onChange={(e) => setMpActivoInput(e.target.checked)}
+                className="w-5 h-5 rounded accent-[#4db8ff] cursor-pointer"
+              />
+              <span className="text-sm text-white/70">Aceptar pagos con Mercado Pago en los pedidos</span>
+            </label>
+            <button
+              onClick={guardarMP}
+              disabled={guardandoMP}
+              className="mt-3 bg-[#4db8ff] text-[#03174a] font-bold text-xs px-4 py-2 rounded-lg active:scale-95 transition-all disabled:opacity-60"
+            >
+              {guardandoMP ? 'Guardando...' : 'Guardar'}
+            </button>
+            <p className="text-[11px] text-white/35 mt-3 leading-snug">
+              Conseguí tu Access Token en Mercado Pago → <span className="text-white/55">Tu negocio → Configuración → Credenciales de producción</span>. La plata de cada pedido entra <span className="text-white/55">directo a tu cuenta</span>; BlueMarket no la toca. El token se guarda de forma segura y no se muestra.
+            </p>
           </div>
         )}
 
