@@ -1,32 +1,22 @@
 'use server'
 
+import { headers } from 'next/headers'
 import { createClient } from '../../../lib/supabase/server'
 import { createAdminClient } from '../../../lib/supabase/admin'
+import { acumularPedido, retornoDisponible, redimirCiclo } from '../../../lib/fidelizacion'
 
-const PESCADERIA_DEMO = 'aab4a81c-e409-4c2c-b9df-11077c7f7bcd'
-
-// Genera una palabra clave de 2 palabras random
-const PALABRAS = [
-  'mar','pez','ola','sal','red','sol','luna','agua','viento','coral',
-  'perla','orca','timon','ancla','faro','marea','remo','barco','bahia','isla',
-  'delfin','pulpo','trucha','merluza','langosta','cangrejo','almeja','ostra',
-]
-function generarPalabraClave() {
-  const a = PALABRAS[Math.floor(Math.random() * PALABRAS.length)]
-  const b = PALABRAS[Math.floor(Math.random() * PALABRAS.length)]
-  const n = Math.floor(Math.random() * 90) + 10
-  return `${a}-${b}-${n}`
-}
-
-// Guarda un pedido real en la base de datos.
+// Guarda un pedido en la pescadería indicada por pescaderiaId.
 // datos = { entrega, pago, direccion, nota, total }
 // items = [{ producto, cantidad }]
-export async function crearPedido(datos, items) {
-  // 1. Verificar que la persona esté logueada
+export async function crearPedido(pescaderiaId, datos, items) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return { error: 'Tenés que iniciar sesión para confirmar el pedido' }
+  }
+
+  if (!pescaderiaId) {
+    return { error: 'No se identificó la pescadería' }
   }
 
   if (!items || items.length === 0) {
@@ -35,63 +25,105 @@ export async function crearPedido(datos, items) {
 
   const admin = createAdminClient()
 
-  // Pescadería del consumidor (la asignada en su perfil; si no, la demo)
-  const { data: perfilUsuario } = await admin
-    .from('usuarios')
-    .select('pescaderia_id')
-    .eq('id', user.id)
+  // ── Gate: las opciones de entrega dependen de la modalidad de la pescadería ──
+  const { data: pescModalidad } = await admin
+    .from('pescaderias')
+    .select('modalidad')
+    .eq('id', pescaderiaId)
     .maybeSingle()
-  const pescaderiaId = perfilUsuario?.pescaderia_id || PESCADERIA_DEMO
+  const modalidad = pescModalidad?.modalidad
+  if (datos.entrega === 'envio' && modalidad === 'solo_local') {
+    return { error: 'Esta pescadería no hace envíos, solo retiro en el local.' }
+  }
+  if (datos.entrega === 'retiro' && modalidad === 'solo_reparto') {
+    return { error: 'Esta pescadería es solo reparto, no tiene retiro en el local.' }
+  }
 
-  // 2. Buscar/crear la ficha de cliente de este usuario EN esta pescadería
-  //    (por usuario_id, o por email para no duplicar)
+  // ── Validación de disponibilidad al confirmar (stock infinito: solo importa "sin stock") ──
+  const productoIds = items.map((i) => i.producto.id)
+  const { data: productosActuales } = await admin
+    .from('productos')
+    .select('id, nombre, disponible')
+    .in('id', productoIds)
+
+  const problemasStock = []
+  for (const item of items) {
+    const actual = productosActuales?.find((p) => p.id === item.producto.id)
+    if (!actual || !actual.disponible) {
+      problemasStock.push(`"${item.producto.nombre}" ya no está disponible`)
+    }
+  }
+  if (problemasStock.length > 0) {
+    return { error: problemasStock.join(', '), stockInvalido: true }
+  }
+
+  // ── Asegurar que exista el perfil en `usuarios` (la FK clientes.usuario_id lo exige) ──
+  // El comprador puede estar en auth pero sin fila en `usuarios` si nunca pasó por el alta.
+  await admin.from('usuarios').upsert({
+    id: user.id,
+    email: user.email,
+    nombre: user.user_metadata?.full_name || user.email.split('@')[0],
+  }, { onConflict: 'id' })
+
+  // ── Buscar/crear la ficha de cliente de este usuario EN ESA pescadería ──
+  // Dedup por usuario_id (clave confiable).
   let clienteId = null
+
   const { data: porUsuario } = await admin
     .from('clientes')
-    .select('id')
+    .select('id, activo')
     .eq('pescaderia_id', pescaderiaId)
     .eq('usuario_id', user.id)
     .maybeSingle()
 
-  if (porUsuario) {
-    clienteId = porUsuario.id
-  } else {
-    const { data: porEmail } = await admin
-      .from('clientes')
-      .select('id, usuario_id')
-      .eq('pescaderia_id', pescaderiaId)
-      .eq('email', user.email)
-      .maybeSingle()
-
-    if (porEmail) {
-      clienteId = porEmail.id
-      if (!porEmail.usuario_id) {
-        await admin.from('clientes').update({ usuario_id: user.id }).eq('id', porEmail.id)
-      }
-    } else {
-      const { data: nuevoCliente, error: errCliente } = await admin
-        .from('clientes')
-        .insert({
-          pescaderia_id: pescaderiaId,
-          usuario_id: user.id,
-          nombre: user.user_metadata?.full_name || user.email.split('@')[0],
-          email: user.email,
-        })
-        .select('id')
-        .single()
-      if (errCliente) {
-        return { error: 'No se pudo crear la ficha de cliente: ' + errCliente.message }
-      }
-      clienteId = nuevoCliente?.id || null
-    }
+  // Si el local dio de baja a este cliente, no puede comprar
+  if (porUsuario && porUsuario.activo === false) {
+    return { error: 'Tu cuenta en esta tienda fue dada de baja. Comunicate con el local para reactivarla.' }
   }
 
-  // 3. Calcular totales
-  const subtotal = items.reduce((acc, i) => acc + i.producto.precio * i.cantidad, 0)
-  const envio = datos.entrega === 'envio' ? 0 : 0  // por ahora envío gratis
-  const total = subtotal + envio
+  if (porUsuario) {
+    clienteId = porUsuario.id
+    if (datos.telefono) {
+      await admin.from('clientes').update({ telefono: datos.telefono }).eq('id', porUsuario.id)
+    }
+  } else {
+    const { data: nuevoCliente, error: errCliente } = await admin
+      .from('clientes')
+      .insert({
+        pescaderia_id: pescaderiaId,
+        usuario_id: user.id,
+        nombre: user.user_metadata?.full_name || user.email.split('@')[0],
+        email: user.email,
+        telefono: datos.telefono || null,
+      })
+      .select('id')
+      .single()
+    if (errCliente || !nuevoCliente) {
+      return { error: 'No se pudo registrar el cliente: ' + (errCliente?.message || 'sin detalle') }
+    }
+    clienteId = nuevoCliente.id
+  }
 
-  // 4. Crear el pedido (la palabra clave la genera el trigger de la base)
+  const subtotal = items.reduce((acc, i) => acc + i.producto.precio * i.cantidad, 0)
+  const envio = 0
+
+  // ── Retorno de fidelización disponible para usar como descuento ──
+  let descuentoRetorno = 0
+  let retornoUsado = null
+  if (clienteId) {
+    try {
+      const ret = await retornoDisponible(admin, pescaderiaId, clienteId)
+      // Se aplica si el comprador lo pidió, o automáticamente si está en el nivel máximo.
+      const aplicar = datos.usarRetorno === true || ret.maxTier
+      if (ret.disponible > 0 && aplicar) {
+        descuentoRetorno = Math.min(ret.disponible, subtotal)
+        retornoUsado = { cicloId: ret.cicloId, nivel: ret.nivel }
+      }
+    } catch (e) { /* si algo falla, no se aplica descuento */ }
+  }
+
+  const total = subtotal + envio - descuentoRetorno
+
   const { data: pedido, error: errPedido } = await admin
     .from('pedidos')
     .insert({
@@ -101,11 +133,13 @@ export async function crearPedido(datos, items) {
       estado: 'nuevo',
       tipo_entrega: datos.entrega === 'envio' ? 'delivery' : 'retiro',
       direccion: datos.direccion || null,
+      franja: datos.franja || null,
       metodo_pago: datos.pago,
       pagado: false,
+      pago_estado: datos.pago === 'mercadopago' ? 'pendiente' : 'no_aplica',
       subtotal,
       envio,
-      descuento: 0,
+      descuento: descuentoRetorno,
       total,
       nota_cliente: datos.nota || null,
     })
@@ -116,7 +150,6 @@ export async function crearPedido(datos, items) {
     return { error: 'No se pudo crear el pedido: ' + errPedido.message }
   }
 
-  // 5. Crear los items del pedido
   const itemsParaGuardar = items.map((i) => ({
     pedido_id: pedido.id,
     producto_id: i.producto.id,
@@ -135,39 +168,173 @@ export async function crearPedido(datos, items) {
     return { error: 'El pedido se creó pero falló al guardar los productos: ' + errItems.message }
   }
 
-  return { ok: true, numero: pedido.numero, pedidoId: pedido.id, palabraClave: pedido.palabra_clave }
+  // Si el pago es cuenta corriente, sumar el total al saldo del cliente y registrar el movimiento
+  if (datos.pago === 'cuenta_corriente' && clienteId) {
+    const { data: cli } = await admin
+      .from('clientes')
+      .select('cc_saldo, cc_habilitada')
+      .eq('id', clienteId)
+      .single()
+
+    if (cli?.cc_habilitada) {
+      const saldoActual = Number(cli.cc_saldo) || 0
+      const nuevoSaldo = saldoActual + total
+
+      await admin.from('cc_movimientos').insert({
+        pescaderia_id: pescaderiaId,
+        cliente_id: clienteId,
+        pedido_id: pedido.id,
+        tipo: 'cargo',
+        monto: total,
+        saldo_despues: nuevoSaldo,
+        nota: `Pedido #${pedido.numero}`,
+      })
+
+      await admin.from('clientes').update({ cc_saldo: nuevoSaldo }).eq('id', clienteId)
+    }
+  }
+
+  // Fidelización: contar este pedido en el ciclo del mes (por fecha de creación,
+  // aunque todavía no esté pago ni entregado). No rompe la creación si falla.
+  // Recién ahora (el pedido ya existe) redimimos el retorno usado: cierra y reinicia el ciclo.
+  if (descuentoRetorno > 0 && retornoUsado) {
+    try { await redimirCiclo(admin, retornoUsado.cicloId, descuentoRetorno, retornoUsado.nivel) } catch (e) { /* ignorar */ }
+  }
+
+  try { await acumularPedido(admin, pedido.id) } catch (e) { /* ignorar */ }
+
+  // Nivel alcanzado POST-compra (para mostrar la animación de logro al comprador)
+  let logroNivel = null
+  try {
+    if (clienteId) {
+      const postRet = await retornoDisponible(admin, pescaderiaId, clienteId)
+      if (postRet.nivel && postRet.disponible > 0) {
+        logroNivel = { nivel: postRet.nivel, pct: postRet.pct, disponible: postRet.disponible }
+      }
+    }
+  } catch (e) { /* ignorar */ }
+
+  return { ok: true, numero: pedido.numero, pedidoId: pedido.id, palabraClave: pedido.palabra_clave, descuentoRetorno, logroNivel }
 }
 
-// ── Traer los pedidos del consumidor logueado (admin, sin RLS) ──
-export async function misPedidos() {
+
+// ── Crea la preferencia de pago en Mercado Pago y devuelve el init_point ──
+export async function crearPreferenciaMP(pedidoId) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { pedidos: [] }
+  if (!user) return { error: 'Tenés que iniciar sesión' }
 
   const admin = createAdminClient()
+
+  const { data: pedido } = await admin
+    .from('pedidos')
+    .select('id, numero, total, pescaderia_id, usuario_id, metodo_pago')
+    .eq('id', pedidoId)
+    .single()
+
+  if (!pedido) return { error: 'No se encontró el pedido' }
+  if (pedido.usuario_id !== user.id) return { error: 'No autorizado' }
+  if (pedido.metodo_pago !== 'mercadopago') return { error: 'Este pedido no es con Mercado Pago' }
+
+  const { data: tienda } = await admin
+    .from('pescaderias')
+    .select('slug, nombre, mp_access_token, mp_activo')
+    .eq('id', pedido.pescaderia_id)
+    .single()
+
+  if (!tienda?.mp_activo || !tienda?.mp_access_token) {
+    return { error: 'La tienda no tiene Mercado Pago activo' }
+  }
+
+  const h = await headers()
+  const host = h.get('host')
+  const proto = (host && host.includes('localhost')) ? 'http' : 'https'
+  const base = `${proto}://${host}`
+
+  const pref = {
+    items: [
+      {
+        id: String(pedido.id),
+        title: `${tienda.nombre} - Pedido #${pedido.numero}`,
+        quantity: 1,
+        currency_id: 'ARS',
+        unit_price: Number(pedido.total) || 0,
+      },
+    ],
+    external_reference: String(pedido.id),
+    back_urls: {
+      success: `${base}/t/${tienda.slug}?pago=ok`,
+      failure: `${base}/t/${tienda.slug}?pago=error`,
+      pending: `${base}/t/${tienda.slug}?pago=pendiente`,
+    },
+    auto_return: 'approved',
+    notification_url: `${base}/api/mp/webhook?tienda=${pedido.pescaderia_id}`,
+  }
+
+  let data
+  try {
+    const res = await fetch('https://api.mercadopago.com/checkout/preferences', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${tienda.mp_access_token}`,
+      },
+      body: JSON.stringify(pref),
+    })
+    data = await res.json()
+    if (!res.ok) {
+      return { error: data?.message || 'Mercado Pago rechazó la creación del pago' }
+    }
+  } catch (e) {
+    return { error: 'No se pudo conectar con Mercado Pago. Probá de nuevo.' }
+  }
+
+  if (data?.id) {
+    await admin.from('pedidos').update({ mp_preference_id: data.id }).eq('id', pedido.id)
+  }
+
+  return { init_point: data.init_point || data.sandbox_init_point }
+}
+
+
+// ── Traer los pedidos del cliente logueado en esta pescadería ──
+export async function misPedidos(pescaderiaId) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'No logueado', pedidos: [] }
+  if (!pescaderiaId) return { pedidos: [] }
+
+  const admin = createAdminClient()
+
+  // Traer sus pedidos por usuario_id (no depende de la ficha de cliente)
   const { data: pedidos } = await admin
     .from('pedidos')
-    .select('id, numero, estado, estado_visto, total, created_at, tipo_entrega, palabra_clave')
+    .select('id, numero, estado, tipo_entrega, total, total_final, pesado, created_at, palabra_clave, direccion')
+    .eq('pescaderia_id', pescaderiaId)
     .eq('usuario_id', user.id)
     .order('created_at', { ascending: false })
     .limit(20)
 
-  return { pedidos: pedidos || [] }
-}
+  if (!pedidos || pedidos.length === 0) return { pedidos: [] }
 
-// Marca un pedido como visto por el cliente (borra la notificación de cambio de estado)
-export async function marcarEstadoVisto(pedidoId) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'No autenticado' }
+  // Traer los items de esos pedidos
+  const ids = pedidos.map((p) => p.id)
+  const { data: items } = await admin
+    .from('items_pedido')
+    .select('pedido_id, nombre, cantidad, cantidad_final, unidad')
+    .in('pedido_id', ids)
 
-  const admin = createAdminClient()
+  // Agrupar items por pedido
+  const itemsPorPedido = {}
+  ;(items || []).forEach((it) => {
+    if (!itemsPorPedido[it.pedido_id]) itemsPorPedido[it.pedido_id] = []
+    itemsPorPedido[it.pedido_id].push(it)
+  })
 
-  await admin
-    .from('pedidos')
-    .update({ estado_visto: true })
-    .eq('id', pedidoId)
-    .eq('usuario_id', user.id)
+  const pedidosConItems = pedidos.map((p) => ({
+    ...p,
+    items: itemsPorPedido[p.id] || [],
+  }))
 
-  return { ok: true }
+  return { pedidos: pedidosConItems }
 }

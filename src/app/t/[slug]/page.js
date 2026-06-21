@@ -5,6 +5,7 @@ import TiendaCliente from './TiendaCliente'
 import SplashTienda from './SplashTienda'
 import { retornoDisponible } from '../../../lib/fidelizacion'
 
+// Metadata dinámica por tienda: título, descripción e ícono según rubro
 export async function generateMetadata({ params }) {
   const { slug } = await params
   const admin = createAdminClient()
@@ -29,19 +30,21 @@ export async function generateMetadata({ params }) {
 export default async function TiendaPorSlug(props) {
   const params = await props.params
   const searchParams = await props.searchParams
-  const slug = params?.slug ?? Object.values(params)[0]
+  const slug = params?.slug ?? params?.nxtPslug ?? Object.values(params)[0]
   const preview = searchParams?.preview === '1'
   const admin = createAdminClient()
 
-  const { data: pescaderia, error: errPesc } = await admin
+  const { data: pescaderia } = await admin
     .from('pescaderias')
     .select('id, nombre, slug, activa, modalidad, direccion, telefono, rubro, emoji_rubro, envio_modo, envio_gratis_desde, logo_url, mp_activo')
     .eq('slug', slug)
     .maybeSingle()
 
-  console.log("SLUG:", slug, "PESCADERIA:", JSON.stringify(pescaderia), "ERROR:", JSON.stringify(errPesc))
-  if (!pescaderia) notFound()
+  if (!pescaderia) {
+    notFound()
+  }
 
+  // Usuario actual (para cuenta corriente, fidelización y modo preview de developer)
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -55,7 +58,10 @@ export default async function TiendaPorSlug(props) {
     esDeveloper = perfilDev?.rol === 'developer'
   }
 
-  if (!pescaderia.activa && !(preview && esDeveloper)) notFound()
+  // Una tienda apagada solo la puede abrir el developer en modo preview (?preview=1)
+  if (!pescaderia.activa && !(preview && esDeveloper)) {
+    notFound()
+  }
 
   const { data: productos } = await admin
     .from('productos')
@@ -82,7 +88,7 @@ export default async function TiendaPorSlug(props) {
       try {
         const r = await retornoDisponible(admin, pescaderia.id, cli.id)
         retorno = { disponible: r.disponible, maxTier: r.maxTier, nivel: r.nivel }
-      } catch (e) {}
+      } catch (e) { /* sin retorno */ }
     }
   }
 

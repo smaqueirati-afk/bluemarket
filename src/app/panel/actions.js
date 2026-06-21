@@ -38,7 +38,7 @@ export async function cambiarEstadoPedido(pedidoId, nuevoEstado) {
 
   if (error) return { error: error.message }
 
-  revalidatePath('/panel')
+  revalidatePath('/pescaderia')
   return { ok: true }
 }
 
@@ -76,7 +76,7 @@ export async function guardarHorario(pedidoId, horario) {
 
   if (error) return { error: error.message }
 
-  revalidatePath('/panel')
+  revalidatePath('/pescaderia')
   return { ok: true }
 }
 
@@ -106,7 +106,7 @@ export async function guardarMontoMinimoReparto(monto) {
 
   if (error) return { error: error.message }
 
-  revalidatePath('/panel')
+  revalidatePath('/pescaderia')
   return { ok: true }
 }
 
@@ -137,7 +137,7 @@ export async function guardarEnvioConfig(modo, gratisDesde) {
 
   if (error) return { error: error.message }
 
-  revalidatePath('/panel')
+  revalidatePath('/pescaderia')
   return { ok: true }
 }
 
@@ -166,7 +166,56 @@ export async function guardarLogoTienda(url) {
 
   if (error) return { error: error.message }
 
-  revalidatePath('/panel')
+  revalidatePath('/pescaderia')
+  return { ok: true }
+}
+
+export async function guardarMercadoPago(token, activo) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'No autenticado' }
+
+  const { data: perfil } = await supabase
+    .from('usuarios')
+    .select('rol, pescaderia_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!perfil || perfil.rol !== 'cliente' || !perfil.pescaderia_id) {
+    return { error: 'No autorizado' }
+  }
+
+  const admin = createAdminClient()
+  const update = { mp_activo: !!activo }
+
+  if (typeof token === 'string' && token.trim()) {
+    const t = token.trim()
+    if (!t.startsWith('APP_USR-') && !t.startsWith('TEST-')) {
+      return { error: 'El Access Token no parece válido (tiene que empezar con APP_USR- o TEST-).' }
+    }
+    update.mp_access_token = t
+  }
+
+  // No dejar activar el cobro si no hay token (ni nuevo ni guardado)
+  if (update.mp_activo && !update.mp_access_token) {
+    const { data: actual } = await admin
+      .from('pescaderias')
+      .select('mp_access_token')
+      .eq('id', perfil.pescaderia_id)
+      .single()
+    if (!actual?.mp_access_token) {
+      return { error: 'Primero pegá tu Access Token de Mercado Pago para poder activar el cobro.' }
+    }
+  }
+
+  const { error } = await admin
+    .from('pescaderias')
+    .update(update)
+    .eq('id', perfil.pescaderia_id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/pescaderia')
   return { ok: true }
 }
 
@@ -285,36 +334,4 @@ export async function ajustarPesosPedido(pedidoId, pesos) {
 
   revalidatePath('/panel')
   return { ok: true, total_final: totalFinal, items: updates }
-}
-
-export async function guardarMercadoPago(accessToken, activo) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'No autenticado' }
-
-  const { data: perfil } = await supabase
-    .from('usuarios')
-    .select('rol, pescaderia_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!perfil || perfil.rol !== 'cliente' || !perfil.pescaderia_id) {
-    return { error: 'No autorizado' }
-  }
-
-  const admin = createAdminClient()
-  const updates = { mp_activo: !!activo }
-  if (typeof accessToken === 'string' && accessToken.trim()) {
-    updates.mp_access_token = accessToken.trim()
-  }
-
-  const { error } = await admin
-    .from('pescaderias')
-    .update(updates)
-    .eq('id', perfil.pescaderia_id)
-
-  if (error) return { error: error.message }
-
-  revalidatePath('/panel')
-  return { ok: true }
 }
