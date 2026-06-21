@@ -1,10 +1,10 @@
 import { createClient } from '../../../lib/supabase/server'
 import { createAdminClient } from '../../../lib/supabase/admin'
 import { redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
 import PanelFidelizacion from './PanelFidelizacion'
 import PanelMiFidelizacion from './PanelMiFidelizacion'
 
-// ── Nivel alcanzado (vendedor): se evalúa de mayor a menor. ──
 function nivelDe(config, fact) {
   if (!config) return null
   const f = Number(fact) || 0
@@ -20,7 +20,6 @@ function nivelDe(config, fact) {
   return null
 }
 
-// ── Niveles activos ordenados de menor a mayor (comprador: para "próximo nivel"). ──
 function nivelesActivos(config) {
   if (!config) return []
   return [
@@ -60,17 +59,21 @@ export default async function FidelizacionPage() {
     .eq('id', user.id)
     .single()
 
-  if (!perfil || perfil.rol !== 'cliente' || !perfil.pescaderia_id) {
+  const admin = createAdminClient()
+  let pescaderiaId = perfil?.pescaderia_id
+
+  if (perfil?.rol === 'developer') {
+    const ck = (await cookies()).get('bm_dev_tienda')?.value
+    if (!ck) redirect('/dashboard')
+    pescaderiaId = ck
+  } else if (!perfil || perfil.rol !== 'cliente' || !perfil.pescaderia_id) {
     redirect('/inicio')
   }
 
-  const admin = createAdminClient()
-
-  // La modalidad define qué vista mostrar.
   const { data: miPescaderia } = await admin
     .from('pescaderias')
     .select('modalidad')
-    .eq('id', perfil.pescaderia_id)
+    .eq('id', pescaderiaId)
     .maybeSingle()
 
   const haceReparto =
@@ -79,7 +82,6 @@ export default async function FidelizacionPage() {
   const ahora = new Date()
   const mesLabel = ahora.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' })
 
-  // ───────────── COMPRADOR (solo_local): "retorno cobrado" por proveedor ─────────────
   if (!haceReparto) {
     const { data: relaciones } = await admin
       .from('clientes')
@@ -129,21 +131,19 @@ export default async function FidelizacionPage() {
     }
 
     proveedores.sort((a, b) => Number(b.tieneActivo) - Number(a.tieneActivo) || b.acumulado - a.acumulado)
-
     return <PanelMiFidelizacion proveedores={proveedores} mesLabel={mesLabel} />
   }
 
-  // ───────────── PROVEEDOR (hace reparto): config + ranking + retornos pagados ─────────────
   const { data: config } = await admin
     .from('fidelizacion_config')
     .select('*')
-    .eq('pescaderia_id', perfil.pescaderia_id)
+    .eq('pescaderia_id', pescaderiaId)
     .maybeSingle()
 
   const { data: ciclos } = await admin
     .from('fidelizacion_ciclos')
     .select('id, cliente_id, facturacion_acumulada, fecha_inicio, fecha_cierre, estado, nivel_alcanzado, beneficio_otorgado, cerrado_at')
-    .eq('pescaderia_id', perfil.pescaderia_id)
+    .eq('pescaderia_id', pescaderiaId)
     .order('facturacion_acumulada', { ascending: false })
 
   const ids = [...new Set((ciclos || []).map((c) => c.cliente_id))]
