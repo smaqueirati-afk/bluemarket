@@ -29,7 +29,9 @@ export async function generateMetadata({ params }) {
 
 export default async function TiendaPorSlug(props) {
   const params = await props.params
+  const searchParams = await props.searchParams
   const slug = params?.slug ?? params?.nxtPslug ?? Object.values(params)[0]
+  const preview = searchParams?.preview === '1'
   const admin = createAdminClient()
 
   const { data: pescaderia } = await admin
@@ -38,7 +40,26 @@ export default async function TiendaPorSlug(props) {
     .eq('slug', slug)
     .maybeSingle()
 
-  if (!pescaderia || !pescaderia.activa) {
+  if (!pescaderia) {
+    notFound()
+  }
+
+  // Usuario actual (para cuenta corriente, fidelización y modo preview de developer)
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  let esDeveloper = false
+  if (user) {
+    const { data: perfilDev } = await admin
+      .from('usuarios')
+      .select('rol')
+      .eq('id', user.id)
+      .maybeSingle()
+    esDeveloper = perfilDev?.rol === 'developer'
+  }
+
+  // Una tienda apagada solo la puede abrir el developer en modo preview (?preview=1)
+  if (!pescaderia.activa && !(preview && esDeveloper)) {
     notFound()
   }
 
@@ -52,8 +73,6 @@ export default async function TiendaPorSlug(props) {
   let ccHabilitada = false
   let retorno = { disponible: 0, maxTier: false, nivel: null }
   const soloDelivery = pescaderia.modalidad === 'solo_reparto'
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
 
   if (user) {
     const { data: cli } = await admin

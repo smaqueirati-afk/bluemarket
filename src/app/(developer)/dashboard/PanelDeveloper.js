@@ -541,10 +541,10 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
                   {/* Acciones */}
                   <div className="flex items-center gap-2 mt-3">
                     <a
-                      href={`/t/${p.slug}`}
+                      href={`/t/${p.slug}?preview=1`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      title="Abrir tienda pública"
+                      title="Abrir tienda pública (modo prueba)"
                       className="flex-1 h-10 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center gap-1.5 text-xs font-semibold text-white/60 hover:text-[#2ecc71] hover:border-[#2ecc71]/40 transition-colors active:scale-95"
                     >
                       <span>🛒</span>
