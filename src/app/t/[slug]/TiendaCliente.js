@@ -1,35 +1,24 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Checkout from './Checkout'
-import { crearPedido, crearPreferenciaMP, misPedidos } from './actions'
+import { crearPedido, marcarEstadoVisto, misPedidos } from './actions'
 import BarraUsuario from '../../../components/BarraUsuario'
 import { createClient } from '../../../lib/supabase/client'
 
-export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHabilitada, soloDelivery, pescaderia, retorno }) {
+const ESTADOS = {
+  nuevo:      { label: 'Recibido',   emoji: '🆕', color: '#4db8ff' },
+  preparando: { label: 'Preparando', emoji: '👨‍🍳', color: '#f39c12' },
+  listo:      { label: 'Listo',      emoji: '✅', color: '#2ecc71' },
+  en_camino:  { label: 'En camino',  emoji: '🛵', color: '#9b59b6' },
+  entregado:  { label: 'Entregado',  emoji: '🎉', color: '#2ecc71' },
+  cancelado:  { label: 'Cancelado',  emoji: '❌', color: '#e74c3c' },
+}
 
-  // Textos y emojis según el rubro de la tienda
-  const TEXTOS_RUBRO = {
-    'pescadería': { titulo: 'Frescos de hoy 🌊', subtitulo: 'Recién llegados del mar a tu mesa', buscar: 'Buscar merluza, langostinos...' },
-    'quesería':   { titulo: 'Lácteos frescos 🐄', subtitulo: 'Selección de quesos y lácteos artesanales', buscar: 'Buscar brie, mozzarella...' },
-    'carnicería': { titulo: 'Cortes del día 🥩', subtitulo: 'Carnes frescas directo al mostrador', buscar: 'Buscar asado, bife...' },
-    'verdulería': { titulo: 'Verduras de hoy 🌿', subtitulo: 'Frescas de la quinta a tu mesa', buscar: 'Buscar tomate, lechuga...' },
-    'panadería':  { titulo: 'Recién horneado 🥖', subtitulo: 'Pan y facturas del día', buscar: 'Buscar pan, medialunas...' },
-    'rotisería':  { titulo: 'Listo para comer 🍗', subtitulo: 'Comida casera recién hecha', buscar: 'Buscar pollo, milanesa...' },
-    'almacén':    { titulo: 'Productos del día 🛒', subtitulo: 'Todo lo que necesitás en un lugar', buscar: 'Buscar arroz, aceite...' },
-  }
-  const txRubro = TEXTOS_RUBRO[pescaderia?.rubro] || { titulo: 'Productos de hoy 🛍️', subtitulo: 'Todo para vos', buscar: 'Buscar productos...' }
+export default function TiendaCliente({ productos, usuarioId, pescaderiaNombre }) {
   // carrito = array de { producto, cantidad }
-  const [carrito, setCarrito] = useState(() => {
-    if (typeof window === 'undefined') return []
-    try {
-      const saved = localStorage.getItem('bm_carrito')
-      if (saved) return JSON.parse(saved)
-    } catch {}
-    return []
-  })
+  const [carrito, setCarrito] = useState([])
   const [categoria, setCategoria] = useState('todo')
-  const [busqueda, setBusqueda] = useState('')
   const [verCarrito, setVerCarrito] = useState(false)
   const [verCheckout, setVerCheckout] = useState(false)
   const [pedidoConfirmado, setPedidoConfirmado] = useState(false)
@@ -37,71 +26,95 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
   const [palabraClave, setPalabraClave] = useState(null)
   const [guardando, setGuardando] = useState(false)
   const [errorPedido, setErrorPedido] = useState(null)
-  const [logroNivel, setLogroNivel] = useState(null) // animación de logro post-compra
   const [copiadoInvite, setCopiadoInvite] = useState(false)
-  const [misPedidosList, setMisPedidosList] = useState([])
   const [verMisPedidos, setVerMisPedidos] = useState(false)
+  const [misPedidos, setMisPedidos] = useState([])
+  const [cargandoPedidos, setCargandoPedidos] = useState(false)
+  const notifCount = misPedidos.filter(p => !p.estado_visto).length
 
-  const emojiTienda = pescaderia?.emoji_rubro || '🛒'
+  // ── Cargar y escuchar pedidos del usuario en tiempo real ──
+  useEffect(() => {
+    if (!usuarioId) return
+    const supabase = createClient()
+
+    async function cargarPedidos() {
+      setCargandoPedidos(true)
+      const { pedidos } = await misPedidos()
+      setMisPedidos(pedidos || [])
+      setCargandoPedidos(false)
+    }
+
+    cargarPedidos()
+
+    const channel = supabase
+      .channel(`mis-pedidos-${usuarioId}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'pedidos',
+        filter: `usuario_id=eq.${usuarioId}`,
+      }, (payload) => {
+        setMisPedidos((prev) =>
+          prev.map((p) => p.id === payload.new.id ? { ...p, ...payload.new } : p)
+        )
+      })
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'pedidos',
+        filter: `usuario_id=eq.${usuarioId}`,
+      }, (payload) => {
+        setMisPedidos((prev) => [payload.new, ...prev])
+      })
+      .subscribe()
+
+    return () => supabase.removeChannel(channel)
+  }, [usuarioId])
+
+  async function verPedido(pedido) {
+    if (!pedido.estado_visto) {
+      // Marcar como visto optimisticamente
+      setMisPedidos((prev) =>
+        prev.map((p) => p.id === pedido.id ? { ...p, estado_visto: true } : p)
+      )
+      await marcarEstadoVisto(pedido.id)
+    }
+  }
+
   const categorias = [
-    { id: 'todo', emoji: emojiTienda, label: 'Todo' },
-    { id: 'lacteos', emoji: '🧀', label: 'Lácteos' },
-    { id: 'pescado', emoji: '🐡', label: 'Pescado' },
+    { id: 'todo', emoji: '🐟', label: 'Todo' },
     { id: 'mariscos', emoji: '🦐', label: 'Mariscos' },
-    { id: 'carnes', emoji: '🥩', label: 'Carnes' },
-    { id: 'fiambres', emoji: '🍖', label: 'Fiambres' },
-    { id: 'verduras', emoji: '🥦', label: 'Verduras' },
-    { id: 'panaderia', emoji: '🥖', label: 'Panadería' },
+    { id: 'pescado', emoji: '🐡', label: 'Pescado' },
+    { id: 'moluscos', emoji: '🦑', label: 'Moluscos' },
     { id: 'congelados', emoji: '❄️', label: 'Congelados' },
-    { id: 'bebidas', emoji: '🧃', label: 'Bebidas' },
-    { id: 'otros', emoji: '📦', label: 'Otros' },
   ]
 
-  // Normaliza para buscar sin tildes ni mayúsculas
-  function normalizar(t) {
-    return (t || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-  }
-
-  // Solo mostramos las categorías que la tienda realmente tiene (+ "Todo")
-  const idsConProductos = new Set(productos.map((p) => p.categoria))
-  const categoriasVisibles = categorias.filter((c) => c.id === 'todo' || idsConProductos.has(c.id))
-
-  const q = normalizar(busqueda)
-  const productosFiltrados = productos.filter((p) => {
-    const okCat = categoria === 'todo' || p.categoria === categoria
-    const okBusq = q === '' || normalizar(p.nombre).includes(q)
-    return okCat && okBusq
-  })
+  const productosFiltrados =
+    categoria === 'todo'
+      ? productos
+      : productos.filter((p) => p.categoria === categoria)
 
   // ── Funciones del carrito ──
-  // Paso de cantidad: productos por kg van de a ¼ (0.25); el resto de a 1
-  function stepDe(producto) {
-    return producto?.unidad === 'kg' ? 0.25 : 1
-  }
-
   function agregar(producto) {
-    const paso = stepDe(producto)
     setCarrito((prev) => {
       const existe = prev.find((item) => item.producto.id === producto.id)
       if (existe) {
         return prev.map((item) =>
           item.producto.id === producto.id
-            ? { ...item, cantidad: +(item.cantidad + paso).toFixed(2) }
+            ? { ...item, cantidad: item.cantidad + 1 }
             : item
         )
       }
-      return [...prev, { producto, cantidad: paso }]
+      return [...prev, { producto, cantidad: 1 }]
     })
   }
 
   function quitar(productoId) {
     setCarrito((prev) => {
       const item = prev.find((i) => i.producto.id === productoId)
-      if (!item) return prev
-      const paso = stepDe(item.producto)
-      if (item.cantidad - paso > 0.001) {
+      if (item && item.cantidad > 1) {
         return prev.map((i) =>
-          i.producto.id === productoId ? { ...i, cantidad: +(i.cantidad - paso).toFixed(2) } : i
+          i.producto.id === productoId ? { ...i, cantidad: i.cantidad - 1 } : i
         )
       }
       return prev.filter((i) => i.producto.id !== productoId)
@@ -116,77 +129,13 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
     return '$' + Number(n).toLocaleString('es-AR')
   }
 
-  // Cantidad corta para los steppers: "¼", "½", "1¼"... en kg; el número en el resto
-  function fmtCantCorto(c, unidad) {
-    if (unidad !== 'kg') return String(c)
-    const entero = Math.floor(c + 1e-9)
-    const frac = +(c - entero).toFixed(2)
-    const simb = { 0: '', 0.25: '¼', 0.5: '½', 0.75: '¾' }[frac]
-    if (simb === undefined) return c.toLocaleString('es-AR')
-    if (entero === 0) return simb
-    return `${entero}${simb}`
-  }
-
-  // Igual que la anterior pero aclara "kg" en productos por peso (más claro para mayores)
-  function fmtCantPaso(c, unidad) {
-    if (unidad !== 'kg') return String(c)
-    return fmtCantCorto(c, 'kg') + ' kg'
-  }
-
-  // ¿Hay algún producto que se vende por peso? -> el total pasa a ser estimado
-  const hayPorPeso = carrito.some((i) => i.producto.unidad === 'kg')
-
   // Invitación a la red (solo para usuarios logueados)
   const linkInvitacion = typeof window !== 'undefined' && usuarioId
     ? `${window.location.origin}/invitacion/${usuarioId}`
     : ''
 
-
-  // ── Cargar mis pedidos y suscribirse a cambios en tiempo real ──
-  useEffect(() => {
-    if (!pescaderiaId || !usuarioId) return
-
-    async function cargar() {
-      const res = await misPedidos(pescaderiaId)
-      if (res.pedidos) setMisPedidosList(res.pedidos)
-    }
-    cargar()
-
-    const supabase = createClient()
-    const channel = supabase
-      .channel(`mis-pedidos-${usuarioId}`)
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'pedidos',
-      }, (payload) => {
-        setMisPedidosList((prev) =>
-          prev.map((p) => p.id === payload.new.id ? { ...p, estado: payload.new.estado, total_final: payload.new.total_final, pesado: payload.new.pesado } : p)
-        )
-      })
-      .subscribe()
-
-    return () => supabase.removeChannel(channel)
-  }, [pescaderiaId, usuarioId])
-
-  // Si el usuario acaba de loguearse y hay carrito guardado, abrir checkout
-  useEffect(() => {
-    if (usuarioId && carrito.length > 0 && !verCheckout && !pedidoConfirmado) {
-      setVerCheckout(true)
-    }
-  }, [usuarioId])
-
-  // Persistir el carrito en localStorage para que sobreviva el login con Google
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    try {
-      if (carrito.length > 0) localStorage.setItem('bm_carrito', JSON.stringify(carrito))
-      else localStorage.removeItem('bm_carrito')
-    } catch {}
-  }, [carrito])
-
   async function invitar() {
-    const texto = `Te invito a comprar en ${pescaderia?.nombre || 'BlueMarket'} ${pescaderia?.emoji_rubro || ''}\n${linkInvitacion}`
+    const texto = `Te invito a BlueMarket 🐟\n${linkInvitacion}`
     if (navigator.share) {
       try {
         await navigator.share({ title: 'BlueMarket', text: texto, url: linkInvitacion })
@@ -213,31 +162,33 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
         {/* TOP BAR */}
         <div className="shrink-0 px-4 pt-5 pb-1">
           <div className="flex items-center justify-between mb-3.5">
-            <div className="flex items-center gap-1.5 bg-white/[0.07] border border-white/12 rounded-full px-3 py-1.5 backdrop-blur-sm min-w-0">
-              <span className="shrink-0">{pescaderia?.emoji_rubro || '🛒'}</span>
-              <strong className="text-[12px] text-white truncate">{pescaderia?.nombre || 'Pescadería'}</strong>
+            <div className="flex items-center gap-2 bg-white/[0.07] border border-white/12 rounded-2xl px-3.5 py-2 backdrop-blur-sm">
+              <span className="text-lg">🐟</span>
+              <div className="flex flex-col leading-tight">
+                <span className="text-[10px] text-white/55">Pedido a la pescadería</span>
+                <strong className="text-[13px] text-white truncate max-w-[180px]">{pescaderiaNombre || 'la pescadería'}</strong>
+              </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2">
               {usuarioId && (
                 <button
                   onClick={() => setVerMisPedidos(true)}
-                  className="relative flex items-center gap-1.5 h-10 px-3 bg-white/[0.07] border border-white/12 rounded-xl backdrop-blur-sm active:scale-95 transition-transform">
-                  <span className="text-lg">📦</span>
-                  <span className="text-xs font-bold text-white/85">Pedidos</span>
-                  {misPedidosList.filter(p => !['entregado','cancelado'].includes(p.estado)).length > 0 && (
-                    <div className="absolute -top-1.5 -right-1.5 bg-[#f39c12] text-[#03174a] text-[10px] font-extrabold min-w-[18px] h-[18px] rounded-lg px-1 flex items-center justify-center">
-                      {misPedidosList.filter(p => !['entregado','cancelado'].includes(p.estado)).length}
+                  className="relative w-10 h-10 bg-white/[0.07] border border-white/12 rounded-xl flex items-center justify-center backdrop-blur-sm active:scale-95 transition-transform">
+                  <span className="text-white/70 text-lg">📦</span>
+                  {notifCount > 0 && (
+                    <div className="absolute -top-1.5 -right-1.5 bg-[#f39c12] text-[#03174a] text-[9px] font-extrabold min-w-[17px] h-[17px] rounded-lg px-1 flex items-center justify-center"
+                         style={{ boxShadow: '0 0 10px rgba(243,156,18,0.6)' }}>
+                      {notifCount}
                     </div>
                   )}
                 </button>
               )}
               <button
                 onClick={() => setVerCarrito(true)}
-                className="relative flex items-center gap-1.5 h-10 px-3 bg-white/[0.07] border border-white/12 rounded-xl backdrop-blur-sm active:scale-95 transition-transform">
-                <span className="text-lg">🛒</span>
-                <span className="text-xs font-bold text-white/85">Carrito</span>
+                className="relative w-10 h-10 bg-white/[0.07] border border-white/12 rounded-xl flex items-center justify-center backdrop-blur-sm active:scale-95 transition-transform">
+                <span className="text-white/70 text-lg">🛒</span>
                 {totalItems > 0 && (
-                  <div className="absolute -top-1.5 -right-1.5 bg-[#4db8ff] text-[#03174a] text-[10px] font-extrabold min-w-[18px] h-[18px] rounded-lg px-1 flex items-center justify-center"
+                  <div className="absolute -top-1.5 -right-1.5 bg-[#4db8ff] text-[#03174a] text-[9px] font-extrabold min-w-[17px] h-[17px] rounded-lg px-1 flex items-center justify-center"
                        style={{ boxShadow: '0 0 10px rgba(77,184,255,0.5)' }}>
                     {totalItems}
                   </div>
@@ -247,31 +198,21 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
           </div>
 
           <h1 className="text-xl font-extrabold text-white mb-0.5">
-            {txRubro.titulo}
+            Frescos de <span className="text-[#4db8ff]">hoy</span> 🌊
           </h1>
-          <p className="text-sm text-white/55 mb-3.5">{txRubro.subtitulo}</p>
+          <p className="text-[12px] text-white/45 mb-3.5">Recién llegados del mar a tu mesa</p>
 
-          <div className="flex items-center gap-2.5 bg-white/10 border border-white/12 rounded-xl px-3.5 py-3 mb-3.5 backdrop-blur-sm focus-within:border-[#4db8ff]/60">
-            <span className="text-white/45 text-lg">🔍</span>
-            <input
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              placeholder={txRubro.buscar}
-              className="flex-1 bg-transparent text-base text-white placeholder-white/40 outline-none"
-            />
-            {busqueda && (
-              <button onClick={() => setBusqueda('')} aria-label="Borrar búsqueda"
-                className="text-white/50 text-2xl leading-none px-1">×</button>
-            )}
+          <div className="flex items-center gap-2.5 bg-white/10 border border-white/12 rounded-xl px-3.5 py-3 mb-3.5 backdrop-blur-sm">
+            <span className="text-white/35">🔍</span>
+            <span className="text-sm text-white/35">Buscar merluza, langostinos...</span>
           </div>
 
-          {categoriasVisibles.length > 1 && (
           <div className="flex gap-2 overflow-x-auto pb-3 bm-no-scrollbar">
-            {categoriasVisibles.map((cat) => (
+            {categorias.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setCategoria(cat.id)}
-                className={`shrink-0 px-4 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap border transition-all ${
+                className={`shrink-0 px-3.5 py-2 rounded-full text-xs font-medium whitespace-nowrap border transition-all ${
                   categoria === cat.id
                     ? 'bg-[#4db8ff]/15 border-[#4db8ff] text-[#4db8ff]'
                     : 'bg-white/[0.06] border-white/10 text-white/55 hover:border-white/25'
@@ -281,7 +222,6 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
               </button>
             ))}
           </div>
-          )}
         </div>
 
         {/* CONTENT */}
@@ -307,8 +247,8 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
 
           {productosFiltrados.length === 0 ? (
             <div className="text-center py-12">
-              <div className="text-4xl mb-3 opacity-40">{pescaderia?.emoji_rubro || '🛒'}</div>
-              <p className="text-white/55 text-base">{busqueda ? `No encontramos "${busqueda}".` : 'No hay productos en esta categoría.'}</p>
+              <div className="text-4xl mb-3 opacity-40">🐟</div>
+              <p className="text-white/40 text-sm">No hay productos en esta categoría.</p>
             </div>
           ) : (
             <div className="flex flex-col gap-3">
@@ -320,42 +260,36 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
                     style={{ animation: `bmFadeUp 0.4s ease both`, animationDelay: `${idx * 0.04}s` }}>
                     {/* Imagen */}
                     <div className="w-[78px] h-[78px] shrink-0 bg-[linear-gradient(135deg,#0a3a7a,#051e5c)] flex items-center justify-center text-3xl relative overflow-hidden">
-                      {p.foto_url ? (
-                        <img src={p.foto_url} alt={p.nombre} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
-                      ) : (
-                        <>
-                          <div className="absolute inset-0 opacity-30"
-                               style={{ background: 'radial-gradient(circle at 70% 20%, rgba(125,211,252,0.4), transparent 60%)' }} />
-                          <span className="relative">{p.emoji}</span>
-                        </>
-                      )}
+                      <div className="absolute inset-0 opacity-30"
+                           style={{ background: 'radial-gradient(circle at 70% 20%, rgba(125,211,252,0.4), transparent 60%)' }} />
+                      <span className="relative">{p.emoji}</span>
                     </div>
                     {/* Info */}
                     <div className="flex-1 min-w-0 py-3">
-                      <div className="text-base font-semibold text-white leading-tight truncate">{p.nombre}</div>
-                      <div className="text-[13px] text-white/55 mt-0.5">
-                        Por {p.unidad === 'kg' ? 'kilo' : p.unidad}
+                      <div className="text-[13px] font-semibold text-white leading-tight truncate">{p.nombre}</div>
+                      <div className="text-[10px] text-white/35 mt-0.5">
+                        Por {p.unidad} · Stock: {p.stock}
                       </div>
-                      <div className="text-xl font-extrabold text-[#4db8ff] mt-1">{fmt(p.precio)}</div>
+                      <div className="text-[15px] font-extrabold text-[#4db8ff] mt-1">{fmt(p.precio)}</div>
                     </div>
                     {/* Controles */}
                     <div className="shrink-0">
                       {enCarrito ? (
-                        <div className="flex items-center gap-2">
-                          <button onClick={() => quitar(p.id)} aria-label="Quitar"
-                            className="w-11 h-11 bg-white/10 rounded-xl text-white text-2xl font-bold flex items-center justify-center active:scale-90 transition-all">
+                        <div className="flex items-center gap-1.5">
+                          <button onClick={() => quitar(p.id)}
+                            className="w-7 h-7 bg-white/10 rounded-lg text-white text-lg font-bold flex items-center justify-center active:scale-90 transition-all">
                             −
                           </button>
-                          <span className="text-base font-bold text-white min-w-[3.5rem] text-center px-0.5">{fmtCantPaso(enCarrito.cantidad, p.unidad)}</span>
-                          <button onClick={() => agregar(p)} aria-label="Agregar"
-                            className="w-11 h-11 bg-[#4db8ff] rounded-xl text-[#03174a] text-2xl font-extrabold flex items-center justify-center active:scale-90 transition-all">
+                          <span className="text-sm font-bold text-white w-5 text-center">{enCarrito.cantidad}</span>
+                          <button onClick={() => agregar(p)}
+                            className="w-7 h-7 bg-[#4db8ff] rounded-lg text-[#03174a] text-lg font-extrabold flex items-center justify-center active:scale-90 transition-all">
                             +
                           </button>
                         </div>
                       ) : (
                         <button
-                          onClick={() => agregar(p)} aria-label="Agregar al carrito"
-                          className="w-12 h-12 bg-[#4db8ff] rounded-xl text-[#03174a] text-3xl font-extrabold flex items-center justify-center active:scale-90 transition-all hover:shadow-[0_0_14px_rgba(77,184,255,0.5)]"
+                          onClick={() => agregar(p)}
+                          className="w-8 h-8 bg-[#4db8ff] rounded-lg text-[#03174a] text-xl font-extrabold flex items-center justify-center active:scale-90 transition-all hover:shadow-[0_0_14px_rgba(77,184,255,0.5)]"
                         >
                           +
                         </button>
@@ -373,12 +307,12 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
           <div className="absolute bottom-4 left-4 right-4 z-20" style={{ animation: 'bmSlideUp 0.3s ease both' }}>
             <button
               onClick={() => setVerCarrito(true)}
-              className="w-full bg-[#4db8ff] text-[#03174a] rounded-2xl px-5 py-4 flex items-center justify-between font-extrabold text-lg shadow-[0_8px_24px_rgba(77,184,255,0.4)] active:scale-[0.98] transition-transform">
+              className="w-full bg-[#4db8ff] text-[#03174a] rounded-2xl px-5 py-3.5 flex items-center justify-between font-bold shadow-[0_8px_24px_rgba(77,184,255,0.4)] active:scale-[0.98] transition-transform">
               <span className="flex items-center gap-2">
-                <span className="bg-[#03174a] text-white w-7 h-7 rounded-lg text-sm flex items-center justify-center">{totalItems}</span>
+                <span className="bg-[#03174a] text-white w-6 h-6 rounded-lg text-xs flex items-center justify-center">{totalItems}</span>
                 Ver carrito
               </span>
-              <span>{hayPorPeso ? '~' : ''}{fmt(totalPrecio)}</span>
+              <span>{fmt(totalPrecio)}</span>
             </button>
           </div>
         )}
@@ -416,17 +350,17 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
                           {item.producto.emoji}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-base font-semibold text-white truncate">{item.producto.nombre}</div>
-                          <div className="text-sm text-[#4db8ff] font-bold mt-0.5">{fmt(item.producto.precio)} <span className="text-white/45 font-normal">/ {item.producto.unidad}</span></div>
+                          <div className="text-sm font-semibold text-white truncate">{item.producto.nombre}</div>
+                          <div className="text-xs text-[#4db8ff] font-bold mt-0.5">{fmt(item.producto.precio)} <span className="text-white/35 font-normal">/ {item.producto.unidad}</span></div>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <button onClick={() => quitar(item.producto.id)} aria-label="Quitar"
-                            className="w-11 h-11 bg-white/10 rounded-xl text-white text-2xl font-bold flex items-center justify-center active:scale-90">
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button onClick={() => quitar(item.producto.id)}
+                            className="w-7 h-7 bg-white/10 rounded-lg text-white text-lg font-bold flex items-center justify-center active:scale-90">
                             −
                           </button>
-                          <span className="text-base font-bold text-white min-w-[3.5rem] text-center px-0.5">{fmtCantPaso(item.cantidad, item.producto.unidad)}</span>
-                          <button onClick={() => agregar(item.producto)} aria-label="Agregar"
-                            className="w-11 h-11 bg-[#4db8ff] rounded-xl text-[#03174a] text-2xl font-extrabold flex items-center justify-center active:scale-90">
+                          <span className="text-sm font-bold text-white w-5 text-center">{item.cantidad}</span>
+                          <button onClick={() => agregar(item.producto)}
+                            className="w-7 h-7 bg-[#4db8ff] rounded-lg text-[#03174a] text-lg font-extrabold flex items-center justify-center active:scale-90">
                             +
                           </button>
                         </div>
@@ -440,91 +374,18 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
               {carrito.length > 0 && (
                 <div className="shrink-0 px-5 py-4 border-t border-white/8 bg-[#03174a]">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-white/55 text-sm">{hayPorPeso ? 'Total estimado' : 'Total'}</span>
-                    <span className="text-2xl font-extrabold text-white">{hayPorPeso ? '~' : ''}{fmt(totalPrecio)}</span>
+                    <span className="text-white/55 text-sm">Total</span>
+                    <span className="text-2xl font-extrabold text-white">{fmt(totalPrecio)}</span>
                   </div>
-                  {hayPorPeso && (
-                    <p className="text-[11px] text-white/45 leading-snug -mt-1.5 mb-3 flex items-start gap-1.5">
-                      <span className="shrink-0">⚖️</span>
-                      <span>Los productos por kg se pesan al preparar el pedido. El importe final puede variar (más o menos) según el corte.</span>
-                    </p>
-                  )}
                   <button
-                    onClick={() => { setVerCarrito(false); setErrorPedido(null); setVerCheckout(true) }}
-                    className="w-full bg-[#4db8ff] text-[#03174a] font-extrabold text-lg py-4 rounded-xl active:scale-[0.98] transition-transform">
-                    Finalizar compra
+                    onClick={() => { setVerCarrito(false); setVerCheckout(true) }}
+                    className="w-full bg-[#4db8ff] text-[#03174a] font-bold py-3.5 rounded-xl active:scale-[0.98] transition-transform">
+                    Continuar con el pedido
                   </button>
                 </div>
               )}
             </div>
           </div>
-        )}
-
-
-        {/* CHECKOUT */}
-        {verCheckout && (
-          <Checkout
-            carrito={carrito}
-            cargando={guardando}
-            errorExterno={errorPedido}
-            soloDelivery={soloDelivery}
-            ccHabilitada={ccHabilitada}
-            modalidad={pescaderia?.modalidad}
-            envioModo={pescaderia?.envio_modo}
-            envioGratisDesde={pescaderia?.envio_gratis_desde}
-            mpActivo={pescaderia?.mp_activo}
-            retorno={retorno}
-            necesitaLogin={!usuarioId}
-            onLogin={async () => {
-              const supabase = createClient()
-              // Guardar carrito para restaurarlo después del login (localStorage sobrevive el redirect de OAuth)
-              try { localStorage.setItem('bm_carrito', JSON.stringify(carrito)) } catch {}
-              // Guardar la URL actual para volver después del login
-              document.cookie = `bm_return=${encodeURIComponent(window.location.pathname)};path=/;max-age=1800;samesite=lax`
-              const slugActual = window.location.pathname.match(/^\/t\/([^/]+)/)?.[1] || ''
-              // Guardamos el slug en localStorage como fallback extra (además de cookie)
-              if (slugActual) localStorage.setItem('bm_slug_pendiente', slugActual)
-              await supabase.auth.signInWithOAuth({
-                provider: 'google',
-                options: { redirectTo: `${window.location.origin}/auth/callback` },
-              })
-            }}
-            onVolver={() => { setVerCheckout(false); setErrorPedido(null); setVerCarrito(true) }}
-            onConfirmar={async (datos) => {
-              setGuardando(true)
-              setErrorPedido(null)
-              try {
-                const resultado = await crearPedido(pescaderiaId, datos, carrito)
-                if (resultado?.error) {
-                  setErrorPedido(resultado.error)
-                  return
-                }
-                // Si paga con Mercado Pago, ir a pagar antes de mostrar la confirmación
-                if (datos.pago === 'mercadopago') {
-                  const pref = await crearPreferenciaMP(resultado.pedidoId)
-                  if (pref?.init_point) {
-                    setCarrito([])
-                    window.location.href = pref.init_point
-                    return
-                  }
-                  setErrorPedido(pref?.error || 'No se pudo iniciar el pago. El pedido quedó pendiente; coordiná con el local.')
-                  return
-                }
-                setVerCheckout(false)
-                setNumeroPedido(resultado.numero)
-                setPalabraClave(resultado.palabraClave)
-                setPedidoConfirmado(true)
-                setCarrito([])
-                if (resultado.logroNivel) setLogroNivel(resultado.logroNivel)
-                // Recargar mis pedidos
-                misPedidos(pescaderiaId).then(r => r.pedidos && setMisPedidosList(r.pedidos))
-              } catch (e) {
-                setErrorPedido('No se pudo confirmar el pedido. Probá de nuevo en un momento.')
-              } finally {
-                setGuardando(false)
-              }
-            }}
-          />
         )}
 
 
@@ -541,84 +402,51 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
                   <button onClick={() => setVerMisPedidos(false)} className="text-white/40 text-2xl leading-none px-1">×</button>
                 </div>
               </div>
-              {/* Contacto de la pescadería */}
-              {(pescaderia?.telefono || pescaderia?.email) && (
-                <div className="shrink-0 mx-5 mt-3 mb-1 bg-white/[0.05] border border-white/10 rounded-2xl px-4 py-3">
-                  <p className="text-[10px] text-white/40 uppercase tracking-wide font-bold mb-2">
-                    Contactar a {pescaderia?.nombre}
-                  </p>
-                  <div className="flex gap-2 flex-wrap">
-                    {pescaderia?.telefono && (() => {
-                      let n = String(pescaderia.telefono).replace(/\D/g, '')
-                      if (n.startsWith('00')) n = n.slice(2)
-                      if (n.startsWith('54')) {
-                        let r = n.slice(2)
-                        if (r.startsWith('0')) r = r.slice(1)
-                        if (!r.startsWith('9')) r = '9' + r
-                        n = '54' + r
-                      } else {
-                        if (n.startsWith('0')) n = n.slice(1)
-                        n = '549' + n
-                      }
-                      return (
-                        <a
-                          href={`https://wa.me/${n}?text=${encodeURIComponent(`Hola ${pescaderia?.nombre || ''}, te escribo por mi pedido ${pescaderia?.emoji_rubro || ''}`)}`}
-                          target="_blank" rel="noopener noreferrer"
-                          className="flex items-center gap-1.5 bg-[#25D366]/15 border border-[#25D366]/30 text-[#25D366] text-xs font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform">
-                          💬 {pescaderia.telefono}
-                        </a>
-                      )
-                    })()}
-                    {pescaderia?.email && (
-                      <a href={`mailto:${pescaderia.email}?subject=Consulta sobre mi pedido`}
-                        className="flex items-center gap-1.5 bg-white/[0.07] border border-white/15 text-white/70 text-xs font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform">
-                        ✉️ {pescaderia.email}
-                      </a>
-                    )}
-                  </div>
-                </div>
-              )}
               <div className="flex-1 overflow-y-auto px-5 py-4 bm-no-scrollbar">
-                {misPedidosList.length === 0 ? (
+                {cargandoPedidos ? (
+                  <div className="text-center py-10 text-white/40 text-sm">Cargando...</div>
+                ) : misPedidos.length === 0 ? (
                   <div className="text-center py-10">
                     <div className="text-4xl mb-3 opacity-40">📦</div>
-                    <p className="text-white/40 text-sm">Todavía no hiciste pedidos.</p>
+                    <p className="text-white/40 text-sm">Todavía no hiciste ningún pedido</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {misPedidosList.map((p) => {
-                      const colores = {
-                        nuevo: { bg: '#4db8ff22', color: '#4db8ff', emoji: '🆕' },
-                        preparando: { bg: '#f39c1222', color: '#f39c12', emoji: '👨‍🍳' },
-                        listo: { bg: '#2ecc7122', color: '#2ecc71', emoji: '✅' },
-                        en_camino: { bg: '#9b59b622', color: '#9b59b6', emoji: '🛵' },
-                        entregado: { bg: '#2ecc7122', color: '#2ecc71', emoji: '🎉' },
-                        cancelado: { bg: '#e74c3c22', color: '#e74c3c', emoji: '❌' },
-                      }
-                      const est = colores[p.estado] || colores.nuevo
+                    {misPedidos.map((pedido) => {
+                      const est = ESTADOS[pedido.estado] || ESTADOS.nuevo
+                      const esNuevo = !pedido.estado_visto
                       return (
-                        <div key={p.id} className="bg-white/[0.06] border border-white/10 rounded-2xl p-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="font-extrabold text-white">#{p.numero}</span>
-                            <span className="text-xs font-bold px-2.5 py-1 rounded-lg"
-                              style={{ background: est.bg, color: est.color }}>
-                              {est.emoji} {p.estado.replace('_', ' ')}
-                            </span>
+                        <div
+                          key={pedido.id}
+                          onClick={() => verPedido(pedido)}
+                          className={`relative flex items-center gap-3 rounded-2xl p-3.5 border transition-all cursor-pointer active:scale-[0.98] ${
+                            esNuevo
+                              ? 'bg-[#f39c12]/10 border-[#f39c12]/40'
+                              : 'bg-white/[0.05] border-white/8'
+                          }`}>
+                          {esNuevo && (
+                            <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-[#f39c12]"
+                                 style={{ boxShadow: '0 0 6px rgba(243,156,18,0.8)' }} />
+                          )}
+                          <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl shrink-0"
+                               style={{ background: `${est.color}22`, border: `1px solid ${est.color}44` }}>
+                            {est.emoji}
                           </div>
-                          <div className="text-xs text-white/40 mb-2">
-                            {new Date(p.created_at).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                          </div>
-                          {p.items?.map((it, i) => (
-                            <div key={i} className="text-xs text-white/60">{it.cantidad}× {it.nombre}</div>
-                          ))}
-                          <div className="flex items-center justify-between mt-2">
-                            <div className="text-base font-extrabold text-[#4db8ff]">
-                              ${Number(p.total).toLocaleString('es-AR')}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-white text-sm">Pedido #{pedido.numero}</span>
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg"
+                                    style={{ background: `${est.color}22`, color: est.color }}>
+                                {est.label}
+                              </span>
                             </div>
-                            {p.palabra_clave && !['entregado','cancelado'].includes(p.estado) && (
-                              <div className="bg-white/[0.07] border border-white/15 rounded-xl px-3 py-1.5 text-right">
-                                <div className="text-[9px] text-white/40 uppercase tracking-wide">🔑 Clave</div>
-                                <div className="text-sm font-extrabold text-[#4db8ff] tracking-wider">{p.palabra_clave}</div>
+                            <div className="text-xs text-white/40 mt-0.5">
+                              ${Number(pedido.total).toLocaleString('es-AR')} · {pedido.tipo_entrega === 'delivery' ? '🏠 Envío' : '🏪 Retiro'}
+                            </div>
+                            {pedido.palabra_clave && !['entregado','cancelado'].includes(pedido.estado) && (
+                              <div className="mt-2 flex items-center gap-2 bg-[#4db8ff]/15 border border-[#4db8ff]/30 rounded-lg px-2.5 py-1.5 w-fit">
+                                <span className="text-[9px] text-white/50 uppercase tracking-wide font-bold">🔑 Clave</span>
+                                <span className="text-sm font-extrabold text-[#4db8ff] tracking-wide">{pedido.palabra_clave}</span>
                               </div>
                             )}
                           </div>
@@ -632,60 +460,32 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
           </div>
         )}
 
-        {/* CONFIRMACIÓN */}
-        {/* ══ ANIMACIÓN DE LOGRO ══ */}
-        {pedidoConfirmado && logroNivel && (
-          <div
-            className="absolute inset-0 z-[60] flex flex-col items-center justify-center px-6 text-center"
-            style={{ background: 'radial-gradient(ellipse at 50% 30%, #1a3a6e 0%, #03174a 100%)' }}
-            onClick={() => setLogroNivel(null)}
-          >
-            {/* Confetti CSS */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
-              {[...Array(18)].map((_, i) => (
-                <span key={i} className="absolute text-xl"
-                  style={{
-                    left: `${(i * 5.5 + 3) % 100}%`,
-                    top: '-10%',
-                    animation: `bmConfetti ${1.8 + (i % 4) * 0.4}s ${(i * 0.18) % 1.6}s ease-in forwards`,
-                    opacity: 0,
-                  }}>
-                  {['⭐','✨','🌟','💫','🎊','🎉'][i % 6]}
-                </span>
-              ))}
-            </div>
-
-            {/* Medalla del nivel */}
-            <div style={{ animation: 'bmLogroPop 0.55s cubic-bezier(0.34,1.56,0.64,1) both' }}>
-              <div className="text-7xl mb-1">
-                {{ bronce: '🥉', plata: '🥈', oro: '🥇', diamante: '💎' }[logroNivel.nivel] || '🏆'}
-              </div>
-            </div>
-
-            <div className="mt-4 mb-2" style={{ animation: 'bmFadeUp 0.5s 0.3s ease both', opacity: 0 }}>
-              <div className="text-[11px] font-bold uppercase tracking-[2px] text-[#4db8ff] mb-1">
-                ¡Nivel alcanzado!
-              </div>
-              <h2 className="text-3xl font-extrabold text-white capitalize">{logroNivel.nivel}</h2>
-            </div>
-
-            <div className="mt-4 bg-white/[0.08] border border-white/15 rounded-2xl px-6 py-4 w-full max-w-xs"
-                 style={{ animation: 'bmFadeUp 0.5s 0.5s ease both', opacity: 0 }}>
-              <div className="text-[11px] text-white/45 uppercase tracking-wide mb-1">Tu descuento en la próxima compra</div>
-              <div className="text-3xl font-extrabold text-[#2ecc71]">
-                −${Math.round(logroNivel.disponible).toLocaleString('es-AR')}
-              </div>
-              <div className="text-[12px] text-white/55 mt-1">
-                {logroNivel.pct}% de retorno · nivel {logroNivel.nivel}
-              </div>
-            </div>
-
-            <p className="text-white/35 text-[12px] mt-6" style={{ animation: 'bmFadeUp 0.5s 0.8s ease both', opacity: 0 }}>
-              Tocá para continuar
-            </p>
-          </div>
+        {/* CHECKOUT */}
+        {verCheckout && (
+          <Checkout
+            carrito={carrito}
+            cargando={guardando}
+            errorExterno={errorPedido}
+            onVolver={() => { setVerCheckout(false); setVerCarrito(true) }}
+            onConfirmar={async (datos) => {
+              setGuardando(true)
+              setErrorPedido(null)
+              const resultado = await crearPedido(datos, carrito)
+              setGuardando(false)
+              if (resultado.error) {
+                setErrorPedido(resultado.error)
+                return
+              }
+              setVerCheckout(false)
+              setNumeroPedido(resultado.numero)
+              setPalabraClave(resultado.palabraClave)
+              setPedidoConfirmado(true)
+              setCarrito([])
+            }}
+          />
         )}
 
+        {/* CONFIRMACIÓN */}
         {pedidoConfirmado && (
           <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[linear-gradient(180deg,#051e5c_0%,#03174a_100%)] px-8 text-center"
                style={{ animation: 'bmFadeUp 0.4s ease both' }}>
@@ -699,17 +499,17 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
             )}
             {palabraClave && (
               <div className="bg-white/[0.07] border border-white/15 rounded-2xl px-6 py-4 mb-5 w-full">
-                <div className="text-[13px] text-white/60 mb-1">Tu palabra clave 🔑</div>
+                <div className="text-[11px] text-white/45 uppercase tracking-wide mb-1">Tu palabra clave 🔑</div>
                 <div className="text-2xl font-extrabold text-[#4db8ff] tracking-wider">{palabraClave}</div>
-                <div className="text-[13px] text-white/55 mt-1.5">Guardala — te la van a pedir al entregar el pedido</div>
+                <div className="text-[11px] text-white/40 mt-1.5">Guardala — te la van a pedir al entregar el pedido</div>
               </div>
             )}
-            <p className="text-white/70 text-base leading-relaxed mb-8">
-              ✅ Tu pedido fue recibido. <strong className="text-white">{pescaderia?.nombre || 'La tienda'}</strong> lo va a preparar y te va a contactar por <span className="text-[#25D366] font-semibold">WhatsApp</span> para coordinar. {pescaderia?.emoji_rubro || ''}
+            <p className="text-white/55 text-sm leading-relaxed mb-8">
+              Tu pedido fue recibido. La pescadería lo va a preparar y te avisará cuando esté listo. 🐟
             </p>
             <button
               onClick={() => setPedidoConfirmado(false)}
-              className="bg-[#4db8ff] text-[#03174a] font-extrabold text-lg px-8 py-4 rounded-xl active:scale-95 transition-transform">
+              className="bg-[#4db8ff] text-[#03174a] font-bold px-8 py-3 rounded-xl active:scale-95 transition-transform">
               Volver a la tienda
             </button>
           </div>
@@ -717,13 +517,11 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
 
       </div>
 
-<style dangerouslySetInnerHTML={{ __html: `
+      <style jsx>{`
         @keyframes bmFadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes bmSlideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes bmFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-        @keyframes bmLogroPop { from { opacity:0; transform: scale(0.4) rotate(-15deg); } to { opacity:1; transform: scale(1) rotate(0deg); } }
-        @keyframes bmConfetti { 0% { opacity:1; transform: translateY(0) rotate(0deg); } 100% { opacity:0; transform: translateY(110vh) rotate(720deg); } }
-      `}} />
+      `}</style>
     </div>
   )
 }
