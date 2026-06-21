@@ -33,13 +33,13 @@ export default async function TiendaPorSlug(props) {
   const preview = searchParams?.preview === '1'
   const admin = createAdminClient()
 
-  const { data: pescaderia } = await admin
+  const { data: pescaderia, error: errPesc } = await admin
     .from('pescaderias')
     .select('id, nombre, slug, activa, modalidad, direccion, telefono, rubro, emoji_rubro, envio_modo, envio_gratis_desde, logo_url, mp_activo')
     .eq('slug', slug)
     .maybeSingle()
 
-  console.log("SLUG:", slug, "PESCADERIA:", JSON.stringify(pescaderia))
+  console.log("SLUG:", slug, "PESCADERIA:", JSON.stringify(pescaderia), "ERROR:", JSON.stringify(errPesc))
   if (!pescaderia) notFound()
 
   const supabase = await createClient()
