@@ -519,7 +519,7 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
                   className="bg-white/[0.06] border border-white/10 rounded-2xl p-4 backdrop-blur-sm transition-all hover:border-[#4db8ff]/40"
                   style={{ animation: 'bmFadeUp 0.4s ease both', animationDelay: `${idx * 0.05}s` }}>
 
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-start gap-3">
                     <div className="w-12 h-12 rounded-xl bg-[#4db8ff]/12 border border-[#4db8ff]/30 flex items-center justify-center text-2xl shrink-0">
                       {p.emoji_rubro || '🛒'}
                     </div>
@@ -536,31 +536,33 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
                               style={p.activa ? { boxShadow: '0 0 8px rgba(46,204,113,0.6)' } : {}}></span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        onClick={() => window.open(`/t/${p.slug}`, '_blank')}
-                        title="Abrir tienda pública"
-                        className="h-11 px-3 rounded-xl bg-white/[0.06] border border-white/10 flex items-center gap-1.5 text-xs font-semibold text-white/60 hover:text-[#2ecc71] hover:border-[#2ecc71]/40 transition-colors active:scale-90"
-                      >
-                        <span>🛒</span>
-                        <span>Abrir</span>
-                      </button>
-                      <button
-                        onClick={() => { setPescaderiaSeleccionada(p); setMensaje(null) }}
-                        title="Ver detalle"
-                        className="h-11 px-3 rounded-xl bg-white/[0.06] border border-white/10 flex items-center gap-1.5 text-xs font-semibold text-white/60 hover:text-[#4db8ff] hover:border-[#4db8ff]/40 transition-colors active:scale-90"
-                      >
-                        <span>Ver</span>
-                        <span className="text-base">→</span>
-                      </button>
-                      <button
-                        onClick={() => { setBorrandoId(p.id); setMensaje(null) }}
-                        title="Borrar pescadería"
-                        className="w-11 h-11 rounded-xl bg-white/[0.04] border border-white/8 flex items-center justify-center text-xl text-white/35 hover:text-[#e74c3c] hover:border-[#e74c3c]/40 transition-colors active:scale-90 shrink-0"
-                      >
-                        🗑
-                      </button>
-                    </div>
+                  </div>
+
+                  {/* Acciones */}
+                  <div className="flex items-center gap-2 mt-3">
+                    <button
+                      onClick={() => window.open(`/t/${p.slug}`, '_blank')}
+                      title="Abrir tienda pública"
+                      className="flex-1 h-10 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center gap-1.5 text-xs font-semibold text-white/60 hover:text-[#2ecc71] hover:border-[#2ecc71]/40 transition-colors active:scale-95"
+                    >
+                      <span>🛒</span>
+                      <span>Abrir</span>
+                    </button>
+                    <button
+                      onClick={() => { setPescaderiaSeleccionada(p); setMensaje(null) }}
+                      title="Ver detalle"
+                      className="flex-1 h-10 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center gap-1.5 text-xs font-semibold text-white/60 hover:text-[#4db8ff] hover:border-[#4db8ff]/40 transition-colors active:scale-95"
+                    >
+                      <span>Ver</span>
+                      <span className="text-base">→</span>
+                    </button>
+                    <button
+                      onClick={() => { setBorrandoId(p.id); setMensaje(null) }}
+                      title="Borrar tienda"
+                      className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/8 flex items-center justify-center text-lg text-white/35 hover:text-[#e74c3c] hover:border-[#e74c3c]/40 transition-colors active:scale-95 shrink-0"
+                    >
+                      🗑
+                    </button>
                   </div>
 
                   {/* Métricas de la tienda (sin entrar al detalle) */}
