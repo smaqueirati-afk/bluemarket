@@ -3,14 +3,20 @@
 import { useState, useEffect } from 'react'
 
 // Splash del panel del dueño: muestra el logo del rubro sobre fondo blanco
-// al abrir el panel y se desvanece solo. Aparece una vez por sesión.
+// al abrir el panel y se desvanece solo. Aparece UNA VEZ POR DÍA (por tienda).
 // Reutiliza las mismas imágenes /splash/[rubro].png que la tienda,
-// pero con su propia clave de sesión para no pisarse con el splash del consumidor.
+// pero con su propia clave para no pisarse con el splash del consumidor.
 //
 // Por defecto, todo panel nuevo usa el splash genérico de BlueMarket.
 // Solo pescaderías y queserías mantienen su splash propio.
 const SPLASH_POR_SLUG = {
   // 'algun-slug': 'pescaderia',
+}
+
+// Fecha local (YYYY-M-D) para mostrar el splash una sola vez por día.
+function fechaHoy() {
+  const d = new Date()
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`
 }
 
 function normalizar(texto) {
@@ -34,12 +40,12 @@ export default function SplashPanel({ rubro, slug }) {
 
   const carpeta = resolverCarpeta(rubro, slug)
   const src = `/splash/${carpeta}.png`
-  const flagVisto = `bm_splash_panel_visto_${slug || 'x'}`
+  const flagFecha = `bm_splash_panel_fecha_${slug || 'x'}`
 
-  // Precarga la imagen del rubro. Si no existe, no muestra nada.
+  // Precarga la imagen del rubro. Si ya se mostró hoy, no aparece.
   useEffect(() => {
     try {
-      if (sessionStorage.getItem(flagVisto)) {
+      if (localStorage.getItem(flagFecha) === fechaHoy()) {
         setEstado('oculto')
         return
       }
@@ -49,7 +55,7 @@ export default function SplashPanel({ rubro, slug }) {
     img.onload = () => setEstado('mostrando')
     img.onerror = () => setEstado('oculto')
     img.src = src
-  }, [src, flagVisto])
+  }, [src, flagFecha])
 
   // Tiempos de visibilidad y fade
   useEffect(() => {
@@ -57,10 +63,10 @@ export default function SplashPanel({ rubro, slug }) {
     const tFade = setTimeout(() => setEstado('saliendo'), 1100)
     const tFin = setTimeout(() => {
       setEstado('oculto')
-      try { sessionStorage.setItem(flagVisto, '1') } catch (e) {}
+      try { localStorage.setItem(flagFecha, fechaHoy()) } catch (e) {}
     }, 1650)
     return () => { clearTimeout(tFade); clearTimeout(tFin) }
-  }, [estado, flagVisto])
+  }, [estado, flagFecha])
 
   if (estado === 'oculto' || estado === 'cargando') return null
 
@@ -68,7 +74,7 @@ export default function SplashPanel({ rubro, slug }) {
     setEstado('saliendo')
     setTimeout(() => {
       setEstado('oculto')
-      try { sessionStorage.setItem(flagVisto, '1') } catch (e) {}
+      try { localStorage.setItem(flagFecha, fechaHoy()) } catch (e) {}
     }, 450)
   }
 

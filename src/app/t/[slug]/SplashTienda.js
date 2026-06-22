@@ -3,13 +3,19 @@
 import { useState, useEffect } from 'react'
 
 // Splash de la tienda: muestra el logo sobre fondo blanco al abrir,
-// y se desvanece solo. Se muestra una vez por sesión. Se puede saltear con un tap.
+// y se desvanece solo. Se muestra UNA VEZ POR DÍA (por tienda). Se puede saltear con un tap.
 //
 // Por defecto, toda tienda nueva usa el splash genérico de BlueMarket.
 // Pescaderías y queserías (cualquier tienda con ese rubro) usan su splash propio.
 // Excepciones puntuales por tienda individual se agregan acá por slug.
 const SPLASH_POR_SLUG = {
   // 'algun-slug': 'pescaderia',
+}
+
+// Fecha local (YYYY-M-D) para mostrar el splash una sola vez por día.
+function fechaHoy() {
+  const d = new Date()
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`
 }
 
 function normalizar(texto) {
@@ -33,12 +39,12 @@ export default function SplashTienda({ rubro, slug, logoUrl }) {
 
   const carpeta = resolverCarpeta(rubro, slug)
   const src = logoUrl || `/splash/${carpeta}.png`
-  const flagVisto = `bm_splash_visto_${slug || 'x'}`
+  const flagFecha = `bm_splash_fecha_${slug || 'x'}`
 
-  // Precarga la imagen del rubro. Si no existe, no muestra nada.
+  // Precarga la imagen del rubro. Si ya se mostró hoy, no aparece.
   useEffect(() => {
     try {
-      if (sessionStorage.getItem(flagVisto)) {
+      if (localStorage.getItem(flagFecha) === fechaHoy()) {
         setEstado('oculto')
         return
       }
@@ -48,7 +54,7 @@ export default function SplashTienda({ rubro, slug, logoUrl }) {
     img.onload = () => setEstado('mostrando')
     img.onerror = () => setEstado('oculto')
     img.src = src
-  }, [src, flagVisto])
+  }, [src, flagFecha])
 
   // Tiempos de visibilidad y fade
   useEffect(() => {
@@ -56,10 +62,10 @@ export default function SplashTienda({ rubro, slug, logoUrl }) {
     const tFade = setTimeout(() => setEstado('saliendo'), 1100)
     const tFin = setTimeout(() => {
       setEstado('oculto')
-      try { sessionStorage.setItem(flagVisto, '1') } catch (e) {}
+      try { localStorage.setItem(flagFecha, fechaHoy()) } catch (e) {}
     }, 1650)
     return () => { clearTimeout(tFade); clearTimeout(tFin) }
-  }, [estado, flagVisto])
+  }, [estado, flagFecha])
 
   if (estado === 'oculto' || estado === 'cargando') return null
 
@@ -67,7 +73,7 @@ export default function SplashTienda({ rubro, slug, logoUrl }) {
     setEstado('saliendo')
     setTimeout(() => {
       setEstado('oculto')
-      try { sessionStorage.setItem(flagVisto, '1') } catch (e) {}
+      try { localStorage.setItem(flagFecha, fechaHoy()) } catch (e) {}
     }, 450)
   }
 

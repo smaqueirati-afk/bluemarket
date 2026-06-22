@@ -2,20 +2,25 @@
 
 import { useState, useEffect } from 'react'
 
-// Splash del panel de administrador (developer). A diferencia de la tienda y
-// el panel del dueño, este NO depende del rubro: usa una imagen fija genérica
-// de BlueMarket en /splash/admin.png. Fondo blanco, se desvanece solo y aparece
-// una vez por sesión (clave propia para no pisarse con los otros splash).
+// Fecha local (YYYY-M-D) para mostrar el splash una sola vez por día.
+function fechaHoy() {
+  const d = new Date()
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`
+}
+
+// Splash del panel de administrador (developer). Usa una imagen fija genérica
+// de BlueMarket en /splash/admin.png. Fondo claro, se desvanece solo y aparece
+// UNA VEZ POR DÍA (guarda la fecha en localStorage).
 export default function SplashAdmin() {
   // estados: 'cargando' | 'mostrando' | 'saliendo' | 'oculto'
   const [estado, setEstado] = useState('cargando')
 
   const src = '/splash/admin.png'
 
-  // Precarga la imagen. Si no existe todavía, no muestra nada (sin splash roto).
+  // Precarga la imagen. Si ya se mostró hoy, no aparece.
   useEffect(() => {
     try {
-      if (sessionStorage.getItem('bm_splash_admin_visto')) {
+      if (localStorage.getItem('bm_splash_admin_fecha') === fechaHoy()) {
         setEstado('oculto')
         return
       }
@@ -33,7 +38,7 @@ export default function SplashAdmin() {
     const tFade = setTimeout(() => setEstado('saliendo'), 1100)
     const tFin = setTimeout(() => {
       setEstado('oculto')
-      try { sessionStorage.setItem('bm_splash_admin_visto', '1') } catch (e) {}
+      try { localStorage.setItem('bm_splash_admin_fecha', fechaHoy()) } catch (e) {}
     }, 1650)
     return () => { clearTimeout(tFade); clearTimeout(tFin) }
   }, [estado])
@@ -44,7 +49,7 @@ export default function SplashAdmin() {
     setEstado('saliendo')
     setTimeout(() => {
       setEstado('oculto')
-      try { sessionStorage.setItem('bm_splash_admin_visto', '1') } catch (e) {}
+      try { localStorage.setItem('bm_splash_admin_fecha', fechaHoy()) } catch (e) {}
     }, 450)
   }
 
