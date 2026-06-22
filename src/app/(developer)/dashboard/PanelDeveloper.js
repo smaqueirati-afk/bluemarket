@@ -426,7 +426,7 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
                   { rubro: 'otro',       emoji: '📦' },
                 ].map((r) => (
                   <label key={r.rubro} className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 cursor-pointer has-[:checked]:border-[#4db8ff] has-[:checked]:bg-[#4db8ff]/10 transition-all">
-                    <input type="radio" name="rubro" value={r.rubro} defaultChecked={r.rubro === 'pescadería'} className="accent-[#4db8ff]" />
+                    <input type="radio" name="rubro" value={r.rubro} defaultChecked={r.rubro === 'otro'} className="accent-[#4db8ff]" />
                     <span className="text-sm">{r.emoji} {r.rubro.charAt(0).toUpperCase() + r.rubro.slice(1)}</span>
                     <input type="hidden" name={`emoji_${r.rubro}`} value={r.emoji} />
                   </label>

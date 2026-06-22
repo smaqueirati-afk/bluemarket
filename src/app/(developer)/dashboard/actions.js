@@ -40,7 +40,7 @@ export async function crearPescaderia(formData) {
   let slug = formData.get('slug')?.trim().toLowerCase()
   const telefono = formData.get('modalidad') ? formData.get('telefono')?.trim() : null
   const modalidad = formData.get('modalidad') || 'local_reparto'
-  const rubro = formData.get('rubro') || 'pescadería'
+  const rubro = formData.get('rubro') || 'otro'
   // El emoji lo mandamos como campo oculto emoji_{rubro}
   const emojiRubro = formData.get(`emoji_${rubro}`) || '🛒'
 
