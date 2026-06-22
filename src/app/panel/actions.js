@@ -1,23 +1,13 @@
 'use server'
 
-import { createClient } from '../../lib/supabase/server'
 import { createAdminClient } from '../../lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
+import { resolverTiendaPanel } from '../../lib/panelTienda'
 
 export async function cambiarEstadoPedido(pedidoId, nuevoEstado) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'No autenticado' }
-
-  const { data: perfil } = await supabase
-    .from('usuarios')
-    .select('rol, pescaderia_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!perfil || perfil.rol !== 'cliente') {
-    return { error: 'No autorizado' }
-  }
+  const ctx = await resolverTiendaPanel()
+  if (ctx.error) return { error: ctx.error }
+  const pescaderiaId = ctx.pescaderiaId
 
   const admin = createAdminClient()
 
@@ -27,7 +17,7 @@ export async function cambiarEstadoPedido(pedidoId, nuevoEstado) {
     .eq('id', pedidoId)
     .single()
 
-  if (!pedido || pedido.pescaderia_id !== perfil.pescaderia_id) {
+  if (!pedido || pedido.pescaderia_id !== pescaderiaId) {
     return { error: 'Ese pedido no es de tu pescadería' }
   }
 
@@ -43,19 +33,9 @@ export async function cambiarEstadoPedido(pedidoId, nuevoEstado) {
 }
 
 export async function guardarHorario(pedidoId, horario) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'No autenticado' }
-
-  const { data: perfil } = await supabase
-    .from('usuarios')
-    .select('rol, pescaderia_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!perfil || perfil.rol !== 'cliente') {
-    return { error: 'No autorizado' }
-  }
+  const ctx = await resolverTiendaPanel()
+  if (ctx.error) return { error: ctx.error }
+  const pescaderiaId = ctx.pescaderiaId
 
   const admin = createAdminClient()
 
@@ -65,7 +45,7 @@ export async function guardarHorario(pedidoId, horario) {
     .eq('id', pedidoId)
     .single()
 
-  if (!pedido || pedido.pescaderia_id !== perfil.pescaderia_id) {
+  if (!pedido || pedido.pescaderia_id !== pescaderiaId) {
     return { error: 'Ese pedido no es de tu pescadería' }
   }
 
@@ -81,19 +61,9 @@ export async function guardarHorario(pedidoId, horario) {
 }
 
 export async function guardarMontoMinimoReparto(monto) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'No autenticado' }
-
-  const { data: perfil } = await supabase
-    .from('usuarios')
-    .select('rol, pescaderia_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!perfil || perfil.rol !== 'cliente' || !perfil.pescaderia_id) {
-    return { error: 'No autorizado' }
-  }
+  const ctx = await resolverTiendaPanel()
+  if (ctx.error) return { error: ctx.error }
+  const pescaderiaId = ctx.pescaderiaId
 
   const valor = Math.max(0, Number(monto) || 0)
 
@@ -102,7 +72,7 @@ export async function guardarMontoMinimoReparto(monto) {
   const { error } = await admin
     .from('pescaderias')
     .update({ monto_minimo_reparto: valor })
-    .eq('id', perfil.pescaderia_id)
+    .eq('id', pescaderiaId)
 
   if (error) return { error: error.message }
 
@@ -111,19 +81,9 @@ export async function guardarMontoMinimoReparto(monto) {
 }
 
 export async function guardarEnvioConfig(modo, gratisDesde) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'No autenticado' }
-
-  const { data: perfil } = await supabase
-    .from('usuarios')
-    .select('rol, pescaderia_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!perfil || perfil.rol !== 'cliente' || !perfil.pescaderia_id) {
-    return { error: 'No autorizado' }
-  }
+  const ctx = await resolverTiendaPanel()
+  if (ctx.error) return { error: ctx.error }
+  const pescaderiaId = ctx.pescaderiaId
 
   const modos = ['gratis', 'gratis_desde', 'coordinar']
   const modoFinal = modos.includes(modo) ? modo : 'gratis'
@@ -133,7 +93,7 @@ export async function guardarEnvioConfig(modo, gratisDesde) {
   const { error } = await admin
     .from('pescaderias')
     .update({ envio_modo: modoFinal, envio_gratis_desde: desdeFinal })
-    .eq('id', perfil.pescaderia_id)
+    .eq('id', pescaderiaId)
 
   if (error) return { error: error.message }
 
@@ -142,19 +102,9 @@ export async function guardarEnvioConfig(modo, gratisDesde) {
 }
 
 export async function guardarLogoTienda(url) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'No autenticado' }
-
-  const { data: perfil } = await supabase
-    .from('usuarios')
-    .select('rol, pescaderia_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!perfil || perfil.rol !== 'cliente' || !perfil.pescaderia_id) {
-    return { error: 'No autorizado' }
-  }
+  const ctx = await resolverTiendaPanel()
+  if (ctx.error) return { error: ctx.error }
+  const pescaderiaId = ctx.pescaderiaId
 
   const valor = (typeof url === 'string' && url.trim()) ? url.trim() : null
 
@@ -162,7 +112,7 @@ export async function guardarLogoTienda(url) {
   const { error } = await admin
     .from('pescaderias')
     .update({ logo_url: valor })
-    .eq('id', perfil.pescaderia_id)
+    .eq('id', pescaderiaId)
 
   if (error) return { error: error.message }
 
@@ -171,19 +121,9 @@ export async function guardarLogoTienda(url) {
 }
 
 export async function guardarMercadoPago(token, activo) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'No autenticado' }
-
-  const { data: perfil } = await supabase
-    .from('usuarios')
-    .select('rol, pescaderia_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!perfil || perfil.rol !== 'cliente' || !perfil.pescaderia_id) {
-    return { error: 'No autorizado' }
-  }
+  const ctx = await resolverTiendaPanel()
+  if (ctx.error) return { error: ctx.error }
+  const pescaderiaId = ctx.pescaderiaId
 
   const admin = createAdminClient()
   const update = { mp_activo: !!activo }
@@ -201,7 +141,7 @@ export async function guardarMercadoPago(token, activo) {
     const { data: actual } = await admin
       .from('pescaderias')
       .select('mp_access_token')
-      .eq('id', perfil.pescaderia_id)
+      .eq('id', pescaderiaId)
       .single()
     if (!actual?.mp_access_token) {
       return { error: 'Primero pegá tu Access Token de Mercado Pago para poder activar el cobro.' }
@@ -211,7 +151,7 @@ export async function guardarMercadoPago(token, activo) {
   const { error } = await admin
     .from('pescaderias')
     .update(update)
-    .eq('id', perfil.pescaderia_id)
+    .eq('id', pescaderiaId)
 
   if (error) return { error: error.message }
 
@@ -223,19 +163,9 @@ export async function guardarMercadoPago(token, activo) {
 // pesos = [{ itemId, cantidadFinal }] (en kg). Recalcula subtotales, fija total_final,
 // marca pesado=true y reconcilia el saldo de cuenta corriente por la diferencia.
 export async function ajustarPesosPedido(pedidoId, pesos) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'No autenticado' }
-
-  const { data: perfil } = await supabase
-    .from('usuarios')
-    .select('rol, pescaderia_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!perfil || perfil.rol !== 'cliente' || !perfil.pescaderia_id) {
-    return { error: 'No autorizado' }
-  }
+  const ctx = await resolverTiendaPanel()
+  if (ctx.error) return { error: ctx.error }
+  const pescaderiaId = ctx.pescaderiaId
 
   const admin = createAdminClient()
 
@@ -245,7 +175,7 @@ export async function ajustarPesosPedido(pedidoId, pesos) {
     .eq('id', pedidoId)
     .single()
 
-  if (!pedido || pedido.pescaderia_id !== perfil.pescaderia_id) {
+  if (!pedido || pedido.pescaderia_id !== pescaderiaId) {
     return { error: 'Ese pedido no es de tu tienda' }
   }
 
