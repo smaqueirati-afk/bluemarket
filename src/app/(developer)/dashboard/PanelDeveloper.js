@@ -115,6 +115,8 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
       setMensaje({ tipo: 'ok', texto: `Rubro cambiado a ${emoji} ${rubro} ✓` })
     }
   }
+
+  const [mostrarReactivar, setMostrarReactivar] = useState(false)
   const [emailReactivar, setEmailReactivar] = useState('')
   const [cargandoReactivar, setCargandoReactivar] = useState(false)
 
