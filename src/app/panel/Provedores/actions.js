@@ -1,26 +1,15 @@
 'use server'
 
-import { createClient } from '../../../lib/supabase/server'
 import { createAdminClient } from '../../../lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
+import { resolverTiendaPanel } from '../../../lib/panelTienda'
 
-// Verifica que el usuario sea dueño de una pescadería y devuelve su id.
+// Resuelve la tienda del contexto: dueño = la suya; developer ("Gestionar") = la elegida (cookie).
 async function getMiPescaderia() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'No autenticado' }
-
+  const ctx = await resolverTiendaPanel()
+  if (ctx.error) return { error: ctx.error }
   const admin = createAdminClient()
-  const { data: perfil } = await admin
-    .from('usuarios')
-    .select('rol, pescaderia_id')
-    .eq('id', user.id)
-    .maybeSingle()
-
-  if (!perfil || perfil.rol !== 'cliente' || !perfil.pescaderia_id) {
-    return { error: 'No sos dueño de una pescadería' }
-  }
-  return { admin, pescaderiaId: perfil.pescaderia_id }
+  return { admin, pescaderiaId: ctx.pescaderiaId }
 }
 
 // El local solicita vincularse con un proveedor (pescadería con reparto).

@@ -1,24 +1,13 @@
 'use server'
 
-import { createClient } from '../../../lib/supabase/server'
 import { createAdminClient } from '../../../lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
+import { resolverTiendaPanel } from '../../../lib/panelTienda'
 
 async function verificarDueno() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'No autenticado' }
-
-  const { data: perfil } = await supabase
-    .from('usuarios')
-    .select('rol, pescaderia_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!perfil || perfil.rol !== 'cliente' || !perfil.pescaderia_id) {
-    return { error: 'No autorizado' }
-  }
-  return { pescaderiaId: perfil.pescaderia_id }
+  // Resuelve la tienda según el contexto: el dueño ve la suya;
+  // el developer (modo "Gestionar") opera sobre la tienda elegida (cookie).
+  return await resolverTiendaPanel()
 }
 
 // ── Categorías propias de la tienda ──

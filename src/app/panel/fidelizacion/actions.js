@@ -1,25 +1,15 @@
 'use server'
 
-import { createClient } from '../../../lib/supabase/server'
 import { createAdminClient } from '../../../lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
+import { resolverTiendaPanel } from '../../../lib/panelTienda'
 
 async function getMiPescaderia() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'No autenticado' }
-
+  // Dueño = su tienda; developer ("Gestionar") = la tienda elegida (cookie).
+  const ctx = await resolverTiendaPanel()
+  if (ctx.error) return { error: ctx.error }
   const admin = createAdminClient()
-  const { data: perfil } = await admin
-    .from('usuarios')
-    .select('rol, pescaderia_id')
-    .eq('id', user.id)
-    .maybeSingle()
-
-  if (!perfil || perfil.rol !== 'cliente' || !perfil.pescaderia_id) {
-    return { error: 'No sos dueño de una pescadería' }
-  }
-  return { admin, pescaderiaId: perfil.pescaderia_id }
+  return { admin, pescaderiaId: ctx.pescaderiaId }
 }
 
 export async function guardarConfigFidelizacion(form) {
