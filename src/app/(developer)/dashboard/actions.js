@@ -397,7 +397,7 @@ export async function getPescaderiaDetalle(pescaderiaId) {
 async function crearConfigFidelizacionPorDefecto(admin, pescaderiaId) {
   await admin.from('fidelizacion_config').upsert({
     pescaderia_id: pescaderiaId,
-    activo: true,
+    activo: false,
     bronce_min: 10000,
     bronce_pct: 2,
     plata_min: 30000,
