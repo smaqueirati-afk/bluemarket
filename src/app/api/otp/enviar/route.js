@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createAdminClient } from '../../../../lib/supabase/admin'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+export const dynamic = 'force-dynamic'
 
 function generarCodigo() {
   return String(Math.floor(100000 + Math.random() * 900000))
@@ -10,6 +10,7 @@ function generarCodigo() {
 
 export async function POST(request) {
   try {
+    const resend = new Resend(process.env.RESEND_API_KEY)
     const { email } = await request.json()
     if (!email || !email.includes('@')) {
       return NextResponse.json({ error: 'Email inválido' }, { status: 400 })
