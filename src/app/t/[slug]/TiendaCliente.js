@@ -35,6 +35,7 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
   const [pedidoConfirmado, setPedidoConfirmado] = useState(false)
   const [numeroPedido, setNumeroPedido] = useState(null)
   const [palabraClave, setPalabraClave] = useState(null)
+  const [metodoPagoConfirmado, setMetodoPagoConfirmado] = useState(null)
   const [guardando, setGuardando] = useState(false)
   const [errorPedido, setErrorPedido] = useState(null)
   const [logroNivel, setLogroNivel] = useState(null) // animación de logro post-compra
@@ -514,6 +515,7 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
                 setVerCheckout(false)
                 setNumeroPedido(resultado.numero)
                 setPalabraClave(resultado.palabraClave)
+                setMetodoPagoConfirmado(datos.pago)
                 setPedidoConfirmado(true)
                 setCarrito([])
                 if (resultado.logroNivel) setLogroNivel(resultado.logroNivel)
@@ -722,29 +724,76 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
         )}
 
         {pedidoConfirmado && (
-          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[linear-gradient(180deg,#051e5c_0%,#03174a_100%)] px-8 text-center"
+          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[linear-gradient(180deg,#051e5c_0%,#03174a_100%)] px-6 text-center overflow-y-auto"
                style={{ animation: 'bmFadeUp 0.4s ease both' }}>
-            <div className="w-24 h-24 rounded-full bg-[#2ecc71]/15 border-2 border-[#2ecc71] flex items-center justify-center text-5xl mb-6"
+            <div className="w-24 h-24 rounded-full bg-[#2ecc71]/15 border-2 border-[#2ecc71] flex items-center justify-center text-5xl mb-5"
                  style={{ animation: 'bmFloat 3s ease-in-out infinite' }}>
               ✓
             </div>
-            <h1 className="text-2xl font-extrabold text-white mb-2">¡Pedido confirmado!</h1>
+            <h1 className="text-2xl font-extrabold text-white mb-1">¡Pedido confirmado!</h1>
             {numeroPedido && (
-              <div className="text-[#4db8ff] font-bold text-lg mb-3">Pedido #{numeroPedido}</div>
+              <div className="text-[#4db8ff] font-bold text-lg mb-4">Pedido #{numeroPedido}</div>
             )}
+
+            {/* Palabra clave */}
             {palabraClave && (
-              <div className="bg-white/[0.07] border border-white/15 rounded-2xl px-6 py-4 mb-5 w-full">
-                <div className="text-[13px] text-white/60 mb-1">Tu palabra clave 🔑</div>
-                <div className="text-2xl font-extrabold text-[#4db8ff] tracking-wider">{palabraClave}</div>
-                <div className="text-[13px] text-white/55 mt-1.5">Guardala — te la van a pedir al entregar el pedido</div>
+              <div className="bg-white/[0.07] border border-white/15 rounded-2xl px-5 py-3.5 mb-4 w-full text-left">
+                <div className="text-[11px] text-white/45 uppercase tracking-wide mb-1">🔑 Tu palabra clave</div>
+                <div className="text-xl font-extrabold text-[#4db8ff] tracking-wider">{palabraClave}</div>
+                <div className="text-[11px] text-white/40 mt-1">Te la van a pedir al entregar el pedido</div>
               </div>
             )}
-            <p className="text-white/70 text-base leading-relaxed mb-8">
-              ✅ Tu pedido fue recibido. <strong className="text-white">{pescaderia?.nombre || 'La tienda'}</strong> lo va a preparar y te va a contactar por <span className="text-[#25D366] font-semibold">WhatsApp</span> para coordinar. {pescaderia?.emoji_rubro || ''}
+
+            {/* Datos de pago si eligió transferencia */}
+            {(metodoPagoConfirmado === 'transferencia' || metodoPagoConfirmado === 'mercadopago') && pescaderia?.alias_pago && (
+              <div className="bg-[#4db8ff]/10 border border-[#4db8ff]/30 rounded-2xl px-5 py-4 mb-4 w-full text-left"
+                   style={{ animation: 'bmFadeUp 0.5s ease both' }}>
+                <div className="text-[11px] text-white/45 uppercase tracking-wide mb-1">
+                  {metodoPagoConfirmado === 'transferencia' ? '🏦 Datos para transferir' : '💳 Link / Alias de pago'}
+                </div>
+                <div className="text-sm font-bold text-white break-all mb-3">{pescaderia.alias_pago}</div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => navigator.clipboard.writeText(pescaderia.alias_pago)}
+                    className="flex-1 bg-[#4db8ff]/15 border border-[#4db8ff]/30 text-[#4db8ff] text-xs font-bold py-2.5 rounded-xl active:scale-95 transition-all">
+                    📋 Copiar alias
+                  </button>
+                  {pescaderia?.telefono && (() => {
+                    let n = String(pescaderia.telefono).replace(/\D/g, '')
+                    if (n.startsWith('54')) { let r = n.slice(2); if (r.startsWith('0')) r = r.slice(1); if (!r.startsWith('9')) r = '9' + r; n = '54' + r }
+                    else { if (n.startsWith('0')) n = n.slice(1); n = '549' + n }
+                    const msg = encodeURIComponent(`Hola ${pescaderia?.nombre || ''}! Te envío el comprobante de pago del pedido #${numeroPedido} ${pescaderia?.emoji_rubro || ''}`)
+                    return (
+                      <a href={`https://wa.me/${n}?text=${msg}`} target="_blank" rel="noopener noreferrer"
+                        className="flex-1 bg-[#25D366]/15 border border-[#25D366]/30 text-[#25D366] text-xs font-bold py-2.5 rounded-xl active:scale-95 transition-all flex items-center justify-center gap-1">
+                        💬 Enviar comprobante
+                      </a>
+                    )
+                  })()}
+                </div>
+              </div>
+            )}
+
+            {/* Si no tiene alias pero eligió transferencia */}
+            {(metodoPagoConfirmado === 'transferencia') && !pescaderia?.alias_pago && pescaderia?.telefono && (() => {
+              let n = String(pescaderia.telefono).replace(/\D/g, '')
+              if (n.startsWith('54')) { let r = n.slice(2); if (r.startsWith('0')) r = r.slice(1); if (!r.startsWith('9')) r = '9' + r; n = '54' + r }
+              else { if (n.startsWith('0')) n = n.slice(1); n = '549' + n }
+              const msg = encodeURIComponent(`Hola ${pescaderia?.nombre || ''}! Hice el pedido #${numeroPedido}. ¿Me pasás los datos para transferir? ${pescaderia?.emoji_rubro || ''}`)
+              return (
+                <a href={`https://wa.me/${n}?text=${msg}`} target="_blank" rel="noopener noreferrer"
+                  className="w-full bg-[#25D366]/15 border border-[#25D366]/30 text-[#25D366] text-sm font-bold py-3 rounded-xl active:scale-95 transition-all flex items-center justify-center gap-2 mb-4">
+                  💬 Pedir datos de pago por WhatsApp
+                </a>
+              )
+            })()}
+
+            <p className="text-white/55 text-sm leading-relaxed mb-6">
+              {pescaderia?.nombre || 'La tienda'} va a preparar tu pedido y te va a contactar para coordinar. {pescaderia?.emoji_rubro || ''}
             </p>
             <button
               onClick={() => setPedidoConfirmado(false)}
-              className="bg-[#4db8ff] text-[#03174a] font-extrabold text-lg px-8 py-4 rounded-xl active:scale-95 transition-transform">
+              className="bg-[#4db8ff] text-[#03174a] font-extrabold text-base px-8 py-3.5 rounded-xl active:scale-95 transition-transform w-full">
               Volver a la tienda
             </button>
           </div>
