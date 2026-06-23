@@ -42,6 +42,10 @@ export default function GestionProductos({ productos, categorias: categoriasInic
   const fotoRef = useRef(null)
   const fotoCamaraRef = useRef(null)
   const formRef = useRef(null)
+  const videoRef = useRef(null)
+  const streamRef = useRef(null)
+  const [camaraAbierta, setCamaraAbierta] = useState(false)
+  const [camaraError, setCamaraError] = useState(null)
   const [verCatalogo, setVerCatalogo] = useState(false)
   const [catalogo, setCatalogo] = useState([])
   const [cargandoCatalogo, setCargandoCatalogo] = useState(false)
@@ -137,6 +141,60 @@ export default function GestionProductos({ productos, categorias: categoriasInic
     if (res.error) setMensaje({ tipo: 'error', texto: res.error })
     else { setMensaje({ tipo: 'ok', texto: `${res.cantidad} producto${res.cantidad > 1 ? 's' : ''} importado${res.cantidad > 1 ? 's' : ''} ✓` }); setVerCatalogo(false); window.location.reload() }
     setImportando(false)
+  }
+
+  // ── Cámara in-app: captura a baja resolución (no agota memoria, no crashea) ──
+  useEffect(() => {
+    if (!camaraAbierta) return
+    let cancelado = false
+    ;(async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false,
+        })
+        if (cancelado) { stream.getTracks().forEach((t) => t.stop()); return }
+        streamRef.current = stream
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+          videoRef.current.play().catch(() => {})
+        }
+      } catch (e) {
+        if (!cancelado) setCamaraError('No se pudo abrir la cámara. Revisá los permisos del navegador o usá Galería.')
+      }
+    })()
+    return () => {
+      cancelado = true
+      const s = streamRef.current
+      if (s) { s.getTracks().forEach((t) => t.stop()); streamRef.current = null }
+    }
+  }, [camaraAbierta])
+
+  function abrirCamara() {
+    setCamaraError(null)
+    setCamaraAbierta(true)
+  }
+  function cerrarCamara() {
+    setCamaraAbierta(false)
+  }
+  async function capturarFoto() {
+    const video = videoRef.current
+    if (!video || !video.videoWidth) return
+    const MAX = 1000
+    let w = video.videoWidth, h = video.videoHeight
+    if (w > MAX || h > MAX) {
+      if (w > h) { h = Math.round(h * MAX / w); w = MAX }
+      else { w = Math.round(w * MAX / h); h = MAX }
+    }
+    const canvas = document.createElement('canvas')
+    canvas.width = w; canvas.height = h
+    canvas.getContext('2d').drawImage(video, 0, 0, w, h)
+    const blob = await new Promise((res) => canvas.toBlob((b) => res(b), 'image/jpeg', 0.8))
+    canvas.width = 0; canvas.height = 0
+    setCamaraAbierta(false)
+    if (!blob) { setMensaje({ tipo: 'error', texto: 'No se pudo capturar la foto' }); return }
+    const url = await subirFoto(blob)
+    if (url) setForm((f) => ({ ...f, foto_url: url }))
   }
 
   // Lee ancho/alto de un JPEG o PNG leyendo solo el principio del archivo,
@@ -445,25 +503,11 @@ export default function GestionProductos({ productos, categorias: categoriasInic
                 )}
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <label className="flex items-center justify-center gap-2 bg-white/5 border border-white/10 border-dashed rounded-xl px-3 py-2.5 cursor-pointer hover:bg-white/8 transition-all">
+                <button type="button" onClick={abrirCamara} disabled={subiendoFoto}
+                  className="flex items-center justify-center gap-2 bg-white/5 border border-white/10 border-dashed rounded-xl px-3 py-2.5 cursor-pointer hover:bg-white/8 transition-all disabled:opacity-60">
                   <span className="text-lg">📷</span>
                   <span className="text-sm text-white/50">{subiendoFoto ? 'Subiendo...' : 'Cámara'}</span>
-                  <input
-                    ref={fotoCamaraRef}
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    className="hidden"
-                    disabled={subiendoFoto}
-                    onChange={async (e) => {
-                      const archivo = e.target.files?.[0]
-                      if (!archivo) return
-                      const url = await subirFoto(archivo)
-                      if (url) setForm((f) => ({ ...f, foto_url: url }))
-                      e.target.value = ''
-                    }}
-                  />
-                </label>
+                </button>
                 <label className="flex items-center justify-center gap-2 bg-white/5 border border-white/10 border-dashed rounded-xl px-3 py-2.5 cursor-pointer hover:bg-white/8 transition-all">
                   <span className="text-lg">🖼️</span>
                   <span className="text-sm text-white/50">{subiendoFoto ? 'Subiendo...' : 'Galería'}</span>
@@ -484,6 +528,28 @@ export default function GestionProductos({ productos, categorias: categoriasInic
                 </label>
               </div>
             </div>
+
+            {camaraAbierta && (
+              <div className="fixed inset-0 z-[90] bg-black flex flex-col">
+                <div className="flex-1 relative flex items-center justify-center overflow-hidden">
+                  <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-contain" />
+                  {camaraError && (
+                    <div className="absolute inset-x-4 top-6 bg-[#e74c3c] text-white text-sm rounded-xl px-4 py-3 text-center">
+                      {camaraError}
+                    </div>
+                  )}
+                </div>
+                <div className="shrink-0 bg-black flex items-center justify-between px-8"
+                     style={{ paddingTop: 18, paddingBottom: 'calc(env(safe-area-inset-bottom) + 18px)' }}>
+                  <button type="button" onClick={cerrarCamara} className="text-white/70 font-semibold text-sm py-3">
+                    Cancelar
+                  </button>
+                  <button type="button" onClick={capturarFoto} aria-label="Capturar"
+                    className="w-16 h-16 rounded-full bg-white ring-4 ring-white/30 active:scale-95 transition-transform" />
+                  <div className="w-[68px]" />
+                </div>
+              </div>
+            )}
 
             <div className="flex gap-2 pt-1">
               <button onClick={guardar} disabled={cargando}
