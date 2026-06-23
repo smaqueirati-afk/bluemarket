@@ -444,24 +444,45 @@ export default function GestionProductos({ productos, categorias: categoriasInic
                   </button>
                 )}
               </div>
-              <label className="flex items-center justify-center gap-2 bg-white/5 border border-white/10 border-dashed rounded-xl px-3 py-3 cursor-pointer hover:bg-white/8 transition-all">
-                <span className="text-lg">📷</span>
-                <span className="text-sm text-white/50">{subiendoFoto ? 'Subiendo...' : 'Agregar foto (cámara o galería)'}</span>
-                <input
-                  ref={fotoRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  disabled={subiendoFoto}
-                  onChange={async (e) => {
-                    const archivo = e.target.files?.[0]
-                    if (!archivo) return
-                    const url = await subirFoto(archivo)
-                    if (url) setForm((f) => ({ ...f, foto_url: url }))
-                    e.target.value = ''
-                  }}
-                />
-              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="flex items-center justify-center gap-2 bg-white/5 border border-white/10 border-dashed rounded-xl px-3 py-2.5 cursor-pointer hover:bg-white/8 transition-all">
+                  <span className="text-lg">📷</span>
+                  <span className="text-sm text-white/50">{subiendoFoto ? 'Subiendo...' : 'Cámara'}</span>
+                  <input
+                    ref={fotoCamaraRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    disabled={subiendoFoto}
+                    onChange={async (e) => {
+                      const archivo = e.target.files?.[0]
+                      if (!archivo) return
+                      const url = await subirFoto(archivo)
+                      if (url) setForm((f) => ({ ...f, foto_url: url }))
+                      e.target.value = ''
+                    }}
+                  />
+                </label>
+                <label className="flex items-center justify-center gap-2 bg-white/5 border border-white/10 border-dashed rounded-xl px-3 py-2.5 cursor-pointer hover:bg-white/8 transition-all">
+                  <span className="text-lg">🖼️</span>
+                  <span className="text-sm text-white/50">{subiendoFoto ? 'Subiendo...' : 'Galería'}</span>
+                  <input
+                    ref={fotoRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={subiendoFoto}
+                    onChange={async (e) => {
+                      const archivo = e.target.files?.[0]
+                      if (!archivo) return
+                      const url = await subirFoto(archivo)
+                      if (url) setForm((f) => ({ ...f, foto_url: url }))
+                      e.target.value = ''
+                    }}
+                  />
+                </label>
+              </div>
             </div>
 
             <div className="flex gap-2 pt-1">
