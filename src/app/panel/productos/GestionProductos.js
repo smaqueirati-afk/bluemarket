@@ -174,14 +174,14 @@ export default function GestionProductos({ productos, categorias: categoriasInic
   // Decodifica YA reducida (decode-scale) para no agotar la memoria con fotos
   // de cámara de muchos megapíxeles. Máx 1200px lado largo, JPEG 0.72.
   // Devuelve un Blob, o null si no se pudo comprimir (entonces se sube el original).
-  async function comprimirImagen(archivo) {
+  async function comprimirImagen(archivo, dimPre) {
     const MAX = 1200
     const CALIDAD = 0.72
 
     // 1) Camino moderno: createImageBitmap con resize → el navegador decodifica
     //    directamente en tamaño chico (bajísimo consumo de memoria) y respeta EXIF.
     try {
-      const dim = await leerDimensiones(archivo)
+      const dim = dimPre || await leerDimensiones(archivo)
       const opts = { imageOrientation: 'from-image', resizeQuality: 'high' }
       if (dim && dim.w && dim.h) {
         // Fijando solo un lado, el navegador mantiene la proporción.
@@ -244,8 +244,18 @@ export default function GestionProductos({ productos, categorias: categoriasInic
     setSubiendoFoto(true)
     try {
       const supabase = createClient()
-      // Comprimir antes de subir; si falla, subir el original tal cual
-      let blob = await comprimirImagen(archivo)
+
+      // Evitar el "Memoria insuficiente" del WebView de Android: solo
+      // decodificamos/comprimimos cuando es seguro por tamaño. Si la foto es
+      // muy grande, se sube TAL CUAL (sin reservar memoria para decodificarla),
+      // así no crashea. Las fotos normales sí se comprimen.
+      const dim = await leerDimensiones(archivo)
+      const megapixeles = dim ? (dim.w * dim.h) : null
+      const seguroComprimir =
+        (megapixeles != null && megapixeles <= 10000000 && archivo.size <= 5 * 1024 * 1024) ||
+        (megapixeles == null && archivo.size <= 2.5 * 1024 * 1024)
+
+      let blob = seguroComprimir ? await comprimirImagen(archivo, dim) : null
       let contentType = 'image/jpeg'
       let ext = 'jpg'
       if (!blob) {
