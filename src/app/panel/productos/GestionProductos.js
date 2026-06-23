@@ -140,29 +140,61 @@ export default function GestionProductos({ productos, categorias: categoriasInic
   }
 
   // Comprime la imagen en el cliente antes de subir a Storage
-  // Máximo 800px en el lado más largo, calidad 0.75 JPEG → ~50-100KB típico
+  // Máximo 1200px en el lado más largo, calidad 0.75 JPEG.
+  // Devuelve un Blob, o null si no se pudo comprimir (entonces se sube el original).
   async function comprimirImagen(archivo) {
-    return new Promise((resolve) => {
-      const MAX = 800
-      const CALIDAD = 0.75
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const img = new Image()
-        img.onload = () => {
-          let w = img.width, h = img.height
-          if (w > MAX || h > MAX) {
-            if (w > h) { h = Math.round(h * MAX / w); w = MAX }
-            else { w = Math.round(w * MAX / h); h = MAX }
-          }
-          const canvas = document.createElement('canvas')
-          canvas.width = w; canvas.height = h
-          canvas.getContext('2d').drawImage(img, 0, 0, w, h)
-          canvas.toBlob((blob) => resolve(blob), 'image/jpeg', CALIDAD)
-        }
-        img.src = e.target.result
+    const MAX = 1200
+    const CALIDAD = 0.75
+
+    // 1) Camino moderno: createImageBitmap respeta la orientación EXIF
+    //    (evita fotos de cámara rotadas) y maneja imágenes grandes.
+    try {
+      const bitmap = await createImageBitmap(archivo, { imageOrientation: 'from-image' })
+      let w = bitmap.width, h = bitmap.height
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX / w); w = MAX }
+        else { w = Math.round(w * MAX / h); h = MAX }
       }
-      reader.readAsDataURL(archivo)
-    })
+      const canvas = document.createElement('canvas')
+      canvas.width = w; canvas.height = h
+      canvas.getContext('2d').drawImage(bitmap, 0, 0, w, h)
+      if (bitmap.close) bitmap.close()
+      const blob = await new Promise((res) => canvas.toBlob((b) => res(b), 'image/jpeg', CALIDAD))
+      if (blob) return blob
+    } catch (e) {
+      // sigue al fallback
+    }
+
+    // 2) Fallback con FileReader + Image (navegadores viejos)
+    try {
+      const blob = await new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onerror = () => reject(new Error('No se pudo leer la imagen'))
+        reader.onload = (e) => {
+          const img = new Image()
+          img.onerror = () => reject(new Error('No se pudo cargar la imagen'))
+          img.onload = () => {
+            let w = img.width, h = img.height
+            if (w > MAX || h > MAX) {
+              if (w > h) { h = Math.round(h * MAX / w); w = MAX }
+              else { w = Math.round(w * MAX / h); h = MAX }
+            }
+            const canvas = document.createElement('canvas')
+            canvas.width = w; canvas.height = h
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+            canvas.toBlob((b) => resolve(b), 'image/jpeg', CALIDAD)
+          }
+          img.src = e.target.result
+        }
+        reader.readAsDataURL(archivo)
+      })
+      if (blob) return blob
+    } catch (e) {
+      // cae al último recurso
+    }
+
+    // 3) No se pudo comprimir: se sube el archivo original
+    return null
   }
 
   async function subirFoto(archivo) {
@@ -170,16 +202,26 @@ export default function GestionProductos({ productos, categorias: categoriasInic
     setSubiendoFoto(true)
     try {
       const supabase = createClient()
-      // Comprimir antes de subir
-      const blob = await comprimirImagen(archivo)
-      const path = `${Date.now()}.jpg`
+      // Comprimir antes de subir; si falla, subir el original tal cual
+      let blob = await comprimirImagen(archivo)
+      let contentType = 'image/jpeg'
+      let ext = 'jpg'
+      if (!blob) {
+        blob = archivo
+        contentType = archivo.type || 'image/jpeg'
+        ext = (archivo.name?.split('.').pop() || 'jpg').toLowerCase()
+      }
+      const path = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`
       const { error } = await supabase.storage.from('Productos').upload(path, blob, {
         upsert: true,
-        contentType: 'image/jpeg',
+        contentType,
       })
       if (error) { setMensaje({ tipo: 'error', texto: 'Error al subir foto: ' + error.message }); return null }
       const { data } = supabase.storage.from('Productos').getPublicUrl(path)
       return data.publicUrl
+    } catch (e) {
+      setMensaje({ tipo: 'error', texto: 'Error al procesar la foto: ' + (e?.message || e) })
+      return null
     } finally {
       setSubiendoFoto(false)
     }

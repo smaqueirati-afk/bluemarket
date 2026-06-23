@@ -234,7 +234,7 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
               <span className="text-2xl">🏦</span>
               <span className="text-base font-bold text-white">Transferencia</span>
             </button>
-            {pago === 'transferencia' && aliasPago && (
+            {pago === 'transferencia' && !hayPorPeso && aliasPago && (
               <div className="rounded-2xl border border-[#4db8ff]/30 bg-[#4db8ff]/8 px-4 py-3 flex items-center justify-between gap-3"
                    style={{ animation: 'bmFadeUp 0.25s ease both' }}>
                 <div>
@@ -246,6 +246,13 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
                   className="shrink-0 text-[11px] font-bold text-[#4db8ff] bg-[#4db8ff]/15 border border-[#4db8ff]/30 px-3 py-1.5 rounded-lg active:scale-95 transition-all">
                   Copiar
                 </button>
+              </div>
+            )}
+            {pago === 'transferencia' && hayPorPeso && (
+              <div className="rounded-2xl border border-[#f39c12]/30 bg-[#f39c12]/10 px-4 py-3"
+                   style={{ animation: 'bmFadeUp 0.25s ease both' }}>
+                <div className="text-[12px] text-[#f39c12] font-bold mb-0.5">El alias se habilita después del pesaje</div>
+                <div className="text-[11px] text-white/55">Tu pedido tiene productos por peso. Cuando el local confirme el peso vas a ver el total final y el alias para transferir en “Mis pedidos”.</div>
               </div>
             )}
             {mpActivo && (

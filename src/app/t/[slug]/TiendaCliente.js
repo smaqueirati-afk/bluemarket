@@ -36,6 +36,7 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
   const [numeroPedido, setNumeroPedido] = useState(null)
   const [palabraClave, setPalabraClave] = useState(null)
   const [metodoPagoConfirmado, setMetodoPagoConfirmado] = useState(null)
+  const [confirmadoTienePeso, setConfirmadoTienePeso] = useState(false)
   const [guardando, setGuardando] = useState(false)
   const [errorPedido, setErrorPedido] = useState(null)
   const [logroNivel, setLogroNivel] = useState(null) // animación de logro post-compra
@@ -516,6 +517,7 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
                 setNumeroPedido(resultado.numero)
                 setPalabraClave(resultado.palabraClave)
                 setMetodoPagoConfirmado(datos.pago)
+                setConfirmadoTienePeso(hayPorPeso)
                 setPedidoConfirmado(true)
                 setCarrito([])
                 if (resultado.logroNivel) setLogroNivel(resultado.logroNivel)
@@ -599,8 +601,17 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
                         cancelado: { bg: '#e74c3c22', color: '#e74c3c', emoji: '❌' },
                       }
                       const est = colores[p.estado] || colores.nuevo
+                      const tienePeso = p.items?.some((it) => it.unidad === 'kg')
+                      const pesado = !!p.pesado
+                      const enProceso = !['entregado', 'cancelado'].includes(p.estado)
+                      const puedePagar = !tienePeso || pesado
+                      const cardStyle = !enProceso
+                        ? { background: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.10)' }
+                        : puedePagar
+                          ? { background: 'rgba(46,204,113,0.08)', borderColor: 'rgba(46,204,113,0.45)' }
+                          : { background: 'rgba(231,76,60,0.08)', borderColor: 'rgba(231,76,60,0.45)' }
                       return (
-                        <div key={p.id} className="bg-white/[0.06] border border-white/10 rounded-2xl p-4">
+                        <div key={p.id} className="border rounded-2xl p-4" style={cardStyle}>
                           <div className="flex items-center justify-between mb-2">
                             <span className="font-extrabold text-white">#{p.numero}</span>
                             <span className="text-xs font-bold px-2.5 py-1 rounded-lg"
@@ -616,36 +627,45 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
                           ))}
 
                           {/* Banner de estado de pago */}
-                          {!['entregado','cancelado'].includes(p.estado) && (() => {
-                            const tienePeso = p.items?.some(it => it.unidad === 'kg')
-                            const pesado = !!p.pesado
-                            if (tienePeso && !pesado) {
-                              return (
-                                <div className="mt-3 rounded-xl px-3 py-2.5 flex items-center gap-2"
-                                     style={{ background: '#f39c1222', border: '1px solid #f39c1244' }}>
-                                  <span className="text-xl">⏳</span>
-                                  <div>
-                                    <div className="text-xs font-extrabold text-[#f39c12]">Esperando confirmación de peso</div>
-                                    <div className="text-[10px] text-white/45 mt-0.5">El local está preparando tu pedido. El total puede variar según el corte.</div>
-                                  </div>
-                                </div>
-                              )
-                            }
-                            if (!tienePeso || pesado) {
-                              const totalMostrar = p.total_final ?? p.total
-                              return (
-                                <div className="mt-3 rounded-xl px-3 py-2.5 flex items-center gap-2"
-                                     style={{ background: '#2ecc7122', border: '1px solid #2ecc7144' }}>
+                          {enProceso && !puedePagar && (
+                            <div className="mt-3 rounded-xl px-3 py-2.5 flex items-center gap-2"
+                                 style={{ background: '#e74c3c22', border: '1px solid #e74c3c55' }}>
+                              <span className="text-xl">⏳</span>
+                              <div>
+                                <div className="text-xs font-extrabold text-[#e74c3c]">Esperando que pesen tu pedido</div>
+                                <div className="text-[10px] text-white/55 mt-0.5">Cuando el local confirme el peso vas a ver el total final y el alias para pagar.</div>
+                              </div>
+                            </div>
+                          )}
+                          {enProceso && puedePagar && (() => {
+                            const totalMostrar = p.total_final ?? p.total
+                            return (
+                              <div className="mt-3 rounded-xl px-3 py-2.5"
+                                   style={{ background: '#2ecc7115', border: '1px solid #2ecc7155' }}>
+                                <div className="flex items-center gap-2">
                                   <span className="text-xl">✅</span>
                                   <div>
                                     <div className="text-xs font-extrabold text-[#2ecc71]">
-                                      {pesado ? `Total confirmado: $${Number(totalMostrar).toLocaleString('es-AR')}` : 'Total exacto — listo para coordinar pago'}
+                                      {pesado ? `Total confirmado: $${Number(totalMostrar).toLocaleString('es-AR')}` : `Listo para pagar · $${Number(totalMostrar).toLocaleString('es-AR')}`}
                                     </div>
-                                    <div className="text-[10px] text-white/45 mt-0.5">Coordiná el pago con el local o pagá online si está disponible.</div>
+                                    <div className="text-[10px] text-white/45 mt-0.5">Ya podés abonar tu pedido.</div>
                                   </div>
                                 </div>
-                              )
-                            }
+                                {pescaderia?.alias_pago && (
+                                  <div className="mt-2.5 bg-white/[0.06] border border-white/12 rounded-xl px-3 py-2 flex items-center justify-between gap-2">
+                                    <div className="min-w-0">
+                                      <div className="text-[9px] text-white/45 uppercase tracking-wide mb-0.5">Alias / CBU / Link de pago</div>
+                                      <div className="text-sm font-bold text-white break-all">{pescaderia.alias_pago}</div>
+                                    </div>
+                                    <button type="button"
+                                      onClick={() => { navigator.clipboard?.writeText(pescaderia.alias_pago) }}
+                                      className="shrink-0 text-[11px] font-bold text-[#4db8ff] bg-[#4db8ff]/10 border border-[#4db8ff]/25 px-2.5 py-1.5 rounded-lg active:scale-95">
+                                      📋 Copiar
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            )
                           })()}
 
                           <div className="flex items-center justify-between mt-2">
@@ -745,7 +765,15 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
             )}
 
             {/* Datos de pago si eligió transferencia */}
-            {(metodoPagoConfirmado === 'transferencia' || metodoPagoConfirmado === 'mercadopago') && pescaderia?.alias_pago && (
+            {metodoPagoConfirmado === 'transferencia' && confirmadoTienePeso && (
+              <div className="bg-[#f39c12]/10 border border-[#f39c12]/30 rounded-2xl px-5 py-4 mb-4 w-full text-left"
+                   style={{ animation: 'bmFadeUp 0.5s ease both' }}>
+                <div className="text-[11px] text-white/45 uppercase tracking-wide mb-1">🏦 Pago por transferencia</div>
+                <div className="text-sm font-bold text-white mb-1">El alias se habilita después del pesaje</div>
+                <div className="text-[12px] text-white/55">Tu pedido tiene productos por peso. Cuando el local confirme el peso vas a ver el total final y el alias para transferir en “Mis pedidos”.</div>
+              </div>
+            )}
+            {(metodoPagoConfirmado === 'transferencia' || metodoPagoConfirmado === 'mercadopago') && !confirmadoTienePeso && pescaderia?.alias_pago && (
               <div className="bg-[#4db8ff]/10 border border-[#4db8ff]/30 rounded-2xl px-5 py-4 mb-4 w-full text-left"
                    style={{ animation: 'bmFadeUp 0.5s ease both' }}>
                 <div className="text-[11px] text-white/45 uppercase tracking-wide mb-1">
@@ -775,7 +803,7 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
             )}
 
             {/* Si no tiene alias pero eligió transferencia */}
-            {(metodoPagoConfirmado === 'transferencia') && !pescaderia?.alias_pago && pescaderia?.telefono && (() => {
+            {(metodoPagoConfirmado === 'transferencia') && !confirmadoTienePeso && !pescaderia?.alias_pago && pescaderia?.telefono && (() => {
               let n = String(pescaderia.telefono).replace(/\D/g, '')
               if (n.startsWith('54')) { let r = n.slice(2); if (r.startsWith('0')) r = r.slice(1); if (!r.startsWith('9')) r = '9' + r; n = '54' + r }
               else { if (n.startsWith('0')) n = n.slice(1); n = '549' + n }
