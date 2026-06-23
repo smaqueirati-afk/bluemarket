@@ -165,6 +165,12 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
     }
   }
 
+  // Invitar a un cliente a INSTALAR la tienda como app (link por WhatsApp + pasos)
+  function invitarInstalar() {
+    const texto = `¡Hola! 📲 Sumá la tienda *${pescaderia?.nombre || 'nuestra tienda'}* a tu teléfono como app, así entrás con un solo toque.\n\n1) Abrí este link:\n${linkTienda}\n\n2) En iPhone 📱: tocá *Compartir* y elegí *"Agregar a inicio"*.\n   En Android 🤖: tocá *"Instalar app"* cuando aparezca.\n\n3) ¡Listo! Vas a tener el ícono en tu pantalla de inicio. ✅`
+    window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank')
+  }
+
   // Link de invitación a la red (cada miembro tiene el suyo)
   const linkInvitacion = typeof window !== 'undefined' && usuarioId
     ? `${window.location.origin}/invitacion/${usuarioId}`
@@ -596,6 +602,11 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
               {verQR ? '✕' : '🔲'}
             </button>
           </div>
+
+          <button onClick={invitarInstalar}
+            className="w-full mt-2 bg-[#2ecc71] text-[#03174a] font-bold text-sm py-2.5 rounded-xl active:scale-[0.98] transition-transform flex items-center justify-center gap-1.5">
+            <span>📲</span> Invitar a instalar la app
+          </button>
 
           {verQR && (
             <div className="mt-4 flex flex-col items-center" style={{ animation: 'bmFadeUp 0.3s ease both' }}>
