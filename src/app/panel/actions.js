@@ -265,3 +265,20 @@ export async function ajustarPesosPedido(pedidoId, pesos) {
   revalidatePath('/panel')
   return { ok: true, total_final: totalFinal, items: updates }
 }
+
+export async function guardarAliasPago(alias) {
+  const ctx = await resolverTiendaPanel()
+  if (ctx.error) return { error: ctx.error }
+  const pescaderiaId = ctx.pescaderiaId
+
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('pescaderias')
+    .update({ alias_pago: alias?.trim() || null })
+    .eq('id', pescaderiaId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/panel')
+  return { ok: true }
+}

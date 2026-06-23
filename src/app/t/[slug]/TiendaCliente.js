@@ -473,6 +473,7 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
             envioModo={pescaderia?.envio_modo}
             envioGratisDesde={pescaderia?.envio_gratis_desde}
             mpActivo={pescaderia?.mp_activo}
+            aliasPago={pescaderia?.alias_pago}
             retorno={retorno}
             necesitaLogin={!usuarioId}
             onLogin={async () => {
@@ -611,6 +612,40 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
                           {p.items?.map((it, i) => (
                             <div key={i} className="text-xs text-white/60">{it.cantidad}× {it.nombre}</div>
                           ))}
+
+                          {/* Banner de estado de pago */}
+                          {!['entregado','cancelado'].includes(p.estado) && (() => {
+                            const tienePeso = p.items?.some(it => it.unidad === 'kg')
+                            const pesado = !!p.pesado
+                            if (tienePeso && !pesado) {
+                              return (
+                                <div className="mt-3 rounded-xl px-3 py-2.5 flex items-center gap-2"
+                                     style={{ background: '#f39c1222', border: '1px solid #f39c1244' }}>
+                                  <span className="text-xl">⏳</span>
+                                  <div>
+                                    <div className="text-xs font-extrabold text-[#f39c12]">Esperando confirmación de peso</div>
+                                    <div className="text-[10px] text-white/45 mt-0.5">El local está preparando tu pedido. El total puede variar según el corte.</div>
+                                  </div>
+                                </div>
+                              )
+                            }
+                            if (!tienePeso || pesado) {
+                              const totalMostrar = p.total_final ?? p.total
+                              return (
+                                <div className="mt-3 rounded-xl px-3 py-2.5 flex items-center gap-2"
+                                     style={{ background: '#2ecc7122', border: '1px solid #2ecc7144' }}>
+                                  <span className="text-xl">✅</span>
+                                  <div>
+                                    <div className="text-xs font-extrabold text-[#2ecc71]">
+                                      {pesado ? `Total confirmado: $${Number(totalMostrar).toLocaleString('es-AR')}` : 'Total exacto — listo para coordinar pago'}
+                                    </div>
+                                    <div className="text-[10px] text-white/45 mt-0.5">Coordiná el pago con el local o pagá online si está disponible.</div>
+                                  </div>
+                                </div>
+                              )
+                            }
+                          })()}
+
                           <div className="flex items-center justify-between mt-2">
                             <div className="text-base font-extrabold text-[#4db8ff]">
                               ${Number(p.total).toLocaleString('es-AR')}

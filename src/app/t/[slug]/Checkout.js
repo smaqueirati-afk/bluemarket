@@ -3,7 +3,7 @@
 import { useState } from 'react'
 
 // Pantalla de checkout. Recibe el carrito y una función para volver/confirmar.
-export default function Checkout({ carrito, onVolver, onConfirmar, cargando, errorExterno, ccHabilitada, necesitaLogin, onLogin, modalidad, soloDelivery, retorno, envioModo, envioGratisDesde, mpActivo }) {
+export default function Checkout({ carrito, onVolver, onConfirmar, cargando, errorExterno, ccHabilitada, necesitaLogin, onLogin, modalidad, soloDelivery, retorno, envioModo, envioGratisDesde, mpActivo, aliasPago }) {
   const puedeEnvio = modalidad !== 'solo_local'
   const puedeRetiro = modalidad !== 'solo_reparto' && !soloDelivery
   const [entrega, setEntrega] = useState(puedeEnvio ? 'envio' : 'retiro')
@@ -234,15 +234,34 @@ export default function Checkout({ carrito, onVolver, onConfirmar, cargando, err
               <span className="text-2xl">🏦</span>
               <span className="text-base font-bold text-white">Transferencia</span>
             </button>
+            {pago === 'transferencia' && aliasPago && (
+              <div className="rounded-2xl border border-[#4db8ff]/30 bg-[#4db8ff]/8 px-4 py-3 flex items-center justify-between gap-3"
+                   style={{ animation: 'bmFadeUp 0.25s ease both' }}>
+                <div>
+                  <div className="text-[10px] text-white/45 uppercase tracking-wide mb-0.5">Alias / CBU / Link de pago</div>
+                  <div className="text-sm font-bold text-white break-all">{aliasPago}</div>
+                </div>
+                <button
+                  onClick={() => navigator.clipboard.writeText(aliasPago)}
+                  className="shrink-0 text-[11px] font-bold text-[#4db8ff] bg-[#4db8ff]/15 border border-[#4db8ff]/30 px-3 py-1.5 rounded-lg active:scale-95 transition-all">
+                  Copiar
+                </button>
+              </div>
+            )}
             {mpActivo && (
-              <button onClick={() => setPago('mercadopago')}
+              <button onClick={() => !hayPorPeso && setPago('mercadopago')}
                 className={`w-full p-3.5 rounded-2xl border flex items-center gap-3 transition-all ${
-                  pago === 'mercadopago' ? 'bg-[#009ee3]/20 border-[#009ee3]' : 'bg-white/[0.05] border-white/10'
+                  hayPorPeso
+                    ? 'bg-white/[0.03] border-white/8 opacity-50 cursor-not-allowed'
+                    : pago === 'mercadopago' ? 'bg-[#009ee3]/20 border-[#009ee3]' : 'bg-white/[0.05] border-white/10'
                 }`}>
                 <span className="text-2xl">💳</span>
                 <div className="text-left">
                   <span className="text-base font-bold text-white block">Mercado Pago</span>
-                  <span className="text-[10px] text-white/45">Pagás online ahora, con tarjeta o dinero en cuenta</span>
+                  {hayPorPeso
+                    ? <span className="text-[10px] text-[#f39c12]">⚠️ No disponible — el total puede variar al pesar el corte</span>
+                    : <span className="text-[10px] text-white/45">Pagás online ahora, con tarjeta o dinero en cuenta</span>
+                  }
                 </div>
               </button>
             )}

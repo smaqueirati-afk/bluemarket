@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { cambiarEstadoPedido, guardarHorario, guardarMontoMinimoReparto, guardarEnvioConfig, guardarLogoTienda, guardarMercadoPago, ajustarPesosPedido } from './actions'
+import { cambiarEstadoPedido, guardarHorario, guardarMontoMinimoReparto, guardarEnvioConfig, guardarLogoTienda, guardarAliasPago, ajustarPesosPedido } from './actions'
 import { salirModoDeveloper } from '../(developer)/dashboard/actions'
 import BarraUsuario from '../../components/BarraUsuario'
 import MapaReparto from '../../components/MapaReparto'
@@ -84,9 +84,8 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
   const [guardandoEnvio, setGuardandoEnvio] = useState(false)
   const [subiendoLogo, setSubiendoLogo] = useState(false)
   const logoRef = useRef(null)
-  const [mpTokenInput, setMpTokenInput] = useState('')
-  const [mpActivoInput, setMpActivoInput] = useState(!!pescaderia?.mp_activo)
-  const [guardandoMP, setGuardandoMP] = useState(false)
+  const [aliasPagoInput, setAliasPagoInput] = useState(pescaderia?.alias_pago || '')
+  const [guardandoAlias, setGuardandoAlias] = useState(false)
   const [guardandoMin, setGuardandoMin] = useState(false)
   const [copiadoInvite, setCopiadoInvite] = useState(false)
   const [toastPedido, setToastPedido] = useState(null) // { numero, total }
@@ -339,12 +338,11 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
     setSubiendoLogo(false)
   }
 
-  async function guardarMP() {
-    setGuardandoMP(true)
-    const res = await guardarMercadoPago(mpTokenInput, mpActivoInput)
-    setGuardandoMP(false)
+  async function guardarAlias() {
+    setGuardandoAlias(true)
+    const res = await guardarAliasPago(aliasPagoInput)
+    setGuardandoAlias(false)
     if (res?.error) { alert(res.error); return }
-    setMpTokenInput('')
   }
 
   // Métricas del día
@@ -816,38 +814,27 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
 
         {filtro === 'ajustes' && (
           <div className="bg-white/[0.05] border border-white/10 rounded-2xl p-4 mb-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="text-[10px] text-white/40 uppercase tracking-wide font-bold">Mercado Pago · cobro de pedidos</div>
-              <span className={`text-[11px] font-bold px-2 py-1 rounded-lg ${pescaderia?.mp_conectado ? 'bg-[#2ecc71]/15 text-[#2ecc71]' : 'bg-white/[0.06] text-white/45'}`}>
-                {pescaderia?.mp_conectado ? '✅ Conectado' : '○ No conectado'}
-              </span>
-            </div>
-            <label className="text-[12px] text-white/55">Access Token de producción</label>
+            <div className="text-[10px] text-white/40 uppercase tracking-wide font-bold mb-3">💳 Datos de pago para tus clientes</div>
+            <p className="text-[12px] text-white/55 mb-3 leading-relaxed">
+              Ingresá tu alias de CBU/CVU o un link de pago de Mercado Pago. Tus clientes lo van a ver al confirmar el pedido para hacer la transferencia.
+            </p>
+            <label className="text-[12px] text-white/55">Alias CBU/CVU o link de pago</label>
             <input
-              type="password"
-              value={mpTokenInput}
-              onChange={(e) => setMpTokenInput(e.target.value)}
-              placeholder={pescaderia?.mp_conectado ? '•••••• (dejalo vacío para no cambiarlo)' : 'APP_USR-...'}
+              type="text"
+              value={aliasPagoInput}
+              onChange={(e) => setAliasPagoInput(e.target.value)}
+              placeholder="ej: pescaderia.loma o https://mpago.la/xxxx"
               className="w-full mt-1 bg-white/[0.06] border border-white/15 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#4db8ff]/60"
             />
-            <label className="flex items-center gap-2.5 mt-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={mpActivoInput}
-                onChange={(e) => setMpActivoInput(e.target.checked)}
-                className="w-5 h-5 rounded accent-[#4db8ff] cursor-pointer"
-              />
-              <span className="text-sm text-white/70">Aceptar pagos con Mercado Pago en los pedidos</span>
-            </label>
             <button
-              onClick={guardarMP}
-              disabled={guardandoMP}
+              onClick={guardarAlias}
+              disabled={guardandoAlias}
               className="mt-3 bg-[#4db8ff] text-[#03174a] font-bold text-xs px-4 py-2 rounded-lg active:scale-95 transition-all disabled:opacity-60"
             >
-              {guardandoMP ? 'Guardando...' : 'Guardar'}
+              {guardandoAlias ? 'Guardando...' : 'Guardar'}
             </button>
             <p className="text-[11px] text-white/35 mt-3 leading-snug">
-              Conseguí tu Access Token en Mercado Pago → <span className="text-white/55">Tu negocio → Configuración → Credenciales de producción</span>. La plata de cada pedido entra <span className="text-white/55">directo a tu cuenta</span>; BlueMarket no la toca. El token se guarda de forma segura y no se muestra.
+              Tu cliente va a ver este dato cuando elija pagar por transferencia. Lo puede copiar con un toque.
             </p>
           </div>
         )}
