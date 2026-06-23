@@ -414,21 +414,23 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
                   <div className="space-y-3">
                     {carrito.map((item) => (
                       <div key={item.producto.id} className="flex items-center gap-3 bg-white/[0.05] border border-white/8 rounded-2xl p-3">
-                        <div className="w-12 h-12 rounded-xl bg-[linear-gradient(135deg,#0a3a7a,#051e5c)] flex items-center justify-center text-2xl shrink-0">
-                          {item.producto.emoji}
+                        <div className="w-12 h-12 rounded-xl overflow-hidden bg-[linear-gradient(135deg,#0a3a7a,#051e5c)] flex items-center justify-center text-2xl shrink-0">
+                          {item.producto.foto_url
+                            ? <img src={item.producto.foto_url} alt={item.producto.nombre} className="w-full h-full object-cover" />
+                            : (item.producto.emoji || '🛒')}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-base font-semibold text-white truncate">{item.producto.nombre}</div>
+                          <div className="text-[15px] font-semibold text-white leading-tight line-clamp-2">{item.producto.nombre}</div>
                           <div className="text-sm text-[#4db8ff] font-bold mt-0.5">{fmt(item.producto.precio)} <span className="text-white/45 font-normal">/ {item.producto.unidad}</span></div>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center gap-1.5 shrink-0">
                           <button onClick={() => quitar(item.producto.id)} aria-label="Quitar"
-                            className="w-11 h-11 bg-white/10 rounded-xl text-white text-2xl font-bold flex items-center justify-center active:scale-90">
+                            className="w-9 h-9 bg-white/10 rounded-lg text-white text-xl font-bold flex items-center justify-center active:scale-90">
                             −
                           </button>
-                          <span className="text-base font-bold text-white min-w-[3.5rem] text-center px-0.5">{fmtCantPaso(item.cantidad, item.producto.unidad)}</span>
+                          <span className="text-sm font-bold text-white min-w-[2.75rem] text-center">{fmtCantPaso(item.cantidad, item.producto.unidad)}</span>
                           <button onClick={() => agregar(item.producto)} aria-label="Agregar"
-                            className="w-11 h-11 bg-[#4db8ff] rounded-xl text-[#03174a] text-2xl font-extrabold flex items-center justify-center active:scale-90">
+                            className="w-9 h-9 bg-[#4db8ff] rounded-lg text-[#03174a] text-xl font-extrabold flex items-center justify-center active:scale-90">
                             +
                           </button>
                         </div>
