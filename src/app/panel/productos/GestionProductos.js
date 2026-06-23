@@ -139,17 +139,61 @@ export default function GestionProductos({ productos, categorias: categoriasInic
     setImportando(false)
   }
 
-  // Comprime la imagen en el cliente antes de subir a Storage
-  // Máximo 1200px en el lado más largo, calidad 0.75 JPEG.
+  // Lee ancho/alto de un JPEG o PNG leyendo solo el principio del archivo,
+  // SIN decodificar toda la imagen (evita quedarse sin memoria).
+  async function leerDimensiones(archivo) {
+    try {
+      const buf = new Uint8Array(await archivo.slice(0, 256 * 1024).arrayBuffer())
+      // PNG
+      if (buf[0] === 0x89 && buf[1] === 0x50) {
+        const dv = new DataView(buf.buffer)
+        return { w: dv.getUint32(16), h: dv.getUint32(20) }
+      }
+      // JPEG
+      if (buf[0] === 0xFF && buf[1] === 0xD8) {
+        let i = 2
+        while (i < buf.length - 8) {
+          if (buf[i] !== 0xFF) { i++; continue }
+          const marker = buf[i + 1]
+          // SOF (start of frame) → trae las dimensiones
+          if (marker >= 0xC0 && marker <= 0xCF && marker !== 0xC4 && marker !== 0xC8 && marker !== 0xCC) {
+            const h = (buf[i + 5] << 8) | buf[i + 6]
+            const w = (buf[i + 7] << 8) | buf[i + 8]
+            return { w, h }
+          }
+          const len = (buf[i + 2] << 8) | buf[i + 3]
+          if (len <= 0) break
+          i += 2 + len
+        }
+      }
+    } catch (e) { /* sin dimensiones */ }
+    return null
+  }
+
+  // Comprime la imagen en el cliente antes de subir a Storage.
+  // Decodifica YA reducida (decode-scale) para no agotar la memoria con fotos
+  // de cámara de muchos megapíxeles. Máx 1200px lado largo, JPEG 0.72.
   // Devuelve un Blob, o null si no se pudo comprimir (entonces se sube el original).
   async function comprimirImagen(archivo) {
     const MAX = 1200
-    const CALIDAD = 0.75
+    const CALIDAD = 0.72
 
-    // 1) Camino moderno: createImageBitmap respeta la orientación EXIF
-    //    (evita fotos de cámara rotadas) y maneja imágenes grandes.
+    // 1) Camino moderno: createImageBitmap con resize → el navegador decodifica
+    //    directamente en tamaño chico (bajísimo consumo de memoria) y respeta EXIF.
     try {
-      const bitmap = await createImageBitmap(archivo, { imageOrientation: 'from-image' })
+      const dim = await leerDimensiones(archivo)
+      const opts = { imageOrientation: 'from-image', resizeQuality: 'high' }
+      if (dim && dim.w && dim.h) {
+        // Fijando solo un lado, el navegador mantiene la proporción.
+        if (dim.w >= dim.h) { if (dim.w > MAX) opts.resizeWidth = MAX }
+        else { if (dim.h > MAX) opts.resizeHeight = MAX }
+      } else {
+        // Sin dimensiones conocidas: acoto por las dudas (puede deformar un poco,
+        // pero evita el crash por memoria en imágenes enormes).
+        opts.resizeWidth = MAX
+        opts.resizeHeight = MAX
+      }
+      const bitmap = await createImageBitmap(archivo, opts)
       let w = bitmap.width, h = bitmap.height
       if (w > MAX || h > MAX) {
         if (w > h) { h = Math.round(h * MAX / w); w = MAX }
@@ -160,33 +204,31 @@ export default function GestionProductos({ productos, categorias: categoriasInic
       canvas.getContext('2d').drawImage(bitmap, 0, 0, w, h)
       if (bitmap.close) bitmap.close()
       const blob = await new Promise((res) => canvas.toBlob((b) => res(b), 'image/jpeg', CALIDAD))
+      canvas.width = 0; canvas.height = 0  // liberar memoria del canvas
       if (blob) return blob
     } catch (e) {
       // sigue al fallback
     }
 
-    // 2) Fallback con FileReader + Image (navegadores viejos)
+    // 2) Fallback liviano: objectURL (no data URL gigante) + Image
     try {
       const blob = await new Promise((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onerror = () => reject(new Error('No se pudo leer la imagen'))
-        reader.onload = (e) => {
-          const img = new Image()
-          img.onerror = () => reject(new Error('No se pudo cargar la imagen'))
-          img.onload = () => {
-            let w = img.width, h = img.height
-            if (w > MAX || h > MAX) {
-              if (w > h) { h = Math.round(h * MAX / w); w = MAX }
-              else { w = Math.round(w * MAX / h); h = MAX }
-            }
-            const canvas = document.createElement('canvas')
-            canvas.width = w; canvas.height = h
-            canvas.getContext('2d').drawImage(img, 0, 0, w, h)
-            canvas.toBlob((b) => resolve(b), 'image/jpeg', CALIDAD)
+        const url = URL.createObjectURL(archivo)
+        const img = new Image()
+        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('No se pudo cargar la imagen')) }
+        img.onload = () => {
+          let w = img.naturalWidth || img.width, h = img.naturalHeight || img.height
+          if (w > MAX || h > MAX) {
+            if (w > h) { h = Math.round(h * MAX / w); w = MAX }
+            else { w = Math.round(w * MAX / h); h = MAX }
           }
-          img.src = e.target.result
+          const canvas = document.createElement('canvas')
+          canvas.width = w; canvas.height = h
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+          URL.revokeObjectURL(url)
+          canvas.toBlob((b) => { canvas.width = 0; canvas.height = 0; resolve(b) }, 'image/jpeg', CALIDAD)
         }
-        reader.readAsDataURL(archivo)
+        img.src = url
       })
       if (blob) return blob
     } catch (e) {
