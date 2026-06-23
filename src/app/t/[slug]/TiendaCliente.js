@@ -640,28 +640,29 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
                           {enProceso && puedePagar && (() => {
                             const totalMostrar = p.total_final ?? p.total
                             return (
-                              <div className="mt-3 rounded-xl px-3 py-2.5"
-                                   style={{ background: '#2ecc7115', border: '1px solid #2ecc7155' }}>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xl">✅</span>
-                                  <div>
-                                    <div className="text-xs font-extrabold text-[#2ecc71]">
-                                      {pesado ? `Total confirmado: $${Number(totalMostrar).toLocaleString('es-AR')}` : `Listo para pagar · $${Number(totalMostrar).toLocaleString('es-AR')}`}
-                                    </div>
-                                    <div className="text-[10px] text-white/45 mt-0.5">Ya podés abonar tu pedido.</div>
-                                  </div>
+                              <div className="mt-3 rounded-xl px-4 py-3.5"
+                                   style={{ background: '#2ecc7118', border: '1px solid #2ecc7155' }}>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="text-2xl">✅</span>
+                                  <span className="text-base font-extrabold text-[#2ecc71]">Listo para pagar</span>
                                 </div>
-                                {pescaderia?.alias_pago && (
-                                  <div className="mt-2.5 bg-white/[0.06] border border-white/12 rounded-xl px-3 py-2 flex items-center justify-between gap-2">
-                                    <div className="min-w-0">
-                                      <div className="text-[9px] text-white/45 uppercase tracking-wide mb-0.5">Alias / CBU / Link de pago</div>
-                                      <div className="text-sm font-bold text-white break-all">{pescaderia.alias_pago}</div>
-                                    </div>
+                                <div className="text-white text-lg font-extrabold mb-2">
+                                  Total: ${Number(totalMostrar).toLocaleString('es-AR')}
+                                </div>
+
+                                {pescaderia?.alias_pago ? (
+                                  <div className="bg-white/[0.08] border border-white/15 rounded-xl px-4 py-3">
+                                    <div className="text-sm text-white/70 mb-1">Transferí a este alias:</div>
+                                    <div className="text-lg font-extrabold text-white break-all leading-tight mb-3">{pescaderia.alias_pago}</div>
                                     <button type="button"
                                       onClick={() => { navigator.clipboard?.writeText(pescaderia.alias_pago) }}
-                                      className="shrink-0 text-[11px] font-bold text-[#4db8ff] bg-[#4db8ff]/10 border border-[#4db8ff]/25 px-2.5 py-1.5 rounded-lg active:scale-95">
-                                      📋 Copiar
+                                      className="w-full text-center text-base font-bold text-[#03174a] bg-[#4db8ff] rounded-xl py-3 active:scale-[0.98] transition-transform">
+                                      📋 Copiar alias
                                     </button>
+                                  </div>
+                                ) : (
+                                  <div className="text-sm text-white/75">
+                                    Coordiná el pago con el local al retirar tu pedido.
                                   </div>
                                 )}
                               </div>

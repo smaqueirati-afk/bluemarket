@@ -5,6 +5,18 @@ import { createClient } from '../../../lib/supabase/server'
 import { createAdminClient } from '../../../lib/supabase/admin'
 import { acumularPedido, retornoDisponible, redimirCiclo } from '../../../lib/fidelizacion'
 
+// Palabra clave del pedido: UNA sola palabra común y fácil de decir/escuchar.
+const PALABRAS_CLAVE = [
+  'sol', 'luna', 'mar', 'pan', 'casa', 'mesa', 'silla', 'perro', 'gato', 'flor',
+  'libro', 'agua', 'fuego', 'cielo', 'nube', 'lluvia', 'viento', 'playa', 'monte', 'lago',
+  'campo', 'calle', 'plaza', 'puente', 'barco', 'auto', 'tren', 'avion', 'bici', 'pelota',
+  'globo', 'regalo', 'fiesta', 'torta', 'dulce', 'cafe', 'leche', 'miel', 'queso', 'fruta',
+  'manzana', 'banana', 'limon', 'tomate', 'papa', 'mate', 'taza', 'vaso', 'plato', 'reloj',
+]
+function generarPalabraClave() {
+  return PALABRAS_CLAVE[Math.floor(Math.random() * PALABRAS_CLAVE.length)]
+}
+
 // Guarda un pedido en la pescadería indicada por pescaderiaId.
 // datos = { entrega, pago, direccion, nota, total }
 // items = [{ producto, cantidad }]
@@ -131,6 +143,7 @@ export async function crearPedido(pescaderiaId, datos, items) {
       cliente_id: clienteId,
       usuario_id: user.id,
       estado: 'nuevo',
+      palabra_clave: generarPalabraClave(),
       tipo_entrega: datos.entrega === 'envio' ? 'delivery' : 'retiro',
       direccion: datos.direccion || null,
       franja: datos.franja || null,
