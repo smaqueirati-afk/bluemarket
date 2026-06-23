@@ -5,17 +5,18 @@ import { createAdminClient } from '../../../lib/supabase/admin'
 
 const PESCADERIA_DEMO = 'aab4a81c-e409-4c2c-b9df-11077c7f7bcd'
 
-// Genera una palabra clave de 2 palabras random
+// Genera una palabra clave simple de la vida cotidiana
 const PALABRAS = [
-  'mar','pez','ola','sal','red','sol','luna','agua','viento','coral',
-  'perla','orca','timon','ancla','faro','marea','remo','barco','bahia','isla',
-  'delfin','pulpo','trucha','merluza','langosta','cangrejo','almeja','ostra',
+  'mate','taza','silla','mesa','llave','puerta','bolso','zapato','plato','cuchara',
+  'vaso','reloj','lapiz','libro','carta','cama','manta','jardin','perro','gato',
+  'patio','cocina','sopla','balde','farol','frasco','damero','cesto','toalla','espejo',
+  'timbre','jarron','boton','cinta','gancho','bolsa','postal','cuadro','aguja','horno',
+  'balon','moneda','sereno','paloma','caño','techo','pared','vidrio','banco','cajón',
 ]
 function generarPalabraClave() {
-  const a = PALABRAS[Math.floor(Math.random() * PALABRAS.length)]
-  const b = PALABRAS[Math.floor(Math.random() * PALABRAS.length)]
+  const palabra = PALABRAS[Math.floor(Math.random() * PALABRAS.length)]
   const n = Math.floor(Math.random() * 90) + 10
-  return `${a}-${b}-${n}`
+  return `${palabra}${n}`
 }
 
 // Guarda un pedido real en la base de datos.
