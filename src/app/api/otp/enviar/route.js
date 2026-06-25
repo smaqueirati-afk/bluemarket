@@ -29,6 +29,7 @@ export async function POST(request) {
         codigo,
         expira_en: expira.toISOString(),
         usado: false,
+        intentos: 0,
       }, { onConflict: 'email' })
 
     if (errGuardar) {

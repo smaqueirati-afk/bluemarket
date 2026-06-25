@@ -16,7 +16,7 @@ export async function POST(request) {
     // Buscar el código
     const { data: otp, error: errBuscar } = await admin
       .from('otp_codigos')
-      .select('codigo, expira_en, usado')
+      .select('codigo, expira_en, usado, intentos')
       .eq('email', emailLimpio)
       .maybeSingle()
 
@@ -32,8 +32,29 @@ export async function POST(request) {
       return NextResponse.json({ error: 'El código venció, pedí uno nuevo' }, { status: 400 })
     }
 
+    // Anti fuerza bruta: máximo de intentos por código
+    const MAX_INTENTOS = 5
+    if ((otp.intentos || 0) >= MAX_INTENTOS) {
+      await admin
+        .from('otp_codigos')
+        .update({ usado: true })
+        .eq('email', emailLimpio)
+      return NextResponse.json({ error: 'Demasiados intentos. Pedí un código nuevo.' }, { status: 429 })
+    }
+
     if (otp.codigo !== String(codigo).trim()) {
-      return NextResponse.json({ error: 'Código incorrecto' }, { status: 400 })
+      const nuevos = (otp.intentos || 0) + 1
+      // Al llegar al máximo, se invalida el código
+      await admin
+        .from('otp_codigos')
+        .update({ intentos: nuevos, usado: nuevos >= MAX_INTENTOS })
+        .eq('email', emailLimpio)
+      const restantes = Math.max(0, MAX_INTENTOS - nuevos)
+      return NextResponse.json({
+        error: restantes > 0
+          ? `Código incorrecto. Te quedan ${restantes} ${restantes === 1 ? 'intento' : 'intentos'}.`
+          : 'Demasiados intentos. Pedí un código nuevo.',
+      }, { status: 400 })
     }
 
     // Marcar como usado
