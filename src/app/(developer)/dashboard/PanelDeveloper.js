@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { crearPescaderia, asignarDueno, borrarPescaderia, reactivarUsuario, reactivarUsuarioPorEmail, toggleTrial, toggleActiva, entrarComoTienda, cambiarRubro, resetTotal } from './actions'
 
 const RUBROS = [
@@ -18,6 +19,7 @@ import PescaderiaDetalle from './PescaderiaDetalle'
 import CatalogoMaster from './CatalogoMaster'
 
 export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
+  const router = useRouter()
   const [pestana, setPestana] = useState('pescaderias')
   const [mostrarForm, setMostrarForm] = useState(false)
   const [cargando, setCargando] = useState(false)
@@ -88,6 +90,7 @@ export default function PanelDeveloper({ pescaderias, catalogo, usuarioId }) {
           ? `Trial iniciado ✓ Vence el ${new Date(resultado.trial_hasta).toLocaleDateString('es-AR')}`
           : 'Trial cancelado ✓'
       })
+      router.refresh()
     }
     setToggling(null)
   }

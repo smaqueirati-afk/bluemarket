@@ -230,9 +230,13 @@ export async function toggleTrial(pescaderiaId, activar) {
     ? new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     : null
 
+  const update = activar
+    ? { trial_hasta: trialHasta, plan: 'trial' }
+    : { trial_hasta: null }
+
   const { error } = await admin
     .from('pescaderias')
-    .update({ trial_hasta: trialHasta, plan: activar ? 'trial' : 'sin_plan' })
+    .update(update)
     .eq('id', pescaderiaId)
 
   if (error) return { error: error.message }
