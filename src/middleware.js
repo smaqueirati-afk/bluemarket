@@ -2,6 +2,12 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 
 export async function middleware(request) {
+  // Dominio propio de un tenant: tienda.vittomare.com/ -> su tienda directo
+  const host = request.headers.get('host') || ''
+  if (host === 'tienda.vittomare.com' && request.nextUrl.pathname === '/') {
+    return NextResponse.redirect(new URL('/t/vitto-mare', request.url))
+  }
+
   let response = NextResponse.next({ request })
 
   const supabase = createServerClient(
