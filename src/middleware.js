@@ -7,6 +7,10 @@ export async function middleware(request) {
   if (host === 'tienda.vittomare.com' && request.nextUrl.pathname === '/') {
     return NextResponse.redirect(new URL('/t/vitto-mare', request.url))
   }
+  // Dominio propio del dueño: panel.vittomare.com/ -> su panel de pescadería
+  if (host === 'panel.vittomare.com' && request.nextUrl.pathname === '/') {
+    return NextResponse.redirect(new URL('/panel', request.url))
+  }
 
   let response = NextResponse.next({ request })
 
