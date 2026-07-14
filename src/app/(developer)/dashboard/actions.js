@@ -346,7 +346,7 @@ export async function getPescaderiaDetalle(pescaderiaId) {
     .eq('pescaderia_id', pescaderiaId)
     .order('created_at', { ascending: false })
 
-  // El/los dueño(s) de la pescadería no deben figurar como clientes
+  // Excluir dueños y colaboradores de la lista de clientes
   const { data: duenos } = await admin
     .from('usuarios')
     .select('id, email')
@@ -355,8 +355,14 @@ export async function getPescaderiaDetalle(pescaderiaId) {
   const duenoIds = new Set((duenos || []).map((d) => d.id))
   const duenoEmails = new Set((duenos || []).map((d) => (d.email || '').toLowerCase()))
 
+  const { data: miembros } = await admin
+    .from('tienda_usuarios')
+    .select('usuario_id')
+    .eq('pescaderia_id', pescaderiaId)
+  const miembroIds = new Set((miembros || []).map((m) => m.usuario_id))
+
   const clientesVisibles = (clientes || []).filter(
-    (c) => !duenoIds.has(c.usuario_id) && !duenoEmails.has((c.email || '').toLowerCase())
+    (c) => !duenoIds.has(c.usuario_id) && !duenoEmails.has((c.email || '').toLowerCase()) && !miembroIds.has(c.usuario_id)
   )
 
   // Pedidos (últimos 100) con items
