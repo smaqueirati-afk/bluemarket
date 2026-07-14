@@ -32,12 +32,26 @@ export default async function ClientesPage() {
     .eq('id', pescaderiaId)
     .single()
 
-  const { data: clientes } = await admin
+  // Excluir colaboradores de la lista de clientes
+  const { data: miembros } = await admin
+    .from('tienda_usuarios')
+    .select('usuario_id')
+    .eq('pescaderia_id', pescaderiaId)
+
+  const idsColaboradores = (miembros || []).map((m) => m.usuario_id)
+
+  let query = admin
     .from('clientes')
     .select('*')
     .eq('pescaderia_id', pescaderiaId)
     .neq('usuario_id', user.id)
     .order('cc_saldo', { ascending: false })
+
+  if (idsColaboradores.length > 0) {
+    query = query.not('usuario_id', 'in', `(${idsColaboradores.join(',')})`)
+  }
+
+  const { data: clientes } = await query
 
   return (
     <PanelClientes
