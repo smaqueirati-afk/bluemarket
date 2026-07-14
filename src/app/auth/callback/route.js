@@ -130,15 +130,13 @@ export async function GET(request) {
 
         if (perfil) {
           if (returnTo && returnTo.startsWith('/t/')) {
-            // Venía comprando en una tienda por link: volver ahí después del login
             destino = returnTo
           } else if (perfil.rol === 'cliente' && perfil.pescaderia_id) {
-            // Dueño de tienda: va a su panel
             destino = '/panel'
           } else if (perfil.rol === 'developer') {
             destino = '/dashboard'
           } else if (perfil.pescaderia_id) {
-            // Ya tiene pescadería asignada: buscar el slug
+            // Ya tiene pescadería asignada como cliente: buscar el slug
             const { data: pesc } = await admin
               .from('pescaderias')
               .select('slug')
@@ -149,7 +147,6 @@ export async function GET(request) {
               pescaderiaSlugCookie = null
             }
           } else if (pescaderiaSlugCookie) {
-            // Viene de una invitación con slug: asignar la pescadería al usuario
             const { data: pesc } = await admin
               .from('pescaderias')
               .select('id, slug')
@@ -162,6 +159,15 @@ export async function GET(request) {
                 .eq('id', user.id)
               destino = `/t/${pesc.slug}`
             }
+          } else {
+            // Verificar si es colaborador (tienda_usuarios)
+            const { data: membresia } = await admin
+              .from('tienda_usuarios')
+              .select('pescaderia_id')
+              .eq('usuario_id', user.id)
+              .limit(1)
+              .maybeSingle()
+            if (membresia) destino = '/panel'
           }
         }
       }
