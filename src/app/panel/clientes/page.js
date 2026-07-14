@@ -1,30 +1,15 @@
-import { createClient } from '../../../lib/supabase/server'
 import { createAdminClient } from '../../../lib/supabase/admin'
 import { redirect } from 'next/navigation'
-import { cookies } from 'next/headers'
+import { resolverTiendaPanel } from '../../../lib/panelTienda'
 import PanelClientes from './PanelClientes'
 
 export default async function ClientesPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: perfil } = await supabase
-    .from('usuarios')
-    .select('rol, pescaderia_id')
-    .eq('id', user.id)
-    .single()
+  const acceso = await resolverTiendaPanel()
+  if (acceso.error) redirect('/inicio')
 
   const admin = createAdminClient()
-  let pescaderiaId = perfil?.pescaderia_id
-
-  if (perfil?.rol === 'developer') {
-    const ck = (await cookies()).get('bm_dev_tienda')?.value
-    if (!ck) redirect('/dashboard')
-    pescaderiaId = ck
-  } else if (!perfil || perfil.rol !== 'cliente' || !perfil.pescaderia_id) {
-    redirect('/inicio')
-  }
+  const pescaderiaId = acceso.pescaderiaId
+  const user = { id: acceso.userId }
 
   const { data: pescaderia } = await admin
     .from('pescaderias')
