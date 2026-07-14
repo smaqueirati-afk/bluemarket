@@ -2,6 +2,7 @@ import { createClient } from '../../lib/supabase/server'
 import { createAdminClient } from '../../lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
+import { resolverTiendaPanel } from '../../lib/panelTienda'
 import PanelPescaderia from './PanelPescaderia'
 import SplashPanel from './SplashPanel'
 
@@ -11,27 +12,22 @@ export default async function DashboardPescaderia() {
 
   if (!user) redirect('/login')
 
+  const admin = createAdminClient()
+
   const { data: perfil } = await supabase
     .from('usuarios')
     .select('rol, pescaderia_id, nombre')
     .eq('id', user.id)
     .single()
 
-  const admin = createAdminClient()
-
   // Sobre qué tienda opera el panel:
-  // - el dueño ve la suya
-  // - el developer ve la que eligió desde el panel dev (cookie bm_dev_tienda)
-  let pescaderiaId = perfil?.pescaderia_id
-  let modoDeveloper = false
-  if (perfil?.rol === 'developer') {
-    const ck = (await cookies()).get('bm_dev_tienda')?.value
-    if (!ck) redirect('/dashboard')
-    pescaderiaId = ck
-    modoDeveloper = true
-  } else if (!perfil || perfil.rol !== 'cliente' || !perfil.pescaderia_id) {
-    redirect('/inicio')
-  }
+  // - dueño, colaborador full/admin: via tienda_usuarios o pescaderia_id
+  // - developer ve la que eligió desde el panel dev (cookie bm_dev_tienda)
+  const acceso = await resolverTiendaPanel()
+  if (acceso.error) redirect('/inicio')
+
+  const pescaderiaId = acceso.pescaderiaId
+  const modoDeveloper = acceso.esDeveloper ?? false
 
   const { data: pescaderia } = await admin
     .from('pescaderias')
