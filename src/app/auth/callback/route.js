@@ -131,43 +131,45 @@ export async function GET(request) {
         if (perfil) {
           if (returnTo && returnTo.startsWith('/t/')) {
             destino = returnTo
-          } else if (perfil.rol === 'cliente' && perfil.pescaderia_id) {
-            destino = '/panel'
           } else if (perfil.rol === 'developer') {
             destino = '/dashboard'
-          } else if (perfil.pescaderia_id) {
-            // Ya tiene pescadería asignada como cliente: buscar el slug
-            const { data: pesc } = await admin
-              .from('pescaderias')
-              .select('slug')
-              .eq('id', perfil.pescaderia_id)
-              .single()
-            if (pesc?.slug) {
-              destino = `/t/${pesc.slug}`
-              pescaderiaSlugCookie = null
-            }
-          } else if (pescaderiaSlugCookie) {
-            const { data: pesc } = await admin
-              .from('pescaderias')
-              .select('id, slug')
-              .eq('slug', pescaderiaSlugCookie)
-              .single()
-            if (pesc) {
-              await admin
-                .from('usuarios')
-                .update({ pescaderia_id: pesc.id })
-                .eq('id', user.id)
-              destino = `/t/${pesc.slug}`
-            }
+          } else if (perfil.rol === 'cliente' && perfil.pescaderia_id) {
+            destino = '/panel'
           } else {
-            // Verificar si es colaborador (tienda_usuarios)
+            // Verificar si es colaborador (tienda_usuarios) — tiene prioridad sobre pescaderia_id de cliente
             const { data: membresia } = await admin
               .from('tienda_usuarios')
               .select('pescaderia_id')
               .eq('usuario_id', user.id)
               .limit(1)
               .maybeSingle()
-            if (membresia) destino = '/panel'
+            if (membresia) {
+              destino = '/panel'
+            } else if (perfil.pescaderia_id) {
+              // Consumidor con tienda asignada: ir a la tienda
+              const { data: pesc } = await admin
+                .from('pescaderias')
+                .select('slug')
+                .eq('id', perfil.pescaderia_id)
+                .single()
+              if (pesc?.slug) {
+                destino = `/t/${pesc.slug}`
+                pescaderiaSlugCookie = null
+              }
+            } else if (pescaderiaSlugCookie) {
+              const { data: pesc } = await admin
+                .from('pescaderias')
+                .select('id, slug')
+                .eq('slug', pescaderiaSlugCookie)
+                .single()
+              if (pesc) {
+                await admin
+                  .from('usuarios')
+                  .update({ pescaderia_id: pesc.id })
+                  .eq('id', user.id)
+                destino = `/t/${pesc.slug}`
+              }
+            }
           }
         }
       }
