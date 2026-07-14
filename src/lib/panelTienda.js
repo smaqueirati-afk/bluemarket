@@ -1,31 +1,40 @@
 import { cookies } from 'next/headers'
-import { createClient } from './supabase/server'
 import { createAdminClient } from './supabase/admin'
+import { verificarMiembro } from './verificarTienda'
 
 // Resuelve sobre qué tienda opera el panel y autoriza al usuario.
-// - dueño (rol 'cliente'): su propia pescaderia_id
+// - dueño/colaborador: via tienda_usuarios o usuarios.pescaderia_id (fallback)
 // - developer con tienda elegida (cookie bm_dev_tienda): esa tienda
-// Devuelve { pescaderiaId, userId, esDeveloper } o { error }
+// Devuelve { pescaderiaId, userId, esDeveloper, rolTienda, esAdmin, esFull } o { error }
 export async function resolverTiendaPanel() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'No autenticado' }
+  const miembro = await verificarMiembro()
 
-  const admin = createAdminClient()
-  const { data: perfil } = await admin
-    .from('usuarios')
-    .select('rol, pescaderia_id')
-    .eq('id', user.id)
-    .maybeSingle()
+  // Developer con cookie de tienda elegida
+  if (miembro.error) {
+    // Intentar como developer
+    const admin = createAdminClient()
+    const { createClient } = await import('./supabase/server')
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'No autenticado' }
 
-  if (perfil?.rol === 'developer') {
-    const ck = (await cookies()).get('bm_dev_tienda')?.value
-    if (!ck) return { error: 'No autorizado' }
-    return { pescaderiaId: ck, userId: user.id, esDeveloper: true }
-  }
+    const { data: perfil } = await admin
+      .from('usuarios')
+      .select('rol')
+      .eq('id', user.id)
+      .maybeSingle()
 
-  if (!perfil || perfil.rol !== 'cliente' || !perfil.pescaderia_id) {
+    if (perfil?.rol === 'developer') {
+      const ck = (await cookies()).get('bm_dev_tienda')?.value
+      if (!ck) return { error: 'No autorizado' }
+      return { pescaderiaId: ck, userId: user.id, esDeveloper: true, rolTienda: 'admin', esAdmin: true, esFull: true }
+    }
+
     return { error: 'No autorizado' }
   }
-  return { pescaderiaId: perfil.pescaderia_id, userId: user.id, esDeveloper: false }
+
+  return {
+    ...miembro,
+    esDeveloper: false,
+  }
 }
