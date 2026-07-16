@@ -322,8 +322,8 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
                     style={{ animation: `bmFadeUp 0.4s ease both`, animationDelay: `${idx * 0.04}s` }}>
                     {/* Imagen */}
                     <div className="w-[78px] h-[78px] shrink-0 bg-[linear-gradient(135deg,#0a3a7a,#051e5c)] flex items-center justify-center text-3xl relative overflow-hidden">
-                      {p.foto_url ? (
-                        <img src={p.foto_url} alt={p.nombre} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+                      {(p.foto_real_url || p.foto_url) ? (
+                        <img src={p.foto_real_url || p.foto_url} alt={p.nombre} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
                       ) : (
                         <>
                           <div className="absolute inset-0 opacity-30"
@@ -415,8 +415,8 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
                     {carrito.map((item) => (
                       <div key={item.producto.id} className="flex items-center gap-3 bg-white/[0.05] border border-white/8 rounded-2xl p-3">
                         <div className="w-12 h-12 rounded-xl overflow-hidden bg-[linear-gradient(135deg,#0a3a7a,#051e5c)] flex items-center justify-center text-2xl shrink-0">
-                          {item.producto.foto_url
-                            ? <img src={item.producto.foto_url} alt={item.producto.nombre} className="w-full h-full object-cover" />
+                          {(item.producto.foto_real_url || item.producto.foto_url)
+                            ? <img src={item.producto.foto_real_url || item.producto.foto_url} alt={item.producto.nombre} className="w-full h-full object-cover" />
                             : (item.producto.emoji || '🛒')}
                         </div>
                         <div className="flex-1 min-w-0">

@@ -15,7 +15,7 @@ const UNIDADES = [
 
 const LOGO_BLUEMARKET = '/icons/bluemarket/icon-192.png'
 
-const FORM_VACIO = { nombre: '', precio: '', categoria: '', unidad: 'kg', stock: '', descripcion: '', foto_url: '' }
+const FORM_VACIO = { nombre: '', precio: '', categoria: '', unidad: 'kg', stock: '', descripcion: '', foto_url: '', foto_real_url: '' }
 
 // Placeholder de nombre por rubro (solo a modo de ejemplo en el input)
 const PLACEHOLDER_RUBRO = {
@@ -40,12 +40,14 @@ export default function GestionProductos({ productos, categorias: categoriasInic
   const [accionando, setAccionando] = useState(null)
   const [subiendoFoto, setSubiendoFoto] = useState(false)
   const fotoRef = useRef(null)
+  const fotoRealRef = useRef(null)
   const fotoCamaraRef = useRef(null)
   const formRef = useRef(null)
   const videoRef = useRef(null)
   const streamRef = useRef(null)
   const [camaraAbierta, setCamaraAbierta] = useState(false)
   const [camaraError, setCamaraError] = useState(null)
+  const [camaraCampo, setCamaraCampo] = useState('foto_url') // a qué campo del form escribe la foto capturada
   const [verCatalogo, setVerCatalogo] = useState(false)
   const [catalogo, setCatalogo] = useState([])
   const [cargandoCatalogo, setCargandoCatalogo] = useState(false)
@@ -72,6 +74,7 @@ export default function GestionProductos({ productos, categorias: categoriasInic
       stock: p.stock ?? '',
       descripcion: p.descripcion || '',
       foto_url: p.foto_url || '',
+      foto_real_url: p.foto_real_url || '',
     })
     setEditandoId(p.id)
     setMostrarForm(true)
@@ -170,7 +173,8 @@ export default function GestionProductos({ productos, categorias: categoriasInic
     }
   }, [camaraAbierta])
 
-  function abrirCamara() {
+  function abrirCamara(campo = 'foto_url') {
+    setCamaraCampo(campo)
     setCamaraError(null)
     setCamaraAbierta(true)
   }
@@ -194,7 +198,7 @@ export default function GestionProductos({ productos, categorias: categoriasInic
     setCamaraAbierta(false)
     if (!blob) { setMensaje({ tipo: 'error', texto: 'No se pudo capturar la foto' }); return }
     const url = await subirFoto(blob)
-    if (url) setForm((f) => ({ ...f, foto_url: url }))
+    if (url) setForm((f) => ({ ...f, [camaraCampo]: url }))
   }
 
   // Lee ancho/alto de un JPEG o PNG leyendo solo el principio del archivo,
@@ -490,10 +494,11 @@ export default function GestionProductos({ productos, categorias: categoriasInic
             </div>
 
             <div>
-              <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">Foto del producto (opcional)</label>
+              <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">Foto publicitaria (opcional)</label>
+              <p className="text-[11px] text-white/35 mb-2 -mt-1">Imagen genérica o de catálogo, para ilustrar el producto.</p>
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-14 h-14 rounded-xl border border-white/20 shrink-0 overflow-hidden bg-white/5 flex items-center justify-center">
-                  <img src={form.foto_url || LOGO_BLUEMARKET} alt="foto" className={form.foto_url ? 'w-full h-full object-cover' : 'w-8 h-8 opacity-40'} />
+                  <img src={form.foto_url || LOGO_BLUEMARKET} alt="foto publicitaria" className={form.foto_url ? 'w-full h-full object-cover' : 'w-8 h-8 opacity-40'} />
                 </div>
                 {form.foto_url && (
                   <button type="button" onClick={() => setForm({ ...form, foto_url: '' })}
@@ -503,7 +508,7 @@ export default function GestionProductos({ productos, categorias: categoriasInic
                 )}
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <button type="button" onClick={abrirCamara} disabled={subiendoFoto}
+                <button type="button" onClick={() => abrirCamara('foto_url')} disabled={subiendoFoto}
                   className="flex items-center justify-center gap-2 bg-white/5 border border-white/10 border-dashed rounded-xl px-3 py-2.5 cursor-pointer hover:bg-white/8 transition-all disabled:opacity-60">
                   <span className="text-lg">📷</span>
                   <span className="text-sm text-white/50">{subiendoFoto ? 'Subiendo...' : 'Cámara'}</span>
@@ -522,6 +527,47 @@ export default function GestionProductos({ productos, categorias: categoriasInic
                       if (!archivo) return
                       const url = await subirFoto(archivo)
                       if (url) setForm((f) => ({ ...f, foto_url: url }))
+                      e.target.value = ''
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs text-white/50 uppercase tracking-wide mb-1.5">Foto real del producto (opcional)</label>
+              <p className="text-[11px] text-white/35 mb-2 -mt-1">La foto de tu producto tal cual lo vendés. Si la cargás, esta es la que se muestra primero.</p>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-14 h-14 rounded-xl border border-white/20 shrink-0 overflow-hidden bg-white/5 flex items-center justify-center">
+                  <img src={form.foto_real_url || LOGO_BLUEMARKET} alt="foto real" className={form.foto_real_url ? 'w-full h-full object-cover' : 'w-8 h-8 opacity-40'} />
+                </div>
+                {form.foto_real_url && (
+                  <button type="button" onClick={() => setForm({ ...form, foto_real_url: '' })}
+                    className="text-[#e74c3c] text-xs px-2 py-1 rounded-lg bg-[#e74c3c]/10 border border-[#e74c3c]/20">
+                    Quitar foto
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" onClick={() => abrirCamara('foto_real_url')} disabled={subiendoFoto}
+                  className="flex items-center justify-center gap-2 bg-white/5 border border-white/10 border-dashed rounded-xl px-3 py-2.5 cursor-pointer hover:bg-white/8 transition-all disabled:opacity-60">
+                  <span className="text-lg">📷</span>
+                  <span className="text-sm text-white/50">{subiendoFoto ? 'Subiendo...' : 'Cámara'}</span>
+                </button>
+                <label className="flex items-center justify-center gap-2 bg-white/5 border border-white/10 border-dashed rounded-xl px-3 py-2.5 cursor-pointer hover:bg-white/8 transition-all">
+                  <span className="text-lg">🖼️</span>
+                  <span className="text-sm text-white/50">{subiendoFoto ? 'Subiendo...' : 'Galería'}</span>
+                  <input
+                    ref={fotoRealRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={subiendoFoto}
+                    onChange={async (e) => {
+                      const archivo = e.target.files?.[0]
+                      if (!archivo) return
+                      const url = await subirFoto(archivo)
+                      if (url) setForm((f) => ({ ...f, foto_real_url: url }))
                       e.target.value = ''
                     }}
                   />
@@ -584,8 +630,8 @@ export default function GestionProductos({ productos, categorias: categoriasInic
                 style={{ animation: 'bmFadeUp 0.4s ease both', animationDelay: `${idx * 0.04}s` }}>
                 <div className="flex items-center gap-3">
                   <div className="w-11 h-11 rounded-xl bg-white/5 border border-white/15 flex items-center justify-center shrink-0 overflow-hidden">
-                    {p.foto_url
-                      ? <img src={p.foto_url} alt={p.nombre} className="w-full h-full object-cover" />
+                    {(p.foto_real_url || p.foto_url)
+                      ? <img src={p.foto_real_url || p.foto_url} alt={p.nombre} className="w-full h-full object-cover" />
                       : <img src={LOGO_BLUEMARKET} alt="" className="w-6 h-6 opacity-50" />}
                   </div>
                   <div className="min-w-0 flex-1">

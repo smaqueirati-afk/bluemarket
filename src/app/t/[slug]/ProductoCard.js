@@ -14,9 +14,9 @@ export default function ProductoCard({ producto: p, enCarrito, onAgregar, onQuit
     >
       {/* Imagen / emoji */}
       <div className="h-[78px] bg-[linear-gradient(135deg,#0a3a7a,#051e5c)] flex items-center justify-center text-3xl relative overflow-hidden">
-        {p.foto_url ? (
+        {(p.foto_real_url || p.foto_url) ? (
           <img
-            src={p.foto_url}
+            src={p.foto_real_url || p.foto_url}
             alt={p.nombre}
             loading="lazy"
             className="absolute inset-0 w-full h-full object-cover"
