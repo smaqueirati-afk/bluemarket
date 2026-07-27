@@ -507,7 +507,7 @@ export default function PanelPescaderia({ pescaderia, pedidos: pedidosIniciales,
               className="bg-white/[0.08] border border-white/12 text-white text-sm font-medium px-4 py-2.5 rounded-xl active:scale-95 transition-all text-center whitespace-nowrap">
               👥 Clientes
             </a>
-            <a href={`/t/${pescaderia?.slug}`}
+            <a href={`/t/${pescaderia?.slug}`} target="_blank" rel="noopener noreferrer"
               className="col-span-2 bg-[#4db8ff]/15 border border-[#4db8ff]/30 text-[#4db8ff] text-sm font-semibold px-4 py-2.5 rounded-xl active:scale-95 transition-all text-center whitespace-nowrap">
               🛒 Hacer pedido
             </a>
