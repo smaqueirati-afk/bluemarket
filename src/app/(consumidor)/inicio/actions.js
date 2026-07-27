@@ -110,7 +110,7 @@ export async function crearPedido(datos, items) {
       total,
       nota_cliente: datos.nota || null,
     })
-    .select('id, numero, palabra_clave')
+    .select('id, numero')
     .single()
 
   if (errPedido) {
@@ -136,7 +136,7 @@ export async function crearPedido(datos, items) {
     return { error: 'El pedido se creó pero falló al guardar los productos: ' + errItems.message }
   }
 
-  return { ok: true, numero: pedido.numero, pedidoId: pedido.id, palabraClave: pedido.palabra_clave }
+  return { ok: true, numero: pedido.numero, pedidoId: pedido.id }
 }
 
 // ── Traer los pedidos del consumidor logueado (admin, sin RLS) ──

@@ -443,12 +443,6 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaNombre }
                             <div className="text-xs text-white/40 mt-0.5">
                               ${Number(pedido.total).toLocaleString('es-AR')} · {pedido.tipo_entrega === 'delivery' ? '🏠 Envío' : '🏪 Retiro'}
                             </div>
-                            {pedido.palabra_clave && !['entregado','cancelado'].includes(pedido.estado) && (
-                              <div className="mt-2 flex items-center gap-2 bg-[#4db8ff]/15 border border-[#4db8ff]/30 rounded-lg px-2.5 py-1.5 w-fit">
-                                <span className="text-[9px] text-white/50 uppercase tracking-wide font-bold">🔑 Clave</span>
-                                <span className="text-sm font-extrabold text-[#4db8ff] tracking-wide">{pedido.palabra_clave}</span>
-                              </div>
-                            )}
                           </div>
                         </div>
                       )
@@ -496,13 +490,6 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaNombre }
             <h1 className="text-2xl font-extrabold text-white mb-2">¡Pedido confirmado!</h1>
             {numeroPedido && (
               <div className="text-[#4db8ff] font-bold text-lg mb-3">Pedido #{numeroPedido}</div>
-            )}
-            {palabraClave && (
-              <div className="bg-white/[0.07] border border-white/15 rounded-2xl px-6 py-4 mb-5 w-full">
-                <div className="text-[11px] text-white/45 uppercase tracking-wide mb-1">Tu palabra clave 🔑</div>
-                <div className="text-2xl font-extrabold text-[#4db8ff] tracking-wider">{palabraClave}</div>
-                <div className="text-[11px] text-white/40 mt-1.5">Guardala — te la van a pedir al entregar el pedido</div>
-              </div>
             )}
             <p className="text-white/55 text-sm leading-relaxed mb-8">
               Tu pedido fue recibido. La pescadería lo va a preparar y te avisará cuando esté listo. 🐟

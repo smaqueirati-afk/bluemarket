@@ -143,7 +143,6 @@ export async function crearPedido(pescaderiaId, datos, items) {
       cliente_id: clienteId,
       usuario_id: user.id,
       estado: 'nuevo',
-      palabra_clave: generarPalabraClave(),
       tipo_entrega: datos.entrega === 'envio' ? 'delivery' : 'retiro',
       direccion: datos.direccion || null,
       franja: datos.franja || null,
@@ -156,7 +155,7 @@ export async function crearPedido(pescaderiaId, datos, items) {
       total,
       nota_cliente: datos.nota || null,
     })
-    .select('id, numero, palabra_clave')
+    .select('id, numero')
     .single()
 
   if (errPedido) {
@@ -227,7 +226,7 @@ export async function crearPedido(pescaderiaId, datos, items) {
     }
   } catch (e) { /* ignorar */ }
 
-  return { ok: true, numero: pedido.numero, pedidoId: pedido.id, palabraClave: pedido.palabra_clave, descuentoRetorno, logroNivel }
+  return { ok: true, numero: pedido.numero, pedidoId: pedido.id, descuentoRetorno, logroNivel }
 }
 
 

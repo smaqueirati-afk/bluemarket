@@ -500,12 +500,6 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
                             <div className="text-base font-extrabold text-[#4db8ff]">
                               ${Number(p.total).toLocaleString('es-AR')}
                             </div>
-                            {p.palabra_clave && !['entregado','cancelado'].includes(p.estado) && (
-                              <div className="bg-white/[0.07] border border-white/15 rounded-xl px-3 py-1.5 text-right">
-                                <div className="text-[9px] text-white/40 uppercase tracking-wide">🔑 Clave</div>
-                                <div className="text-sm font-extrabold text-[#4db8ff] tracking-wider">{p.palabra_clave}</div>
-                              </div>
-                            )}
                           </div>
                         </div>
                       )
@@ -528,13 +522,6 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
             <h1 className="text-2xl font-extrabold text-white mb-2">¡Pedido confirmado!</h1>
             {numeroPedido && (
               <div className="text-[#4db8ff] font-bold text-lg mb-3">Pedido #{numeroPedido}</div>
-            )}
-            {palabraClave && (
-              <div className="bg-white/[0.07] border border-white/15 rounded-2xl px-6 py-4 mb-5 w-full">
-                <div className="text-[11px] text-white/45 uppercase tracking-wide mb-1">Tu palabra clave 🔑</div>
-                <div className="text-2xl font-extrabold text-[#4db8ff] tracking-wider">{palabraClave}</div>
-                <div className="text-[11px] text-white/40 mt-1.5">Guardala — te la van a pedir al entregar el pedido</div>
-              </div>
             )}
             <p className="text-white/55 text-sm leading-relaxed mb-8">
               Tu pedido fue recibido. La pescadería lo va a preparar y te avisará cuando esté listo. 🐟
