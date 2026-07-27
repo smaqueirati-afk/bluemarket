@@ -46,13 +46,27 @@ export default async function TiendaPorSlug(props) {
   const { data: { user } } = await supabase.auth.getUser()
 
   let esDeveloper = false
+  let esDueno = false
   if (user) {
     const { data: perfilDev } = await admin
       .from('usuarios')
-      .select('rol')
+      .select('rol, pescaderia_id')
       .eq('id', user.id)
       .maybeSingle()
     esDeveloper = perfilDev?.rol === 'developer'
+
+    // Es dueño/colaborador si tiene esta tienda asignada o está en tienda_usuarios
+    if (perfilDev?.rol === 'cliente' && perfilDev?.pescaderia_id === pescaderia.id) {
+      esDueno = true
+    } else if (!esDeveloper) {
+      const { data: membresia } = await admin
+        .from('tienda_usuarios')
+        .select('usuario_id')
+        .eq('pescaderia_id', pescaderia.id)
+        .eq('usuario_id', user.id)
+        .maybeSingle()
+      if (membresia) esDueno = true
+    }
   }
 
   if (!pescaderia.activa && !(preview && esDeveloper)) notFound()
@@ -97,6 +111,7 @@ export default async function TiendaPorSlug(props) {
         ccHabilitada={ccHabilitada}
         soloDelivery={soloDelivery}
         retorno={retorno}
+        esDueno={esDueno}
       />
     </>
   )

@@ -6,7 +6,7 @@ import { crearPedido, crearPreferenciaMP, misPedidos } from './actions'
 import BarraUsuario from '../../../components/BarraUsuario'
 import { createClient } from '../../../lib/supabase/client'
 
-export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHabilitada, soloDelivery, pescaderia, retorno }) {
+export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHabilitada, soloDelivery, pescaderia, retorno, esDueno }) {
 
   // Textos y emojis según el rubro de la tienda
   const TEXTOS_RUBRO = {
@@ -208,6 +208,12 @@ export default function TiendaCliente({ productos, usuarioId, pescaderiaId, ccHa
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black">
+      {esDueno && (
+        <a href="/panel"
+          className="fixed top-4 left-4 z-50 flex items-center gap-1.5 bg-[#051e5c]/90 border border-white/20 backdrop-blur-sm text-white text-xs font-semibold px-3 py-2 rounded-full shadow-lg active:scale-95 transition-all">
+          ← Panel
+        </a>
+      )}
       <div className="relative w-full h-full max-w-[420px] sm:max-h-[900px] sm:rounded-[40px] sm:shadow-[0_30px_80px_rgba(0,0,0,0.55)] flex flex-col overflow-hidden bg-[linear-gradient(180deg,#051e5c_0%,#03174a_100%)]">
 
         <BarraUsuario perfil="consumidor" />
