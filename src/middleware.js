@@ -11,6 +11,10 @@ export async function middleware(request) {
   if (host === 'panel.vittomare.com' && request.nextUrl.pathname === '/') {
     return NextResponse.redirect(new URL('/panel', request.url))
   }
+  // Panel de administración: adm.vittomare.com/ -> dashboard developer
+  if (host === 'adm.vittomare.com' && request.nextUrl.pathname === '/') {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
 
   let response = NextResponse.next({ request })
 
